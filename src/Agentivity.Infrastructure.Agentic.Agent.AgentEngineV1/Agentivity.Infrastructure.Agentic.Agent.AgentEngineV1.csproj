@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>$(MSBuildProjectName)</AssemblyName>
+    <RootNamespace>Agentivity.Infrastructure.Agentic.AgentEngineV1</RootNamespace>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <!-- The Enterprise Plan-and-Execute runtime only exists in editions that ship it: the community image builds with IncludeEnterprise=false. -->
+    <IncludeEnterprise Condition="'$(IncludeEnterprise)' == ''">true</IncludeEnterprise>
+    <!-- Same for the Plan-and-Execute mode: the community image builds with IncludePlanExecute=false (and no Enterprise runtime). -->
+    <IncludePlanExecute Condition="'$(IncludePlanExecute)' == ''">true</IncludePlanExecute>
+    <DefineConstants Condition="'$(IncludePlanExecute)' == 'true'">$(DefineConstants);INCLUDE_PLAN_EXECUTE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IncludeEnterprise)' != 'true'">
+    <Compile Remove="EnterpriseAgentEngine.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.Native\Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.Native.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.ReAct\Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.ReAct.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent\Agentivity.Infrastructure.Agentic.Agent.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Graph\Agentivity.Infrastructure.Graph.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+  </ItemGroup>
+  <Target Name="CopyModuleOutputsToModulesDirectory" AfterTargets="Build">
+    <PropertyGroup>
+      <!-- Overridable from the CLI (like ModuleOutputDirectory in the other module csprojs),
+           e.g. to redirect the copy while a running host locks the real _modules directory. -->
+      <ModulesDir Condition="'$(ModulesDir)' == ''">$(MSBuildProjectDirectory)\..\..\_modules\</ModulesDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <!-- Copy the module DLL and its private dependencies, but exclude shared contract
+           assemblies (Agentivity.Infrastructure.Agentic.Agent.*) that are already part of
+           the host application. Keeping them out of _modules prevents type-identity mismatches
+           when the host resolves IAgentEngine from the default AssemblyLoadContext. -->
+      <ModuleOutputFiles Include="$(TargetDir)Agentivity.Infrastructure.Agentic.Agent.AgentEngineV1.dll" />
+      <ModuleOutputFiles Include="$(TargetDir)Agentivity.Infrastructure.Agentic.Agent.AgentEngineV1.pdb" />
+      <ModuleOutputFiles Include="$(TargetDir)Agentivity.Infrastructure.Agentic.Agent.AgentEngineV1.deps.json" />
+      <ModuleOutputFiles Include="$(TargetDir)Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.*.dll" />
+      <ModuleOutputFiles Include="$(TargetDir)Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.*.pdb" />
+    </ItemGroup>
+    <MakeDir Directories="$(ModulesDir)" />
+    <Copy SourceFiles="@(ModuleOutputFiles)" DestinationFolder="$(ModulesDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

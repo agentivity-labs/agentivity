@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Agentivity.Infrastructure.Fabric</RootNamespace>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <ModuleOutputDirectory>$(MSBuildThisFileDirectory)..\..\_modules\</ModuleOutputDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Domain\Agentivity.Domain.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic\Agentivity.Infrastructure.Agentic.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent\Agentivity.Infrastructure.Agentic.Agent.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Team\Agentivity.Infrastructure.Agentic.Team.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Graph\Agentivity.Infrastructure.Graph.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Workflow\Agentivity.Infrastructure.Workflow.csproj" />
+    <ProjectReference Include="..\Agentivity.Observability.Contracts\Agentivity.Observability.Contracts.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Interactions\Agentivity.Infrastructure.Interactions.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.DataTables\Agentivity.Infrastructure.DataTables.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="4.4.0" />
+  </ItemGroup>
+
+  <Target Name="CopyModuleToModulesDirectory" AfterTargets="Build">
+    <MakeDir Directories="$(ModuleOutputDirectory)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(ModuleOutputDirectory)$(TargetFileName)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

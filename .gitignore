@@ -1,0 +1,18 @@
+# Build output
+bin/
+obj/
+TestResults/
+*.user
+.vs/
+
+# Local runtime data (never commit)
+_cache/
+_logs/
+_modules/
+_data/credentials.json
+_data/settings.json
+.env
+.env.*
+!.env.example
+
+node_modules/

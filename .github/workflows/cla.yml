@@ -1,0 +1,33 @@
+name: CLA Assistant
+
+# Asks first-time contributors to sign the CLA (CLA.md) by commenting on their pull request, and records the
+# signature. Signatures are stored on a dedicated branch so branch protection on `main` is not an obstacle
+# (create it once: git branch cla-signatures main && git push origin cla-signatures).
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, closed, synchronize]
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      - name: CLA Assistant
+        if: github.event_name == 'pull_request_target' || github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document and I hereby sign the CLA'
+        uses: contributor-assistant/github-action@v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-signatures: 'signatures/v1/cla.json'
+          path-to-document: 'https://github.com/${{ github.repository }}/blob/main/CLA.md'
+          branch: 'cla-signatures'
+          allowlist: 'dependabot[bot],github-actions[bot]'
+          custom-notsigned-prcomment: 'Thank you for your contribution! Before we can look at it, please sign our short Contributor License Agreement (CLA.md) by replying with the sentence below.'

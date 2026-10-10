@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Agentivity.Host</RootNamespace>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <RunAnalyzersDuringBuild>False</RunAnalyzersDuringBuild>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Domain\Agentivity.Domain.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Workflow.Catalog\Agentivity.Infrastructure.Workflow.Catalog.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Agentivity.Module.PromptEngine\Agentivity.Module.PromptEngine.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Graph.GraphHostV1\Agentivity.Infrastructure.Graph.GraphHostV1.csproj" ReferenceOutputAssembly="false" PrivateAssets="all">
+      <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+    </ProjectReference>
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent.AgentEngineV1\Agentivity.Infrastructure.Agentic.Agent.AgentEngineV1.csproj" ReferenceOutputAssembly="false" PrivateAssets="all">
+      <SetTargetFramework>TargetFramework=net10.0</SetTargetFramework>
+    </ProjectReference>
+    <ProjectReference Include="..\Agentivity.Infrastructure.Plugins\Agentivity.Infrastructure.Plugins.csproj" />
+    <!-- Dynamic modules — build-order only; loaded at runtime via ModuleLoader -->
+    <ProjectReference Include="..\Agentivity.Infrastructure.Fabric\Agentivity.Infrastructure.Fabric.csproj" />
+    <!-- Agentic Catalogue API -->
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic\Agentivity.Infrastructure.Agentic.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent\Agentivity.Infrastructure.Agentic.Agent.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Team\Agentivity.Infrastructure.Agentic.Team.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Workflow\Agentivity.Infrastructure.Workflow.csproj" />
+    <!-- Composable execution framework -->
+    <ProjectReference Include="..\Agentivity.Observability.Contracts\Agentivity.Observability.Contracts.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Interactions\Agentivity.Infrastructure.Interactions.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Interactions.Chat\Agentivity.Infrastructure.Interactions.Chat.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+    <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="4.2.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+  </ItemGroup>
+</Project>

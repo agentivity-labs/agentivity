@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Agentivity.Module.Workspace.Json.Basic</RootNamespace>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <ModuleOutputDirectory>$(MSBuildThisFileDirectory)..\..\_modules\</ModuleOutputDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <Target Name="CopyModuleToModulesDirectory" AfterTargets="Build">
+    <MakeDir Directories="$(ModuleOutputDirectory)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(ModuleOutputDirectory)$(TargetFileName)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

@@ -1,0 +1,11 @@
+{
+  "name": "codeexecution-runner",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sandboxed execution loop for Agentivity.Module.CodeExecution's JS worker pool. Not published — copied next to the module DLL in _modules/codeexecution-runner/ at build time, along with its installed node_modules (the curated allowlist available to scripts as blessed globals).",
+  "main": "runner.js",
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "dayjs": "^1.11.13"
+  }
+}

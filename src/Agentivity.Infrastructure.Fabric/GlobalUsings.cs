@@ -1,0 +1,17 @@
+global using Agentivity.Domain.Team;
+global using Agentivity.Infrastructure.Agentic;
+global using Agentivity.Infrastructure.Execution;
+global using Agentivity.Infrastructure.Team;
+global using DebugTraceField = Agentivity.Domain.Run.DebugTraceField;
+global using DebugTraceItem = Agentivity.Domain.Run.DebugTraceItem;
+global using DebugTraceStatus = Agentivity.Domain.Run.DebugTraceStatus;
+global using HumanInteractionOperation = Agentivity.Infrastructure.Interactions.HumanInteractionOperation;
+global using IAgentTelemetryEmitter = Agentivity.Observability.Abstractions.IAgentTelemetryEmitter;
+global using IInteractionRequestStore = Agentivity.Infrastructure.Interactions.IInteractionRequestStore;
+global using InteractionChannelInboundMessage = Agentivity.Infrastructure.Interactions.InteractionChannelInboundMessage;
+global using InteractionKind = Agentivity.Infrastructure.Interactions.InteractionKind;
+global using InteractionOutcome = Agentivity.Infrastructure.Interactions.InteractionOutcome;
+global using InteractionRequest = Agentivity.Infrastructure.Interactions.InteractionRequest;
+global using InteractionResponse = Agentivity.Infrastructure.Interactions.InteractionResponse;
+global using InteractionStore = Agentivity.Infrastructure.Interactions.InteractionStore;
+global using IRunEventBus = Agentivity.Observability.Contracts.Events.IRunEventBus;

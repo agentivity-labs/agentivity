@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Agentivity.Infrastructure.Workflow.Catalog</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Domain\Agentivity.Domain.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic.Agent\Agentivity.Infrastructure.Agentic.Agent.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Workflow\Agentivity.Infrastructure.Workflow.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Interactions.Chat\Agentivity.Infrastructure.Interactions.Chat.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Interactions.Forms\Agentivity.Infrastructure.Interactions.Forms.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Plugins\Agentivity.Infrastructure.Plugins.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Agentic\Agentivity.Infrastructure.Agentic.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Fabric\Agentivity.Infrastructure.Fabric.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.Interactions\Agentivity.Infrastructure.Interactions.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.DataTables\Agentivity.Infrastructure.DataTables.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.2" />
+    <PackageReference Include="Npgsql" Version="9.0.3" />
+    <!-- document.extract_text: PDF text extraction (MIT, pure managed, no native deps). -->
+    <PackageReference Include="PdfPig" Version="0.1.9" />
+    <!-- document.extract_text: DOCX text extraction — Microsoft's own OOXML SDK (MIT). -->
+    <PackageReference Include="DocumentFormat.OpenXml" Version="3.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Icons\**\*.svg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Nodes\AI\Llm\Capabilities\" />
+  </ItemGroup>
+</Project>
+
+
+
+
+

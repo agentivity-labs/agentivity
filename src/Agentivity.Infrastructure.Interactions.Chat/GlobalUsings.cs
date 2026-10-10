@@ -1,0 +1,20 @@
+// Global aliases from Agentivity.Domain
+global using ArgumentType = Agentivity.Domain.Arguments.ArgumentType;
+global using ArgumentUiMetadata = Agentivity.Domain.Arguments.ArgumentUiMetadata;
+global using HumanInteractionOperation = Agentivity.Infrastructure.Interactions.HumanInteractionOperation;
+global using IInteractionBridge = Agentivity.Infrastructure.Interactions.IInteractionBridge;
+global using IInteractionRequestStore = Agentivity.Infrastructure.Interactions.IInteractionRequestStore;
+global using IInteractionThreadStore = Agentivity.Infrastructure.Interactions.IInteractionThreadStore;
+global using InteractionChannelInboundMessage = Agentivity.Infrastructure.Interactions.InteractionChannelInboundMessage;
+global using InteractionKind = Agentivity.Infrastructure.Interactions.InteractionKind;
+// Generic interaction types (Agentivity.Infrastructure.Interactions)
+global using InteractionMessage = Agentivity.Infrastructure.Interactions.InteractionMessage;
+global using InteractionOutcome = Agentivity.Infrastructure.Interactions.InteractionOutcome;
+global using InteractionRequest = Agentivity.Infrastructure.Interactions.InteractionRequest;
+global using InteractionResponse = Agentivity.Infrastructure.Interactions.InteractionResponse;
+global using InteractionResumeResult = Agentivity.Infrastructure.Interactions.InteractionResumeResult;
+// Thread model — now generic, lives in Agentivity.Infrastructure.Interactions
+global using InteractionThread = Agentivity.Infrastructure.Interactions.InteractionThread;
+global using InteractionThreadStatus = Agentivity.Infrastructure.Interactions.InteractionThreadStatus;
+global using ThreadAuthorType = Agentivity.Infrastructure.Interactions.ThreadAuthorType;
+global using ThreadMessage = Agentivity.Infrastructure.Interactions.ThreadMessage;

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>Agentivity.Module.PromptEngine</AssemblyName>
+    <RootNamespace>Agentivity.Module.PromptEngine</RootNamespace>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <ModuleOutputDirectory>$(MSBuildProjectDirectory)\..\..\_modules\</ModuleOutputDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="Microsoft.AspNetCore.Builder" />
+    <Using Include="Microsoft.AspNetCore.Http" />
+    <Using Include="Microsoft.AspNetCore.Routing" />
+    <Using Include="Microsoft.Extensions.Configuration" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Agentivity.Domain\Agentivity.Domain.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Agentivity.Observability\Agentivity.Observability.csproj" />
+  </ItemGroup>
+  <Target Name="CopyModuleToModulesDirectory" AfterTargets="Build">
+    <MakeDir Directories="$(ModuleOutputDirectory)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ModuleOutputDirectory)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>
+

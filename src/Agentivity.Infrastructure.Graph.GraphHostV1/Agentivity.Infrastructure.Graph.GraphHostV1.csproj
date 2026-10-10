@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Agentivity.Infrastructure.Graph.GraphHostV1</RootNamespace>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <ModuleOutputDirectory>$(MSBuildProjectDirectory)\..\..\_modules\</ModuleOutputDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Infrastructure.Graph\Agentivity.Infrastructure.Graph.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <Target Name="CopyModuleToModulesDirectory" AfterTargets="Build">
+    <MakeDir Directories="$(ModuleOutputDirectory)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ModuleOutputDirectory)"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>
