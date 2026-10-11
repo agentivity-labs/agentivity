@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Core.Llm.Recovery;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ public sealed class OpenAiModelNode : BaseLlmModelNode
         : base("ai.llm.model.openai", "openai", LlmApiFlavor.OpenAI, llmClientFactory, logger, recoveryOptions)
     {
         DefineMetadata("OpenAI Model", "OpenAI GPT models (and compatible: LM Studio, Ollama, Groq, Azure OpenAI…).", "ai.models");
+        DefineEffects(NodeEffects.Costs);
     }
 
     protected override string DefaultBaseUrl => "https://api.openai.com/v1";

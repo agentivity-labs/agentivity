@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Agentivity.Domain.Workflow;
+using System.Text;
 using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.Layout;
@@ -17,6 +18,7 @@ public sealed class DslToMarkdownNode : DslAdapterNode
         : base("content.layoutadapters.dsl_to_markdown")
     {
         DefineMetadata("DSL to Markdown", "Converts DSL content to Markdown format", "content.layoutadapters");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -35,12 +37,13 @@ public sealed class DslToMarkdownNode : DslAdapterNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
-        DefineInput("generate_toc_anchors", ArgumentType.Boolean, "Generate anchor links for TOC (default: true)", true, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 });
+        DefineInput("generate_toc_anchors", ArgumentType.Boolean, "Generate anchor links for TOC (default: true)", true, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 }, required: false);
 
-        DefineInput("heading_prefix", ArgumentType.Text, "Optional prefix for all headings (e.g., project name)", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("heading_prefix", ArgumentType.Text, "Optional prefix for all headings (e.g., project name)", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         // Output
         DefineOutput("markdown", ArgumentType.Text, "Generated Markdown content");

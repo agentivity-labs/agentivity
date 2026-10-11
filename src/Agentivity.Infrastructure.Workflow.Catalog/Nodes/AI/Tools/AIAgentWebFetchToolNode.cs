@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Agentivity.Infrastructure.Arguments;
@@ -64,11 +65,12 @@ public sealed class AIAgentWebFetchToolNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("AI Agent Web Fetch Tool", "Fetches a web resource over HTTP(S) and returns normalized HTML, JSON, or text content for AI agents.", "ai.tools");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "AI Agent Web Fetch Tool", ResourcePortCategory.AIAgentTool, maxConnections: -1);
-        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Network", Order = 10 });
+        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Network", Order = 10 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aillm"));
     }

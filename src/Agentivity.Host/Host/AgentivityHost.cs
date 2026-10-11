@@ -3,6 +3,7 @@ using Agentivity.Host.Agentic;
 using Agentivity.Host.Icons;
 using Agentivity.Host.AgUi;
 using Agentivity.Host.AiAssistant;
+using Agentivity.Host.Capabilities;
 using Agentivity.Host.Voice;
 using Agentivity.Host.Configs;
 using Agentivity.Host.Credentials;
@@ -297,6 +298,9 @@ public sealed class AgentivityHost : IAgentivityHost
             widgetBundleRegistry.Register(bundle);
         builder.Services.AddSingleton<IAgUiWidgetBundleRegistry>(widgetBundleRegistry);
 
+        // What the platform can do, discovered from the loaded nodes, widgets, team engine and agent engine
+        builder.Services.AddCapabilityRegistry();
+
         // Configure workflow run retention
         builder.Services.Configure<Infrastructure.Options.WorkflowRunRetentionOptions>(builder.Configuration.GetSection("WorkflowRunRetention"));
 
@@ -404,6 +408,7 @@ public sealed class AgentivityHost : IAgentivityHost
         _app.MapUnifiedExecutionStreamApi();
         _app.MapAgUiWidgetBundleApi();
         _app.MapMetadataApi();
+        _app.MapCapabilitiesApi();
         _app.MapCredentialsApi();
         _app.MapLlmConnectionsApi();
         _app.MapTemplatesApi();

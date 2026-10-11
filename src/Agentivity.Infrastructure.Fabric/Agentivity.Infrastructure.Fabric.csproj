@@ -28,4 +28,5 @@
     <MakeDir Directories="$(ModuleOutputDirectory)" />
     <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(ModuleOutputDirectory)$(TargetFileName)" SkipUnchangedFiles="true" />
   </Target>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets')" />
 </Project>

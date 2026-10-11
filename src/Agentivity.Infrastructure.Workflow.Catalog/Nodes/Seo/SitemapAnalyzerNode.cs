@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using Agentivity.Domain.Workflow;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -25,10 +26,11 @@ public sealed class SitemapAnalyzerNode : ToolNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Sitemap Analyzer", "Parses XML sitemap and extracts page information for SEO analysis.", "seo");
+        DefineEffects(NodeEffects.ReadsExternal);
 
-        DefineInput("sitemap_url", ArgumentType.Text, "Sitemap XML URL (e.g., https://example.com/sitemap.xml)", ui: new ArgumentUiMetadata { Group = "Sitemap", Order = 10 });
-        DefineInput("fetch_content", ArgumentType.Boolean, "Fetch page content (title, H1, meta description, excerpt)", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 });
-        DefineInput("max_pages", ArgumentType.Number, "Maximum pages to analyze (0 = all)", 0, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("sitemap_url", ArgumentType.Text, "Sitemap XML URL (e.g., https://example.com/sitemap.xml)", ui: new ArgumentUiMetadata { Group = "Sitemap", Order = 10 }, required: true);
+        DefineInput("fetch_content", ArgumentType.Boolean, "Fetch page content (title, H1, meta description, excerpt)", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 }, required: false);
+        DefineInput("max_pages", ArgumentType.Number, "Maximum pages to analyze (0 = all)", 0, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         DefineOutput("pages", ArgumentType.Text, "List of sitemap pages (JSON array)");
         DefineOutput("total_pages", ArgumentType.Number, "Total number of pages found");

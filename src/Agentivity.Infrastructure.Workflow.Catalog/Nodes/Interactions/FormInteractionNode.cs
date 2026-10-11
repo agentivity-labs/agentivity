@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
@@ -17,9 +18,10 @@ public sealed class FormInteractionNode : BaseInteractionNode
         : base("interaction.form", store, logger)
     {
         DefineMetadata("Form Interaction", "Collects structured form input through the connected channel", "interaction");
+        DefineEffects(NodeEffects.SendsMessage);
 
-        DefineInput("title", ArgumentType.Text, "Title shown to the user");
-        DefineInput("description", ArgumentType.Text, "Description/instructions", ui: new ArgumentUiMetadata { Multiline = true, Rows = 4 });
+        DefineInput("title", ArgumentType.Text, "Title shown to the user", required: false);
+        DefineInput("description", ArgumentType.Text, "Description/instructions", ui: new ArgumentUiMetadata { Multiline = true, Rows = 4 }, required: false);
         DefineInput(
             "fields",
             ArgumentType.Text,
@@ -29,7 +31,8 @@ public sealed class FormInteractionNode : BaseInteractionNode
                 Multiline = true,
                 Rows = 12,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
         DefineOutput("response_data", ArgumentType.Text, "User response as JSON");

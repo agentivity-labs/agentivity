@@ -34,7 +34,8 @@ public sealed class JSNode : CodeNode
                 Order = 10,
                 Multiline = true,
                 Rows = 12,
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Material(0xe86f, "#f7df1e"));

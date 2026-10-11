@@ -22,6 +22,7 @@ public sealed class CoreSwitchNode : ControlFlowNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Switch", "Evaluates a value and routes execution to different branches based on matching cases.", "core.control");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -33,9 +34,9 @@ public sealed class CoreSwitchNode : ControlFlowNode
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
 
         // Data inputs
-        DefineInput("value", ArgumentType.Text, "Value to evaluate", ui: new ArgumentUiMetadata { Group = "Switch", Order = 10 });
-        DefineInput("mode", ArgumentType.Text, "Matching mode: 'exact', 'contains', 'regex'", "exact", ui: new ArgumentUiMetadata { Group = "Switch", Order = 20 });
-        DefineInput("default_branch", ArgumentType.Text, "Default branch if no case matches", "default", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("value", ArgumentType.Text, "Value to evaluate", ui: new ArgumentUiMetadata { Group = "Switch", Order = 10 }, required: true);
+        DefineInput("mode", ArgumentType.Text, "Matching mode: 'exact', 'contains', 'regex'", "exact", ui: new ArgumentUiMetadata { Group = "Switch", Order = 20 }, required: false);
+        DefineInput("default_branch", ArgumentType.Text, "Default branch if no case matches", "default", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         // Note: Output ports are dynamically defined based on cases in metadata
         // Cases should be defined in metadata.cases as: [{ "value": "case1", "port": "branch1", "label": "Branch 1" }]

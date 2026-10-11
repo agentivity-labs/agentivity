@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
@@ -29,6 +30,7 @@ public sealed class EmbeddingsLocalNode : ResourceNode, IEmbeddingProvider
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.Embeddings);
 
         DefineMetadata("Local Embeddings", "Free, offline embeddings (all-MiniLM-L6-v2) — no credentials, no external API calls.", "ai.embeddings");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();

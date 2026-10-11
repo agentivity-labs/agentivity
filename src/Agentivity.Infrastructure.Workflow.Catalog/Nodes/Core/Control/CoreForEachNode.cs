@@ -25,6 +25,7 @@ public sealed class CoreForEachNode : ControlFlowNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("For Each", "Iterates over a collection, executing connected nodes for each item.", "core.control");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -52,7 +53,8 @@ public sealed class CoreForEachNode : ControlFlowNode
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
         // Data outputs

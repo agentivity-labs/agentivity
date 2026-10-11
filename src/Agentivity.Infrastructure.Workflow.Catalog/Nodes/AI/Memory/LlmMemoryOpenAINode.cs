@@ -1,4 +1,5 @@
 ﻿using Agentivity.Domain.Credentials;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Models.Capabilities;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
@@ -32,26 +33,28 @@ public sealed class LlmMemoryOpenAINode : ResourceNode, IEmbeddingProvider
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
         DefineMetadata("OpenAI Memory", "RAG with dedicated OpenAI credentials for embeddings and vector storage.", "ai.memory");
+        DefineEffects(NodeEffects.WritesInternal | NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "LLM Memory", ResourcePortCategory.LlmMemory, maxConnections: -1);
         DefineResourceInputPort("embeddings", "Embeddings", ResourcePortCategory.Embeddings, "Optional — overrides the credentials below with a connected Embeddings node.", isRequired: false);
 
-        DefineCredentialsInput("credentials", "openai", "OpenAI credentials for embeddings — leave unset to fall back to the free local embedding", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", "openai", "OpenAI credentials for embeddings — leave unset to fall back to the free local embedding", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
 
         DefineChoice(
             "embedding_model",
             [("text-embedding-3-small", "text-embedding-3-small (Fast, Cheap)"), ("text-embedding-3-large", "text-embedding-3-large (Best Quality)"), ("text-embedding-ada-002", "text-embedding-ada-002 (Legacy)")],
             "Embedding model",
             "text-embedding-3-small",
-            ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 }
+            ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 },
+            required: false
         );
 
-        DefineChoice("vector_store", [("local", "Local (K-means clustering)"), ("pinecone", "Pinecone (Cloud Vector DB)"), ("weaviate", "Weaviate (Self-hosted/Cloud)")], "Vector store backend", "local", ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 });
+        DefineChoice("vector_store", [("local", "Local (K-means clustering)"), ("pinecone", "Pinecone (Cloud Vector DB)"), ("weaviate", "Weaviate (Self-hosted/Cloud)")], "Vector store backend", "local", ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 }, required: false);
 
-        DefineInput("namespace", ArgumentType.Text, "Namespace for vector storage", "default", ui: new ArgumentUiMetadata { Group = "Settings", Order = 40 });
-        DefineInput("max_clusters", ArgumentType.Number, "Max clusters for local mode", 30, ui: new ArgumentUiMetadata { Group = "Advanced", Order = 50 });
+        DefineInput("namespace", ArgumentType.Text, "Namespace for vector storage", "default", ui: new ArgumentUiMetadata { Group = "Settings", Order = 40 }, required: false);
+        DefineInput("max_clusters", ArgumentType.Number, "Max clusters for local mode", 30, ui: new ArgumentUiMetadata { Group = "Advanced", Order = 50 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aimemory"));
     }

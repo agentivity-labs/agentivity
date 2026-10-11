@@ -9,6 +9,12 @@ public interface IAgenticModeRuntime : IExecutionUnit<AgentConfig, AgentRunResul
 {
     string ModeId { get; }
     string DisplayName { get; }
+
+    /// <summary>What this mode does, in plain words. Read by the Studio and by the AI assistant; null while the mode is not described.</summary>
+    string? Description => null;
+
+    /// <summary>When to choose this mode rather than another, and when not to. Null while not described.</summary>
+    string? WhenToUse => null;
     AgenticModeCapabilities Capabilities { get; }
     AgentPolicySet DefaultPolicies { get; }
     IReadOnlyList<RuntimePolicyDescriptor> PolicyLibrary { get; }

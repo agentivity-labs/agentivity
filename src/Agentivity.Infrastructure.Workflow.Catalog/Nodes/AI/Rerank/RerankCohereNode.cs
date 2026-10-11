@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
@@ -27,22 +28,24 @@ public sealed class RerankCohereNode : ToolNode
         _service = new RerankService(credentialsService, httpClientFactory, logger ?? throw new ArgumentNullException(nameof(logger)));
 
         DefineMetadata("Cohere Rerank", "Re-ranks documents against a query using Cohere's Rerank API — reorders a vector store's candidate results by true relevance.", "ai.rerank");
+        DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
 
-        DefineCredentialsInput("credentials", "cohere", "Cohere API credentials", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", "cohere", "Cohere API credentials", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineChoice(
             "model",
             [("rerank-v3.5", "rerank-v3.5 (latest, multilingual)"), ("rerank-english-v3.0", "rerank-english-v3.0"), ("rerank-multilingual-v3.0", "rerank-multilingual-v3.0")],
             "Rerank model",
             "rerank-v3.5",
-            ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 }
+            ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 },
+            required: false
         );
 
-        DefineInput("query", ArgumentType.Text, "The query to rank documents against", ui: new ArgumentUiMetadata { Group = "Input", Order = 30 });
-        DefineInput("documents", ArgumentType.Text, "JSON array of document strings to rank", "[]", ui: new ArgumentUiMetadata { Group = "Input", Order = 40, Multiline = true, Rows = 8, Format = "json" });
-        DefineInput("top_n", ArgumentType.Number, "Maximum number of ranked results to return (leave empty for all)", ui: new ArgumentUiMetadata { Group = "Settings", Order = 50, Min = 1 });
+        DefineInput("query", ArgumentType.Text, "The query to rank documents against", ui: new ArgumentUiMetadata { Group = "Input", Order = 30 }, required: true);
+        DefineInput("documents", ArgumentType.Text, "JSON array of document strings to rank", "[]", ui: new ArgumentUiMetadata { Group = "Input", Order = 40, Multiline = true, Rows = 8, Format = "json" }, required: false);
+        DefineInput("top_n", ArgumentType.Number, "Maximum number of ranked results to return (leave empty for all)", ui: new ArgumentUiMetadata { Group = "Settings", Order = 50, Min = 1 }, required: false);
 
         DefineOutput("ranked", ArgumentType.Text, "JSON array of {text, score, original_index}, sorted by score descending");
 

@@ -12,6 +12,14 @@ public sealed class ArgumentDefinition
     public IReadOnlyList<ChoiceOption>? Choices { get; }
     public string? CredentialsTemplateId { get; }
     public object? BindingExpression { get; init; }
+
+    /// <summary>
+    /// Whether the node cannot run without a value for this input. <c>null</c> means "not declared yet" (the node has
+    /// not been classified), which is deliberately different from <c>false</c> ("optional"): a completeness check can
+    /// then tell what is still to be reviewed.
+    /// </summary>
+    public bool? Required { get; init; }
+
     public object? Value { get; set; }
     public Action<object?>? OnChanged { get; init; }
 

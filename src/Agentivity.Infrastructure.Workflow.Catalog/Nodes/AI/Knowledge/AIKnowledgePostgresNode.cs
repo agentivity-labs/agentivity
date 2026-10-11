@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using Agentivity.Domain.Workflow;
+using System.Globalization;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Workflows;
@@ -16,6 +17,7 @@ public sealed class AIKnowledgePostgresNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (PostgreSQL)", "Loads a knowledge corpus from PostgreSQL-compatible databases by executing an explicit query and mapping rows to normalized documents.", "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -30,7 +32,8 @@ public sealed class AIKnowledgePostgresNode : ResourceNode, IKnowledgeSource
                 Order = 10,
                 Multiline = true,
                 Rows = 4,
-            }
+            },
+            required: true
         );
         DefineInput(
             "query",
@@ -42,9 +45,10 @@ public sealed class AIKnowledgePostgresNode : ResourceNode, IKnowledgeSource
                 Order = 20,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: true
         );
-        DefineInput("content_column", ArgumentType.Text, "Column containing the document text.", "content", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 30 });
+        DefineInput("content_column", ArgumentType.Text, "Column containing the document text.", "content", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 30 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("core_data_table_node"));
     }

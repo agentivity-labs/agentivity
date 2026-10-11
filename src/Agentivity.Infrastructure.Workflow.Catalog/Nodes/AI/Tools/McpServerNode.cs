@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using Agentivity.Domain.Workflow;
+using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Arguments;
@@ -26,6 +27,7 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("MCP Server", "Connects AI agents to a remote MCP server over HTTP.", "ai.tools");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -40,7 +42,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Connection",
                 Group = "Server",
                 Order = 10,
-            }
+            },
+            required: true
         );
         DefineInput(
             "bearer_token",
@@ -52,7 +55,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Connection",
                 Group = "Authentication",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineInput(
             "headers_json",
@@ -67,7 +71,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "protocol_version",
@@ -79,7 +84,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Settings",
                 Group = "Protocol",
                 Order = 40,
-            }
+            },
+            required: false
         );
         DefineInput(
             "client_name",
@@ -91,7 +97,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Settings",
                 Group = "Client",
                 Order = 50,
-            }
+            },
+            required: false
         );
         DefineInput(
             "client_version",
@@ -103,7 +110,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Settings",
                 Group = "Client",
                 Order = 60,
-            }
+            },
+            required: false
         );
         DefineInput(
             "timeout_seconds",
@@ -115,7 +123,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Advanced",
                 Group = "Network",
                 Order = 70,
-            }
+            },
+            required: false
         );
         DefineInput(
             "cache_tools",
@@ -127,7 +136,8 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
                 Tab = "Advanced",
                 Group = "Caching",
                 Order = 80,
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("aillm"));

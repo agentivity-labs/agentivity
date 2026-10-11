@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -15,6 +16,7 @@ public sealed class CoreMergeNode : ToolNode
         : base("core.merge")
     {
         DefineMetadata("Merge", "Merges two objects into one, with overlay properties overriding base.", "core.data");
+        DefineEffects(NodeEffects.None);
 
         DefineInput(
             "base",
@@ -27,7 +29,8 @@ public sealed class CoreMergeNode : ToolNode
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "overlay",
@@ -40,9 +43,10 @@ public sealed class CoreMergeNode : ToolNode
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: true
         );
-        DefineInput("deep", ArgumentType.Boolean, "Deep merge nested objects", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("deep", ArgumentType.Boolean, "Deep merge nested objects", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         DefineOutput("result", ArgumentType.Text, "Merged object");
 

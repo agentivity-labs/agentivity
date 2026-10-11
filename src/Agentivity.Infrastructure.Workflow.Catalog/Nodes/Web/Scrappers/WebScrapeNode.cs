@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Web;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Knowledge;
@@ -34,6 +35,7 @@ public sealed class WebScrapeNode : ControlFlowNode
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 
         DefineMetadata("Scrape Web Page", "Reads a web page as Markdown, ready for an LLM prompt. Uses the connected web scraper, or the free Direct scraper when none is connected.", "web");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
@@ -44,10 +46,10 @@ public sealed class WebScrapeNode : ControlFlowNode
 
         DefineResourceInputPort("scraper", "Web Scraper", ResourcePortCategory.WebScraper, "Optional web scraper resource (Direct, Jina, Firecrawl). Direct is used when none is connected.", isRequired: false);
 
-        DefineInput("url", ArgumentType.Text, "The page to read (http or https)", ui: new ArgumentUiMetadata { Group = "Page", Order = 10 });
-        DefineInput("timeout_seconds", ArgumentType.Number, "How long to wait for the page", 30, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 });
-        DefineInput("max_content_length", ArgumentType.Number, "Longest content kept, in characters", 50000, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
-        DefineInput("allow_private_addresses", ArgumentType.Boolean, "Allow links that point inside the backend's own network (localhost, private ranges). Leave off when the link comes from a person", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 40 });
+        DefineInput("url", ArgumentType.Text, "The page to read (http or https)", ui: new ArgumentUiMetadata { Group = "Page", Order = 10 }, required: true);
+        DefineInput("timeout_seconds", ArgumentType.Number, "How long to wait for the page", 30, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 }, required: false);
+        DefineInput("max_content_length", ArgumentType.Number, "Longest content kept, in characters", 50000, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
+        DefineInput("allow_private_addresses", ArgumentType.Boolean, "Allow links that point inside the backend's own network (localhost, private ranges). Leave off when the link comes from a person", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 40 }, required: false);
 
         DefineOutput("markdown", ArgumentType.Text, "The page content as Markdown");
         DefineOutput("text", ArgumentType.Text, "The same content as plain text");

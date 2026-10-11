@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.AgUi;
 using Agentivity.Infrastructure.Interactions.Chat;
 using Agentivity.Infrastructure.Stores;
@@ -35,16 +36,17 @@ public sealed class ChatChannelNode : ResourceNode, IInteractionChannel, IHumanI
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
         DefineMetadata("Chat Channel", "Internal local chat channel for workflow conversations, human-in-the-loop responses, and AG-UI rich widgets.", "ai.interactions");
+        DefineEffects(NodeEffects.WritesInternal);
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Channel", ResourcePortCategory.InteractionChannel, maxConnections: -1);
 
-        DefineInput("default_thread_title", ArgumentType.Text, "Default thread title for newly created workflow conversations", "Main", ui: new ArgumentUiMetadata { Group = "Channel", Order = 20 });
-        DefineInput("workflow_author_name", ArgumentType.Text, "Display name used for workflow-authored messages", "Workflow", ui: new ArgumentUiMetadata { Group = "Display", Order = 30 });
-        DefineInput("respondent", ArgumentType.Text, "Expected respondent name for traceability", ui: new ArgumentUiMetadata { Group = "Display", Order = 40 });
-        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 50 });
-        DefineInput("widget_bundles", ArgumentType.TextList, "Platform widget bundle IDs to activate for this run.", "[\"agentivity_artifacts\"]", ui: new ArgumentUiMetadata { Group = "Widgets", Order = 60 });
-        DefineInput("custom_widgets", ArgumentType.Structured, "Application-specific widget definitions the LLM can invoke as tool calls.", "[]", ui: new ArgumentUiMetadata { Group = "Widgets", Order = 70 });
+        DefineInput("default_thread_title", ArgumentType.Text, "Default thread title for newly created workflow conversations", "Main", ui: new ArgumentUiMetadata { Group = "Channel", Order = 20 }, required: false);
+        DefineInput("workflow_author_name", ArgumentType.Text, "Display name used for workflow-authored messages", "Workflow", ui: new ArgumentUiMetadata { Group = "Display", Order = 30 }, required: false);
+        DefineInput("respondent", ArgumentType.Text, "Expected respondent name for traceability", ui: new ArgumentUiMetadata { Group = "Display", Order = 40 }, required: false);
+        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 50 }, required: false);
+        DefineInput("widget_bundles", ArgumentType.TextList, "Platform widget bundle IDs to activate for this run.", "[\"agentivity_artifacts\"]", ui: new ArgumentUiMetadata { Group = "Widgets", Order = 60 }, required: false);
+        DefineInput("custom_widgets", ArgumentType.Structured, "Application-specific widget definitions the LLM can invoke as tool calls.", "[]", ui: new ArgumentUiMetadata { Group = "Widgets", Order = 70 }, required: false);
 
         DefineIcon(NodeIcon.Material(0xe0b9, "#5b55e8"));
     }

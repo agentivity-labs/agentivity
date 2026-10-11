@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Workflows.Nodes;
 
 namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Web.Scrappers;
@@ -13,5 +14,6 @@ public abstract class WebScraperNodeBase : ResourceNode
     protected void DefineCommonMetadata(string displayName, string description)
     {
         DefineMetadata(displayName, description, "web.scrappers");
+        DefineEffects(NodeEffects.ReadsExternal);
     }
 }

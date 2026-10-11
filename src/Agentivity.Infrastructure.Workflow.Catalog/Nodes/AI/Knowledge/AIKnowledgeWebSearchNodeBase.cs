@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Web;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Web.Scrappers;
@@ -32,11 +33,12 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata(displayName, description, "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
 
-        DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription, ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription, ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
 
         DefineInput(
             "query",
@@ -48,7 +50,8 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
                 Order = 20,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: true
         );
         DefineInput(
             "top_k",
@@ -62,11 +65,12 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
                 Min = 1,
                 Max = 10,
                 Step = 1,
-            }
+            },
+            required: false
         );
-        DefineInput("language", ArgumentType.Text, "Optional language hint passed to the search provider.", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 40 });
-        DefineInput("site", ArgumentType.Text, "Optional site/domain filter passed to the search provider.", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 50 });
-        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile for search requests.", "medium", ui: new ArgumentUiMetadata { Group = "Search", Order = 60 });
+        DefineInput("language", ArgumentType.Text, "Optional language hint passed to the search provider.", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 40 }, required: false);
+        DefineInput("site", ArgumentType.Text, "Optional site/domain filter passed to the search provider.", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 50 }, required: false);
+        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile for search requests.", "medium", ui: new ArgumentUiMetadata { Group = "Search", Order = 60 }, required: false);
 
         DefineResourceInputPort("scraper", "Web Scraper", ResourcePortCategory.WebScraper, "Optional web scraper resource used to load search result URLs.", isRequired: false);
 
@@ -81,7 +85,8 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
                 Order = 70,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_content_length",
@@ -94,10 +99,11 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
                 Order = 80,
                 Min = 256,
                 Step = 256,
-            }
+            },
+            required: false
         );
-        DefineInput("extract_metadata", ArgumentType.Boolean, "Extract page metadata when supported by the scraper.", true, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 90 });
-        DefineInput("render_javascript", ArgumentType.Boolean, "Enable JavaScript rendering when supported by the connected scraper.", false, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 100 });
+        DefineInput("extract_metadata", ArgumentType.Boolean, "Extract page metadata when supported by the scraper.", true, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 90 }, required: false);
+        DefineInput("render_javascript", ArgumentType.Boolean, "Enable JavaScript rendering when supported by the connected scraper.", false, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 100 }, required: false);
 
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
         DefineIcon(NodeIcon.Embedded("web_scrapper"));

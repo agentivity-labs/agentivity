@@ -122,7 +122,7 @@ internal static class AgenticLibraryEndpoints
                     if (catalog is null)
                         return Results.Problem("No team engine is available.", statusCode: 503);
 
-                    var summaries = catalog.OrchestratorIds.Select(id => new OrchestratorSummaryDto(id)).ToList();
+                    var summaries = catalog.Describe().Select(d => new OrchestratorSummaryDto(d.Id, d.DisplayName, d.Description, d.WhenToUse)).ToList();
                     log.LogInformation("GET /orchestrators — returning {Count} orchestrators", summaries.Count);
                     return Results.Ok(summaries);
                 }

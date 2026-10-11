@@ -41,16 +41,25 @@ public static class MetadataEndpoints
                             displayName = meta?.DisplayName,
                             description = meta?.Description,
                             categoryId = meta?.CategoryId,
+                            whenToUse = meta?.WhenToUse,
+                            example = meta?.Example,
+                            // null while the node is not classified; otherwise the names of the flags that are set (empty = none).
+                            effects = meta?.Effects?.ToNames(),
                             inputs = inputsWithMeta.Select(p => new
                             {
                                 name = p.Name,
                                 type = p.Type,
                                 description = p.Description,
+                                // null = not declared yet, false = optional, true = the node cannot run without it.
+                                required = p.Required,
+                                defaultValue = p.DefaultValue,
                                 editorMode = p.EditorMode,
                                 credentialsTemplateId = p.CredentialsTemplateId,
                                 choices = p.Choices?.Select(c => new { value = c.Value, label = c.Label }),
                                 ui = p.Ui,
                             }),
+                            // Outputs that depend on the node's configuration or on what it runs; null when every output is declared.
+                            dynamicOutputs = n.DynamicOutputs,
                             outputs = n.GetOutputs()
                                 .Select(p => new
                                 {

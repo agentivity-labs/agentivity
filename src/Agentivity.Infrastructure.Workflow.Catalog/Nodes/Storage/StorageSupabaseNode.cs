@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
 
@@ -26,13 +27,14 @@ public sealed class StorageSupabaseNode : ResourceNode
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.DatabaseStorage); // Register with abstract type (storage.database.*)
 
         DefineMetadata("Supabase Storage", "Provides access to Supabase database key-value storage.", "storage");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Supabase Storage", ResourcePortCategory.DatabaseStorage, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", "supabase", "Supabase project credentials (URL + API key)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
-        DefineInput("table_name", ArgumentType.Text, "Database table name", "storage_items", ui: new ArgumentUiMetadata { Group = "Storage", Order = 20 });
+        DefineCredentialsInput("credentials", "supabase", "Supabase project credentials (URL + API key)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
+        DefineInput("table_name", ArgumentType.Text, "Database table name", "storage_items", ui: new ArgumentUiMetadata { Group = "Storage", Order = 20 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("supabase"));
     }

@@ -56,7 +56,8 @@ public sealed class AgentPolicyNode : ResourceNode, IAgentPolicySource, IWorkflo
                 Tab = "General",
                 Group = "Layer",
                 Order = 10,
-            }
+            },
+            required: false
         );
         DefineInput(
             "priority",
@@ -68,7 +69,8 @@ public sealed class AgentPolicyNode : ResourceNode, IAgentPolicySource, IWorkflo
                 Tab = "General",
                 Group = "Layer",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineInput(
             "source_id",
@@ -80,7 +82,8 @@ public sealed class AgentPolicyNode : ResourceNode, IAgentPolicySource, IWorkflo
                 Tab = "General",
                 Group = "Layer",
                 Order = 30,
-            }
+            },
+            required: false
         );
         DefineInput(
             "textual_policy_tree",
@@ -93,7 +96,8 @@ public sealed class AgentPolicyNode : ResourceNode, IAgentPolicySource, IWorkflo
                 Order = 10,
                 Editor = "structured",
                 StructuredEditorDefinition = BuildTextualPolicyTreeEditorDefinition(),
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("aillm"));

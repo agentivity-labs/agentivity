@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Arguments;
@@ -56,6 +57,7 @@ public sealed class CodeToolNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("AI Agent JavaScript Tool", "Lets an AI agent run a JavaScript snippet (real, sandboxed Node.js) and use the result.", "ai.tools");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -65,7 +67,8 @@ public sealed class CodeToolNode : ResourceNode, IAgentTool
             ArgumentType.Number,
             "Execution timeout per call, in seconds.",
             defaultValue: DefaultTimeoutSeconds,
-            ui: new ArgumentUiMetadata { Group = "Execution", Order = 10, Min = 0.1, Max = MaxTimeoutSeconds }
+            ui: new ArgumentUiMetadata { Group = "Execution", Order = 10, Min = 0.1, Max = MaxTimeoutSeconds },
+            required: false
         );
 
         DefineIcon(NodeIcon.Material(0xe86f, "#f7df1e"));

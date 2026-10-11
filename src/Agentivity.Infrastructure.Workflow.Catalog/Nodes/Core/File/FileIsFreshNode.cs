@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ public sealed class FileIsFreshNode : ToolNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("File Is Fresh", "Checks if a file exists and was modified within the specified time window.", "core.file");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -33,8 +35,8 @@ public sealed class FileIsFreshNode : ToolNode
         DefineOutputPort("out", "Out", "Default output port");
 
         // Data inputs
-        DefineInput("file_path", ArgumentType.Text, "Path to the file to check", ui: new ArgumentUiMetadata { Group = "File", Order = 10 });
-        DefineInput("max_age_minutes", ArgumentType.Number, "Maximum age in minutes for the file to be considered fresh", ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 });
+        DefineInput("file_path", ArgumentType.Text, "Path to the file to check", ui: new ArgumentUiMetadata { Group = "File", Order = 10 }, required: true);
+        DefineInput("max_age_minutes", ArgumentType.Number, "Maximum age in minutes for the file to be considered fresh", ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 }, required: false);
 
         // Data outputs
         DefineOutput("isFresh", ArgumentType.Boolean, "True if the file exists and is fresh, false otherwise");

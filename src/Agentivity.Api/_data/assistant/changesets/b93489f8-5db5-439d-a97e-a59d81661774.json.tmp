@@ -1,0 +1,29 @@
+{
+  "id": "b93489f8-5db5-439d-a97e-a59d81661774",
+  "name": "",
+  "status": "open",
+  "createdAt": "2026-10-10T17:29:50.2160011+00:00",
+  "updatedAt": "2026-10-10T17:29:50.2192104+00:00",
+  "rootEntityId": null,
+  "folderId": null,
+  "agentModel": {
+    "connectionId": "cred_8357abb614c14d80bca6cba26883a763",
+    "kind": "anthropic",
+    "name": "LLM API - Anthropic"
+  },
+  "registryVersion": "f064724bf22b12a8",
+  "revision": 0,
+  "entities": [],
+  "journal": [],
+  "revisions": [],
+  "conversation": [
+    {
+      "role": "user",
+      "content": "Give me something that takes a web address, reads the page and writes a three-sentence summary of it.",
+      "at": "2026-10-10T17:29:50.2192084+00:00",
+      "work": [],
+      "options": []
+    }
+  ],
+  "plan": null
+}

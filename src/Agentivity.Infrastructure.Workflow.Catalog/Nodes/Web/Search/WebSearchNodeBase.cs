@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Web.Search;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -19,12 +20,13 @@ public abstract class WebSearchNodeBase : ResourceNode
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata(displayName, description, "web.search");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription, ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription, ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
 
         DefineInput(
             "query",
@@ -36,7 +38,8 @@ public abstract class WebSearchNodeBase : ResourceNode
                 Order = 20,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: true
         );
         DefineInput(
             "top_k",
@@ -50,11 +53,12 @@ public abstract class WebSearchNodeBase : ResourceNode
                 Min = 1,
                 Max = 10,
                 Step = 1,
-            }
+            },
+            required: false
         );
-        DefineInput("language", ArgumentType.Text, "Optional language hint", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 40 });
-        DefineInput("site", ArgumentType.Text, "Optional site/domain filter", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 50 });
-        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Search", Order = 60 });
+        DefineInput("language", ArgumentType.Text, "Optional language hint", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 40 }, required: false);
+        DefineInput("site", ArgumentType.Text, "Optional site/domain filter", "", ui: new ArgumentUiMetadata { Group = "Search", Order = 50 }, required: false);
+        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Search", Order = 60 }, required: false);
 
         DefineOutput("provider", ArgumentType.Text, "Search provider identifier");
         DefineOutput("query", ArgumentType.Text, "Original search query");

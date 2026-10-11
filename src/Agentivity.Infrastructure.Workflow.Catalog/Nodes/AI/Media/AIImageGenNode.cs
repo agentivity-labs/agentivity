@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.ImageGeneration;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Workflow.Services.Media;
@@ -27,6 +28,7 @@ public sealed class AIImageGenNode : BaseAINode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("AI Image Generator", "Generates images using AI based on prompts and config.", "ai.media");
+        DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -48,7 +50,8 @@ public sealed class AIImageGenNode : BaseAINode
                 Tab = "Settings",
                 Group = "Execution",
                 Order = 10,
-            }
+            },
+            required: false
         );
         DefineInput(
             "instructions",
@@ -61,7 +64,8 @@ public sealed class AIImageGenNode : BaseAINode
                 Order = 10,
                 Multiline = true,
                 Rows = 5,
-            }
+            },
+            required: true
         );
         DefineInput(
             "config",
@@ -75,7 +79,8 @@ public sealed class AIImageGenNode : BaseAINode
                 Order = 20,
                 Multiline = true,
                 Rows = 5,
-            }
+            },
+            required: false
         );
         DefineChoice(
             "size",
@@ -87,7 +92,8 @@ public sealed class AIImageGenNode : BaseAINode
                 Tab = "Settings",
                 Group = "Generation",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineChoice(
             "mode",
@@ -99,7 +105,8 @@ public sealed class AIImageGenNode : BaseAINode
                 Tab = "Settings",
                 Group = "Generation",
                 Order = 30,
-            }
+            },
+            required: false
         );
 
         // Outputs

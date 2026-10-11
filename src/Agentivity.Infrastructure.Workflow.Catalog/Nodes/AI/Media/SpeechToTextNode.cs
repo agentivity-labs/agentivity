@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -24,20 +25,22 @@ public sealed class SpeechToTextNode : ToolNode
         _service = new SpeechToTextService(credentialsService, httpClientFactory, logger ?? throw new ArgumentNullException(nameof(logger)));
 
         DefineMetadata("Speech to Text", "Transcribes an audio file to text using OpenAI Whisper.", "ai.media");
+        DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
 
-        DefineCredentialsInput("credentials", "openai", "OpenAI credentials (Whisper uses the same account as chat models)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", "openai", "OpenAI credentials (Whisper uses the same account as chat models)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
 
-        DefineInput("audio_source", ArgumentType.Text, "Local file path or http(s) URL to the audio file", ui: new ArgumentUiMetadata { Group = "Audio", Order = 20 });
-        DefineInput("language", ArgumentType.Text, "ISO-639-1 language hint (leave empty for auto-detection)", "", ui: new ArgumentUiMetadata { Group = "Audio", Order = 30 });
+        DefineInput("audio_source", ArgumentType.Text, "Local file path or http(s) URL to the audio file", ui: new ArgumentUiMetadata { Group = "Audio", Order = 20 }, required: true);
+        DefineInput("language", ArgumentType.Text, "ISO-639-1 language hint (leave empty for auto-detection)", "", ui: new ArgumentUiMetadata { Group = "Audio", Order = 30 }, required: false);
         DefineInput(
             "context_prompt",
             ArgumentType.Text,
             "Optional context to improve accuracy (proper nouns, jargon, expected style)",
             "",
-            ui: new ArgumentUiMetadata { Group = "Audio", Order = 40, Multiline = true, Rows = 3 }
+            ui: new ArgumentUiMetadata { Group = "Audio", Order = 40, Multiline = true, Rows = 3 },
+            required: false
         );
 
         DefineOutput("text", ArgumentType.Text, "Transcribed text");

@@ -1,4 +1,5 @@
 ﻿using Agentivity.Domain.Common;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -19,10 +20,11 @@ public sealed class WorkflowNode : ToolNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Run Workflow", "Executes a nested workflow with input parameters.", "core.workflow");
+        DefineEffects(NodeEffects.Delegates);
 
         // Inputs are resolved dynamically via config (workflow name, input, resultKey),
         // but we still surface a generic input port for tooling.
-        DefineInput("workflow", ArgumentType.Text, "Nested workflow name", ui: new ArgumentUiMetadata { Group = "Workflow", Order = 10 });
+        DefineInput("workflow", ArgumentType.Text, "Nested workflow name", ui: new ArgumentUiMetadata { Group = "Workflow", Order = 10 }, required: true);
         DefineInput(
             "input",
             ArgumentType.Text,
@@ -34,9 +36,10 @@ public sealed class WorkflowNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: false
         );
-        DefineInput("resultKey", ArgumentType.Text, "Key under which to store nested workflow state", "", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("resultKey", ArgumentType.Text, "Key under which to store nested workflow state", "", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         // Output: when resultKey is set, nested workflow state is stored under that key; otherwise merged.
         DefineOutput("state", ArgumentType.Text, "Nested workflow resulting state (direct or under resultKey)");
@@ -54,7 +57,7 @@ public sealed class WorkflowNode : ToolNode
 
         // Inputs are resolved dynamically via config (workflow name, input, resultKey),
         // but we still surface a generic input port for tooling.
-        DefineInput("workflow", ArgumentType.Text, "Nested workflow name", ui: new ArgumentUiMetadata { Group = "Workflow", Order = 10 });
+        DefineInput("workflow", ArgumentType.Text, "Nested workflow name", ui: new ArgumentUiMetadata { Group = "Workflow", Order = 10 }, required: true);
         DefineInput(
             "input",
             ArgumentType.Text,
@@ -66,9 +69,10 @@ public sealed class WorkflowNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: false
         );
-        DefineInput("resultKey", ArgumentType.Text, "Key under which to store nested workflow state", "", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("resultKey", ArgumentType.Text, "Key under which to store nested workflow state", "", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         // Output: when resultKey is set, nested workflow state is stored under that key; otherwise merged.
         DefineOutput("result", ArgumentType.Text, "Result of the invoked process");

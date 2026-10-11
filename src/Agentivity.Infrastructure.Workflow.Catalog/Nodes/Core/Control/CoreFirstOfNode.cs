@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,7 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("First Of", "Selects the first available value from multiple inputs. Does not wait for all connections.", "core.control");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -38,8 +40,8 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
         DefineOutputPort("out", "Out", "Selected output");
 
         // Configuration inputs
-        DefineInput("mode", ArgumentType.Text, "Selection mode: 'passThrough', 'preferFirst', 'preferNonNull'", "passThrough", ui: new ArgumentUiMetadata { Group = "Settings", Order = 10 });
-        DefineInput("wait_for_all", ArgumentType.Boolean, "Wait for all connections before selecting", false, ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 });
+        DefineInput("mode", ArgumentType.Text, "Selection mode: 'passThrough', 'preferFirst', 'preferNonNull'", "passThrough", ui: new ArgumentUiMetadata { Group = "Settings", Order = 10 }, required: false);
+        DefineInput("wait_for_all", ArgumentType.Boolean, "Wait for all connections before selecting", false, ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 }, required: false);
 
         // Data inputs for manual values (if no connection)
         DefineInput(
@@ -52,7 +54,8 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
                 Order = 30,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: false
         );
         DefineInput(
             "value2",
@@ -64,7 +67,8 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
                 Order = 40,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: false
         );
         DefineInput(
             "value3",
@@ -76,7 +80,8 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
                 Order = 50,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: false
         );
         DefineInput(
             "value4",
@@ -88,7 +93,8 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
                 Order = 60,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: false
         );
 
         // Output

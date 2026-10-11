@@ -1,5 +1,6 @@
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Observability.Contracts.Events;
@@ -19,6 +20,7 @@ public sealed class TeamNode : ComposableNode
         : base(NodeTypeId, services, eventBus)
     {
         DefineMetadata("Team", "Executes a team of agents defined in the library. The team is resolved by ID and run through the Team Engine.", "ai.agents");
+        DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInput(
             "entity_id",
@@ -29,7 +31,8 @@ public sealed class TeamNode : ComposableNode
                 Tab = "General",
                 Group = "Team",
                 Order = 5,
-            }
+            },
+            required: true
         );
 
         // Remove entity_kind — kind is always Team for this node.

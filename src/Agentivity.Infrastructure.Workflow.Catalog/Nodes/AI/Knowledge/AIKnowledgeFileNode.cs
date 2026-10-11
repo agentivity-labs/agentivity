@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core;
@@ -17,12 +18,13 @@ public sealed class AIKnowledgeFileNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (File)", "Loads a knowledge corpus from a file or a directory pattern and exposes normalized documents for AI consumers.", "ai.knowledge");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
-        DefineInput("path", ArgumentType.Text, "Absolute or relative file path, or a directory path to scan for knowledge files.", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 10 });
-        DefineInput("pattern", ArgumentType.Text, "Search pattern used when 'path' points to a directory.", "*", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 20 });
+        DefineInput("path", ArgumentType.Text, "Absolute or relative file path, or a directory path to scan for knowledge files.", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 10 }, required: true);
+        DefineInput("pattern", ArgumentType.Text, "Search pattern used when 'path' points to a directory.", "*", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 20 }, required: false);
         DefineInput(
             "include_patterns",
             ArgumentType.Text,
@@ -34,10 +36,11 @@ public sealed class AIKnowledgeFileNode : ResourceNode, IKnowledgeSource
                 Order = 25,
                 Multiline = true,
                 Rows = 4,
-            }
+            },
+            required: false
         );
-        DefineInput("recursive", ArgumentType.Boolean, "When enabled, scans subdirectories when 'path' points to a directory.", false, ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 30 });
-        DefineInput("json_selector", ArgumentType.Text, "Optional selector used when reading JSON files (for example: items[0].content).", "", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 40 });
+        DefineInput("recursive", ArgumentType.Boolean, "When enabled, scans subdirectories when 'path' points to a directory.", false, ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 30 }, required: false);
+        DefineInput("json_selector", ArgumentType.Text, "Optional selector used when reading JSON files (for example: items[0].content).", "", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 40 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("file"));
     }

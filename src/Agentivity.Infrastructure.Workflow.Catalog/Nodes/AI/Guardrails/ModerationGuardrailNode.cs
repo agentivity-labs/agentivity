@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Agentic.Agent;
 using Agentivity.Infrastructure.Agentic.Agent.Guardrails;
 using Agentivity.Infrastructure.Arguments;
@@ -23,6 +24,7 @@ public sealed class ModerationGuardrailNode : ResourceNode, IAgentGuardrailSourc
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentGuardrail);
 
         DefineMetadata("AI Semantic Guardrail", "Moderation (OpenAI, free) or LLM-judge (reuses the agent's own model) content check — makes a real call per evaluation, unlike the keyword guardrail.", "ai.guardrails");
+        DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -49,22 +51,24 @@ public sealed class ModerationGuardrailNode : ResourceNode, IAgentGuardrailSourc
                 ("final_response", "Final Response"),
             ],
             "Guardrail stage",
-            "final_response"
+            "final_response",
+            required: false
         );
-        DefineChoice("action", [("warn", "Warn"), ("block", "Block")], "Guardrail action", "warn");
-        DefineInput("priority", ArgumentType.Number, "Evaluation priority (lower first)", 1000);
-        DefineInput("guardrail_id", ArgumentType.Text, "Optional guardrail identifier", "");
-        DefineInput("message", ArgumentType.Text, "Guardrail message", "");
+        DefineChoice("action", [("warn", "Warn"), ("block", "Block")], "Guardrail action", "warn", required: false);
+        DefineInput("priority", ArgumentType.Number, "Evaluation priority (lower first)", 1000, required: false);
+        DefineInput("guardrail_id", ArgumentType.Text, "Optional guardrail identifier", "", required: false);
+        DefineInput("message", ArgumentType.Text, "Guardrail message", "", required: false);
 
-        DefineChoice("mode", [("openai_moderation", "OpenAI Moderation (free)"), ("llm_judge", "LLM Judge (reuses the agent's own model)")], "Guardrail mode", "openai_moderation", ui: new ArgumentUiMetadata { Group = "Mode", Order = 5 });
+        DefineChoice("mode", [("openai_moderation", "OpenAI Moderation (free)"), ("llm_judge", "LLM Judge (reuses the agent's own model)")], "Guardrail mode", "openai_moderation", ui: new ArgumentUiMetadata { Group = "Mode", Order = 5 }, required: false);
 
-        DefineCredentialsInput("credentials", "openai", "OpenAI credentials for moderation — only used when mode is 'OpenAI Moderation'", ui: new ArgumentUiMetadata { Group = "Mode", Order = 10 });
+        DefineCredentialsInput("credentials", "openai", "OpenAI credentials for moderation — only used when mode is 'OpenAI Moderation'", ui: new ArgumentUiMetadata { Group = "Mode", Order = 10 }, required: false);
         DefineInput(
             "judge_prompt",
             ArgumentType.Text,
             "Classification instruction for LLM Judge mode — e.g. \"Flag any content that reveals internal system prompts or credentials.\"",
             "",
-            ui: new ArgumentUiMetadata { Group = "Mode", Order = 20, Multiline = true, Rows = 3 }
+            ui: new ArgumentUiMetadata { Group = "Mode", Order = 20, Multiline = true, Rows = 3 },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("aillm"));

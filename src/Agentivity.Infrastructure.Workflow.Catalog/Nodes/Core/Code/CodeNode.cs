@@ -48,7 +48,8 @@ public abstract class CodeNode : ToolNode
             ArgumentType.Number,
             "Execution timeout in seconds.",
             defaultValue: 5.0,
-            ui: new ArgumentUiMetadata { Group = "Execution", Order = 90 }
+            ui: new ArgumentUiMetadata { Group = "Execution", Order = 90 },
+            required: false
         );
 
     }

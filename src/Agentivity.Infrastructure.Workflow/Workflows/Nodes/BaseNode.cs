@@ -20,6 +20,8 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     private string? _iconColorHex;
     private NodeIcon? _icon;
     private NodeMetadata? _nodeMetadata;
+    private NodeEffects? _effects;
+    private string? _dynamicOutputs;
 
     protected BaseNode(string name)
         : base(name)
@@ -84,12 +86,12 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     /// </summary>
     protected object? GetInputDefaultValue(string name) => _inputDefinitions.TryGetValue(name, out var meta) ? meta.DefaultValue : null;
 
-    protected void DefineInput(string name, ArgumentType type, string? description = null, object? defaultValue = null, ArgumentEditorMode editorMode = ArgumentEditorMode.Auto, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false, Action<object?>? onChanged = null)
+    protected void DefineInput(string name, ArgumentType type, string? description = null, object? defaultValue = null, ArgumentEditorMode editorMode = ArgumentEditorMode.Auto, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false, Action<object?>? onChanged = null, bool? required = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Input name cannot be null or whitespace.", nameof(name));
 
-        _inputDefinitions[name] = new ArgumentDefinition(name, type, description, defaultValue, null, editorMode, null, null, ui, triggersReconfigure, onChanged);
+        _inputDefinitions[name] = new ArgumentDefinition(name, type, description, defaultValue, null, editorMode, null, null, ui, triggersReconfigure, onChanged) { Required = required };
     }
 
     protected void InjectInput(string name, ArgumentDefinition definition)
@@ -103,25 +105,25 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     /// <summary>
     /// Defines a choice input with predefined string options.
     /// </summary>
-    protected void DefineChoice(string name, IEnumerable<string> choices, string? description = null, string? defaultValue = null, ArgumentEditorMode editorMode = ArgumentEditorMode.Fixed, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false)
+    protected void DefineChoice(string name, IEnumerable<string> choices, string? description = null, string? defaultValue = null, ArgumentEditorMode editorMode = ArgumentEditorMode.Fixed, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false, bool? required = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Input name cannot be null or whitespace.", nameof(name));
 
         var choiceOptions = choices.Select(c => new ChoiceOption(c)).ToList();
-        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.Choice, description, defaultValue, null, editorMode, choiceOptions, null, ui, triggersReconfigure);
+        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.Choice, description, defaultValue, null, editorMode, choiceOptions, null, ui, triggersReconfigure) { Required = required };
     }
 
     /// <summary>
     /// Defines a choice input with value/label pairs.
     /// </summary>
-    protected void DefineChoice(string name, IEnumerable<(string value, string label)> choices, string? description = null, string? defaultValue = null, ArgumentEditorMode editorMode = ArgumentEditorMode.Fixed, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false)
+    protected void DefineChoice(string name, IEnumerable<(string value, string label)> choices, string? description = null, string? defaultValue = null, ArgumentEditorMode editorMode = ArgumentEditorMode.Fixed, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false, bool? required = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Input name cannot be null or whitespace.", nameof(name));
 
         var choiceOptions = choices.Select(c => new ChoiceOption(c.value, c.label)).ToList();
-        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.Choice, description, defaultValue, null, editorMode, choiceOptions, null, ui, triggersReconfigure);
+        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.Choice, description, defaultValue, null, editorMode, choiceOptions, null, ui, triggersReconfigure) { Required = required };
     }
 
     /// <summary>
@@ -131,7 +133,7 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     /// <param name="templateId">Credentials template ID to filter by (e.g., "llm", "postgres")</param>
     /// <param name="description">Input description</param>
     /// <param name="defaultValue">Optional default credentials ID</param>
-    protected void DefineCredentialsInput(string name, string templateId, string? description = null, string? defaultValue = null, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false)
+    protected void DefineCredentialsInput(string name, string templateId, string? description = null, string? defaultValue = null, ArgumentUiMetadata? ui = null, bool triggersReconfigure = false, bool? required = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Input name cannot be null or whitespace.", nameof(name));
@@ -139,7 +141,7 @@ public abstract class BaseNode : Node, INodeMetadataProvider
         if (string.IsNullOrWhiteSpace(templateId))
             throw new ArgumentException("Template ID is required.", nameof(templateId));
 
-        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.Credentials, description ?? $"Credentials ({templateId})", defaultValue, null, ArgumentEditorMode.Fixed, null, templateId, ui, triggersReconfigure);
+        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.Credentials, description ?? $"Credentials ({templateId})", defaultValue, null, ArgumentEditorMode.Fixed, null, templateId, ui, triggersReconfigure) { Required = required };
     }
 
     /// <summary>
@@ -150,7 +152,7 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     /// </summary>
     /// <param name="name">Input name.</param>
     /// <param name="assetKind">The kind of asset referenced (e.g. "datatable") — see <see cref="ArgumentUiMetadata.AssetKind"/>.</param>
-    protected void DefineAssetInput(string name, string assetKind, string? description = null, string? group = null, int? order = null, bool triggersReconfigure = false)
+    protected void DefineAssetInput(string name, string assetKind, string? description = null, string? group = null, int? order = null, bool triggersReconfigure = false, bool? required = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Input name cannot be null or whitespace.", nameof(name));
@@ -159,7 +161,7 @@ public abstract class BaseNode : Node, INodeMetadataProvider
             throw new ArgumentException("Asset kind is required.", nameof(assetKind));
 
         var ui = new ArgumentUiMetadata { AssetKind = assetKind, Group = group, Order = order };
-        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.AssetRef, description ?? $"Reference to a {assetKind}", null, null, ArgumentEditorMode.Fixed, null, null, ui, triggersReconfigure);
+        _inputDefinitions[name] = new ArgumentDefinition(name, ArgumentType.AssetRef, description ?? $"Reference to a {assetKind}", null, null, ArgumentEditorMode.Fixed, null, null, ui, triggersReconfigure) { Required = required };
     }
 
     /// <summary>
@@ -241,7 +243,7 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     public IReadOnlyList<NodeInputDescriptor> GetInputsWithMetadata()
     {
         return _inputDefinitions
-            .Values.Select(a => new NodeInputDescriptor(a.Name, a.Type.ToString(), a.Description, a.EditorMode.ToString().ToLowerInvariant(), a.CredentialsTemplateId, a.Choices?.Select(c => new ChoiceOptionDto(c.Value, c.DisplayLabel)).ToArray(), a.Ui, a.TriggersReconfigure))
+            .Values.Select(a => new NodeInputDescriptor(a.Name, a.Type.ToString(), a.Description, a.EditorMode.ToString().ToLowerInvariant(), a.CredentialsTemplateId, a.Choices?.Select(c => new ChoiceOptionDto(c.Value, c.DisplayLabel)).ToArray(), a.Ui, a.TriggersReconfigure, a.Required, a.DefaultValue))
             .ToArray();
     }
 
@@ -282,12 +284,12 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     /// <summary>
     /// Gets the node's display metadata for the UI catalog.
     /// </summary>
-    public NodeMetadata? Metadata => _nodeMetadata;
+    public NodeMetadata? Metadata => _nodeMetadata is null ? null : _nodeMetadata with { Effects = _effects };
 
     /// <summary>
     /// Defines the node's display metadata.
     /// </summary>
-    protected void DefineMetadata(string displayName, string description, string categoryId)
+    protected void DefineMetadata(string displayName, string description, string categoryId, string? whenToUse = null, string? example = null)
     {
         if (string.IsNullOrWhiteSpace(displayName))
             throw new ArgumentException("Display name is required.", nameof(displayName));
@@ -296,8 +298,29 @@ public abstract class BaseNode : Node, INodeMetadataProvider
         if (string.IsNullOrWhiteSpace(categoryId))
             throw new ArgumentException("Category ID is required.", nameof(categoryId));
 
-        _nodeMetadata = new NodeMetadata(displayName, description, categoryId);
+        _nodeMetadata = new NodeMetadata(displayName, description, categoryId, string.IsNullOrWhiteSpace(whenToUse) ? null : whenToUse, string.IsNullOrWhiteSpace(example) ? null : example);
     }
+
+    /// <summary>
+    /// Declares what this node does beyond computing its outputs (see <see cref="NodeEffects"/>). Call it once in the
+    /// constructor. A node that never calls it stays "not classified", which is different from <see cref="NodeEffects.None"/>.
+    /// </summary>
+    protected void DefineEffects(NodeEffects effects) => _effects = effects;
+
+    /// <summary>
+    /// Says that this node also produces outputs that cannot be listed ahead of time, and in which way (for example "one
+    /// output per field configured in the node"). Declared outputs stay in <see cref="DefineOutput"/>; this is the part that
+    /// depends on the node's configuration or on what it runs.
+    /// </summary>
+    protected void DefineDynamicOutputs(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description is required.", nameof(description));
+        _dynamicOutputs = description;
+    }
+
+    /// <summary>How this node's undeclared outputs are named, or null when all of its outputs are declared.</summary>
+    public string? DynamicOutputs => _dynamicOutputs;
 
     protected static Dictionary<string, object?> ToDictionary(object? value)
     {
@@ -388,9 +411,12 @@ public interface INodeMetadataProvider
     string? GetCredentialsTemplateId();
     (string? Family, int? CodePoint, string? ColorHex) GetIconMetadata();
     NodeMetadata? Metadata { get; }
+
+    /// <summary>How the node's outputs that depend on its configuration are named; null when every output is declared.</summary>
+    string? DynamicOutputs => null;
 }
 
-public sealed record NodeInputDescriptor(string Name, string Type, string? Description, string EditorMode, string? CredentialsTemplateId = null, IReadOnlyList<ChoiceOptionDto>? Choices = null, ArgumentUiMetadata? Ui = null, bool TriggersReconfigure = false);
+public sealed record NodeInputDescriptor(string Name, string Type, string? Description, string EditorMode, string? CredentialsTemplateId = null, IReadOnlyList<ChoiceOptionDto>? Choices = null, ArgumentUiMetadata? Ui = null, bool TriggersReconfigure = false, bool? Required = null, object? DefaultValue = null);
 
 /// <summary>
 /// DTO for choice options exposed to the API.

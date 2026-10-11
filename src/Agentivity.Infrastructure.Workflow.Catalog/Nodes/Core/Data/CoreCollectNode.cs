@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
 
@@ -14,6 +15,7 @@ public sealed class CoreCollectNode : ToolNode
         : base("core.collect")
     {
         DefineMetadata("Collect", "Collects items into an array across multiple executions.", "core.data");
+        DefineEffects(NodeEffects.None);
 
         DefineInput(
             "item",
@@ -25,9 +27,10 @@ public sealed class CoreCollectNode : ToolNode
                 Order = 10,
                 Multiline = true,
                 Rows = 4,
-            }
+            },
+            required: true
         );
-        DefineInput("reset", ArgumentType.Boolean, "Clear collection before adding", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 });
+        DefineInput("reset", ArgumentType.Boolean, "Clear collection before adding", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 }, required: false);
 
         DefineOutput("items", ArgumentType.Text, "All collected items as an array");
         DefineOutput("count", ArgumentType.Number, "Number of items in collection");

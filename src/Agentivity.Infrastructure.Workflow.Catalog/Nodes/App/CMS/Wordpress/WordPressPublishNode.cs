@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Domain.Common;
 using Agentivity.Infrastructure.Arguments;
@@ -25,6 +26,7 @@ public sealed class WordPressPublishNode : ToolNode
         _wordpressService = new WordPressService(httpClientFactory, credentialsService, logger);
 
         DefineMetadata("Publish to WordPress", "Publishes content as a WordPress post with optional Elementor layout.", "app.cms.wordpress");
+        DefineEffects(NodeEffects.WritesExternal);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -39,7 +41,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "Settings",
                 Group = "Connection",
                 Order = 10,
-            }
+            },
+            required: true
         );
 
         DefineInput(
@@ -51,7 +54,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "Content",
                 Group = "Post",
                 Order = 10,
-            }
+            },
+            required: true
         );
         DefineInput(
             "content",
@@ -64,7 +68,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Order = 20,
                 Multiline = true,
                 Rows = 10,
-            }
+            },
+            required: false
         );
         DefineInput(
             "elementorData",
@@ -78,7 +83,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Multiline = true,
                 Rows = 10,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "metaTags",
@@ -89,7 +95,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "SEO",
                 Group = "Metadata",
                 Order = 40,
-            }
+            },
+            required: false
         );
         DefineInput(
             "metaDescription",
@@ -102,7 +109,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Order = 50,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: false
         );
         DefineInput(
             "slug",
@@ -113,7 +121,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "SEO",
                 Group = "Metadata",
                 Order = 60,
-            }
+            },
+            required: false
         );
         DefineInput(
             "categories",
@@ -124,7 +133,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "Publishing",
                 Group = "Taxonomy",
                 Order = 70,
-            }
+            },
+            required: false
         );
         DefineInput(
             "status",
@@ -136,7 +146,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "Publishing",
                 Group = "Publishing",
                 Order = 80,
-            }
+            },
+            required: false
         );
         DefineInput(
             "featuredMediaId",
@@ -147,7 +158,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "Media",
                 Group = "Featured Image",
                 Order = 90,
-            }
+            },
+            required: false
         );
         DefineInput(
             "updateFeaturedImage",
@@ -159,7 +171,8 @@ public sealed class WordPressPublishNode : ToolNode
                 Tab = "Media",
                 Group = "Featured Image",
                 Order = 100,
-            }
+            },
+            required: false
         );
 
         DefineOutput("result", ArgumentType.Text, "Result of the WordPress post publication");

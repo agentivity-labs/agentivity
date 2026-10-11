@@ -16,4 +16,15 @@
     <Folder Include="Chats\" />
     <Folder Include="Forms\" />
   </ItemGroup>
+  <!--
+    The platform references no module: modules are loaded from _modules at start-up. They are built by Agentivity.Modules.proj,
+    which this runs first so that a build (F5) leaves every module copied. An edition build turns it off (BuildModules=false)
+    because it builds exactly the modules of its manifest, one by one.
+  -->
+  <PropertyGroup>
+    <AgentivityModulesProject>$(MSBuildThisFileDirectory)..\..\Agentivity.Modules.proj</AgentivityModulesProject>
+  </PropertyGroup>
+  <Target Name="BuildAgentivityModules" BeforeTargets="BeforeBuild" Condition="'$(BuildModules)' != 'false' And Exists('$(AgentivityModulesProject)')">
+    <MSBuild Projects="$(AgentivityModulesProject)" Targets="Build" />
+  </Target>
 </Project>

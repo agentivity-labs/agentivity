@@ -15,6 +15,7 @@ using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Policies;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Rerank;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Sessions;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Tools;
+using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Tools.Communication;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Tools.Data;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Tools.Utils;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Tools.Web.Scrappers.Direct;
@@ -194,6 +195,10 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
             typeof(SlackChannelNode),
             typeof(EmailChannelNode),
             typeof(EmailNode),
+            typeof(EmailReadNode),
+            typeof(EmailGetNode),
+            typeof(EmailUpdateNode),
+            typeof(AIAgentEmailToolNode),
         ];
     }
 

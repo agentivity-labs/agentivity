@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Workflows;
@@ -22,6 +23,7 @@ public sealed class LlmPromptNode : BaseAINode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("LLM Prompt", "Executes a prompt using an LLM with optional structured output, retrieval via llm_memory, and connectable knowledge sources.", "ai.llm");
+        DefineEffects(NodeEffects.Costs);
 
         // LLM provider — same resource-port pattern as AiNode ("AI Agent"): the connected
         // BaseLlmModelNode (OpenAI/Anthropic/Gemini/...) knows its own wire flavor, so this node
@@ -48,7 +50,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Order = 10,
                 Multiline = true,
                 Rows = 6,
-            }
+            },
+            required: false
         );
         DefineInput(
             "prompt",
@@ -61,7 +64,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Order = 20,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: true
         );
         DefineInput(
             "images",
@@ -72,7 +76,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Tab = "General",
                 Group = "Prompt",
                 Order = 25,
-            }
+            },
+            required: false
         );
         DefineInput(
             "response_schema",
@@ -87,7 +92,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Multiline = true,
                 Rows = 12,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "rag_top_k",
@@ -101,7 +107,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Order = 10,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "temperature",
@@ -116,7 +123,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Min = 0,
                 Max = 2,
                 Step = 0.1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_tokens",
@@ -130,7 +138,8 @@ public sealed class LlmPromptNode : BaseAINode
                 Order = 20,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
 
         // Outputs

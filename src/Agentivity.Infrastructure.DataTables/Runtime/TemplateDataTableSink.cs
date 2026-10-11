@@ -26,7 +26,17 @@ public sealed class TemplateDataTableSink(IEntityRepository<DataTableEntity> rep
             return $"The data table '{table.Name}' is empty.";
         }
 
-        var saved = await repository.SaveAsync(entity, cancellationToken: cancellationToken).ConfigureAwait(false);
+        string? folder;
+        try
+        {
+            folder = await WorkspaceFolderPaths.FindOrCreateAsync(repository, table.Folder, cancellationToken).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return $"The folder of the data table '{table.Name}' could not be prepared: {ex.Message}";
+        }
+
+        var saved = await repository.SaveAsync(entity, folder, cancellationToken).ConfigureAwait(false);
         if (!saved.IsSuccess)
         {
             return $"The data table '{table.Name}' could not be saved.";

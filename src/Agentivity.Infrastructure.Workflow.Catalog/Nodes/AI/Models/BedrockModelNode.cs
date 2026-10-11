@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json.Nodes;
 using Agentivity.Domain.Common;
 using Agentivity.Domain.Credentials;
@@ -44,15 +45,16 @@ public sealed class BedrockModelNode : ResourceNode, ILlmProvider
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmModel);
 
         DefineMetadata("AWS Bedrock Model", "Anthropic Claude models via AWS Bedrock — SigV4-signed requests through the official AWS SDK, no bearer token.", "ai.models");
+        DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "LLM Model", ResourcePortCategory.LlmModel, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", "aws_bedrock", "AWS credentials used to sign Bedrock requests", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
-        DefineInput("model", ArgumentType.Text, "Bedrock model id", DefaultModelId, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 20 });
-        DefineInput("max_tokens", ArgumentType.Number, "Maximum tokens in response (leave empty to let the model decide)", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 });
-        DefineInput("top_p", ArgumentType.Number, "Nucleus sampling 0.0–1.0 (default: 1.0)", 1.0, ui: new ArgumentUiMetadata { Group = "Sampling", Order = 50 });
+        DefineCredentialsInput("credentials", "aws_bedrock", "AWS credentials used to sign Bedrock requests", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
+        DefineInput("model", ArgumentType.Text, "Bedrock model id", DefaultModelId, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 20 }, required: false);
+        DefineInput("max_tokens", ArgumentType.Number, "Maximum tokens in response (leave empty to let the model decide)", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 }, required: false);
+        DefineInput("top_p", ArgumentType.Number, "Nucleus sampling 0.0–1.0 (default: 1.0)", 1.0, ui: new ArgumentUiMetadata { Group = "Sampling", Order = 50 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aimodel"));
     }

@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.Layout;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -15,6 +16,7 @@ public sealed class LayoutAddBlockNode : ToolNode
         : base("layout.add_block")
     {
         DefineMetadata("Add Block", "Adds one or more blocks to the layout at a specified position. Supports single block object or array of blocks.", "content.layout");
+        DefineEffects(NodeEffects.None);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -30,10 +32,11 @@ public sealed class LayoutAddBlockNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
-        DefineInput("target", ArgumentType.Text, "Target path (e.g., 'main')", ui: new ArgumentUiMetadata { Group = "Placement", Order = 20 });
-        DefineChoice("position", [("append", "Append"), ("prepend", "Prepend"), ("before", "Before"), ("after", "After"), ("replace", "Replace")], "Insert position", "append", ui: new ArgumentUiMetadata { Group = "Placement", Order = 30 });
+        DefineInput("target", ArgumentType.Text, "Target path (e.g., 'main')", ui: new ArgumentUiMetadata { Group = "Placement", Order = 20 }, required: true);
+        DefineChoice("position", [("append", "Append"), ("prepend", "Prepend"), ("before", "Before"), ("after", "After"), ("replace", "Replace")], "Insert position", "append", ui: new ArgumentUiMetadata { Group = "Placement", Order = 30 }, required: false);
         DefineInput(
             "block",
             ArgumentType.Text,
@@ -45,7 +48,8 @@ public sealed class LayoutAddBlockNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
         DefineOutput("layout", ArgumentType.Text, "Updated DSL layout JSON");

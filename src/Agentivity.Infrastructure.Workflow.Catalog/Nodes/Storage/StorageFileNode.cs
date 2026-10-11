@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
 
@@ -16,12 +17,13 @@ public sealed class StorageFileNode : ResourceNode
         ResourceNodeRegistry.Register(Name, "storage.file");
 
         DefineMetadata("File Storage", "Provides access to file-based key-value storage using a single JSON file.", "storage");
+        DefineEffects(NodeEffects.WritesInternal | NodeEffects.WritesExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "File Storage", ResourcePortCategory.FileStorage, maxConnections: -1);
 
-        DefineInput("file_path", ArgumentType.Text, "Path to storage JSON file", "_data/storage/data.json", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 });
+        DefineInput("file_path", ArgumentType.Text, "Path to storage JSON file", "_data/storage/data.json", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("file"));
     }

@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
@@ -22,12 +23,13 @@ public sealed class HumanInteractionNode : BaseNode
         ArgumentNullException.ThrowIfNull(logger);
 
         DefineMetadata("Human Interaction", "Performs a generic human interaction through the connected channel", "interaction");
+        DefineEffects(NodeEffects.SendsMessage);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
         DefineResourceInputPort("channel", "Channel", ResourcePortCategory.InteractionChannel, "Interaction channel (Slack, Email, Forms, etc.)");
 
-        DefineChoice("operation", [("send", "Send"), ("send_and_wait", "Send and Wait"), ("receive", "Receive"), ("update", "Update"), ("delete", "Delete"), ("search", "Search")], "Interaction operation", "send", ui: new ArgumentUiMetadata { Group = "Operation", Order = 10 });
+        DefineChoice("operation", [("send", "Send"), ("send_and_wait", "Send and Wait"), ("receive", "Receive"), ("update", "Update"), ("delete", "Delete"), ("search", "Search")], "Interaction operation", "send", ui: new ArgumentUiMetadata { Group = "Operation", Order = 10 }, required: false);
         DefineInput(
             "message",
             ArgumentType.Text,
@@ -38,13 +40,14 @@ public sealed class HumanInteractionNode : BaseNode
                 Order = 20,
                 Multiline = true,
                 Rows = 6,
-            }
+            },
+            required: false
         );
-        DefineInput("message_id", ArgumentType.Text, "Existing message identifier for update/delete", ui: new ArgumentUiMetadata { Group = "Targets", Order = 30 });
-        DefineInput("thread_id", ArgumentType.Text, "Conversation thread identifier", ui: new ArgumentUiMetadata { Group = "Targets", Order = 40 });
-        DefineInput("conversation_id", ArgumentType.Text, "Conversation identifier", ui: new ArgumentUiMetadata { Group = "Targets", Order = 50 });
-        DefineInput("query", ArgumentType.Text, "Search query", ui: new ArgumentUiMetadata { Group = "Search", Order = 60 });
-        DefineInput("timeout_minutes", ArgumentType.Number, "Optional wait timeout in minutes (0 = channel default)", 0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 70 });
+        DefineInput("message_id", ArgumentType.Text, "Existing message identifier for update/delete", ui: new ArgumentUiMetadata { Group = "Targets", Order = 30 }, required: false);
+        DefineInput("thread_id", ArgumentType.Text, "Conversation thread identifier", ui: new ArgumentUiMetadata { Group = "Targets", Order = 40 }, required: false);
+        DefineInput("conversation_id", ArgumentType.Text, "Conversation identifier", ui: new ArgumentUiMetadata { Group = "Targets", Order = 50 }, required: false);
+        DefineInput("query", ArgumentType.Text, "Search query", ui: new ArgumentUiMetadata { Group = "Search", Order = 60 }, required: false);
+        DefineInput("timeout_minutes", ArgumentType.Number, "Optional wait timeout in minutes (0 = channel default)", 0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 70 }, required: false);
 
         DefineOutput("success", ArgumentType.Boolean, "Whether the interaction operation succeeded");
         DefineOutput("outcome", ArgumentType.Text, "Interaction outcome");

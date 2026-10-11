@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
@@ -27,12 +28,13 @@ public abstract class AIAgentWebSearchToolNodeBase : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata(displayName, description, "ai.tools.web.search");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", displayName, ResourcePortCategory.AIAgentTool, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription, ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription, ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineInput(
             "default_top_k",
             ArgumentType.Number,
@@ -45,11 +47,12 @@ public abstract class AIAgentWebSearchToolNodeBase : ResourceNode, IAgentTool
                 Min = 1,
                 Max = 10,
                 Step = 1,
-            }
+            },
+            required: false
         );
-        DefineInput("default_language", ArgumentType.Text, "Default language hint", "", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 });
-        DefineInput("default_site", ArgumentType.Text, "Default site/domain filter", "", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 40 });
-        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 50 });
+        DefineInput("default_language", ArgumentType.Text, "Default language hint", "", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 }, required: false);
+        DefineInput("default_site", ArgumentType.Text, "Default site/domain filter", "", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 40 }, required: false);
+        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 50 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aillm"));
     }

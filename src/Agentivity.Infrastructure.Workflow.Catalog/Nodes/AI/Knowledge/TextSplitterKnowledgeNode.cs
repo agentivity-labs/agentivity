@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Globalization;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
@@ -24,6 +25,7 @@ public sealed class TextSplitterKnowledgeNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("Text Splitter", "Splits an upstream knowledge source's documents into smaller chunks, sized for embedding/vector-store use.", "ai.knowledge");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -35,10 +37,11 @@ public sealed class TextSplitterKnowledgeNode : ResourceNode, IKnowledgeSource
             [("recursive_character", "Recursive Character (paragraphs → lines → sentences → words)"), ("token", "Approximate Token Count (word-based)")],
             "Splitting strategy",
             "recursive_character",
-            ui: new ArgumentUiMetadata { Group = "Settings", Order = 10 }
+            ui: new ArgumentUiMetadata { Group = "Settings", Order = 10 },
+            required: false
         );
-        DefineInput("chunk_size", ArgumentType.Number, "Maximum chunk size — characters for Recursive Character, approximate tokens (words) for Token", 1000.0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 20, Min = 1 });
-        DefineInput("chunk_overlap", ArgumentType.Number, "Overlap between consecutive chunks, same unit as chunk size", 150.0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 30, Min = 0 });
+        DefineInput("chunk_size", ArgumentType.Number, "Maximum chunk size — characters for Recursive Character, approximate tokens (words) for Token", 1000.0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 20, Min = 1 }, required: false);
+        DefineInput("chunk_overlap", ArgumentType.Number, "Overlap between consecutive chunks, same unit as chunk size", 150.0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 30, Min = 0 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aimemory"));
     }

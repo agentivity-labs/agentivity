@@ -19,6 +19,7 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.VariablesState
             // Override default output ports with loop/out
             ClearOutputPorts();
             DefineOutputPort("out", "Out", "Default output port");
+            DefineDynamicOutputs("One output per field configured in the node, named after the field.");
 
             // Icon: tune (settings/sliders), teal
             DefineIcon(NodeIcon.Embedded("setup"));

@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -18,6 +19,7 @@ public sealed class FileExistsNode : ToolNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("File Exists", "Checks if a file exists at the specified path.", "core.file");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -33,7 +35,7 @@ public sealed class FileExistsNode : ToolNode
         DefineOutputPort("out", "Out", "Default output port");
 
         // Data inputs
-        DefineInput("file_path", ArgumentType.Text, "Path to the file to check", ui: new ArgumentUiMetadata { Group = "File", Order = 10 });
+        DefineInput("file_path", ArgumentType.Text, "Path to the file to check", ui: new ArgumentUiMetadata { Group = "File", Order = 10 }, required: true);
 
         // Data outputs
         DefineOutput("exists", ArgumentType.Boolean, "True if the file exists, false otherwise");

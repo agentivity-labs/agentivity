@@ -20,6 +20,7 @@ public static class OrchestrationCredentialsTemplates
         RegisterXAiTemplate();
         RegisterGeminiTemplate();
         RegisterSmtpTemplate();
+        RegisterImapTemplate();
         RegisterSlackTemplate();
         RegisterTavilyTemplate();
         RegisterSerpApiTemplate();
@@ -40,6 +41,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "cohere",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "Cohere",
                 Description = "Credentials for Cohere's API (rerank, embeddings, Command R+ chat).",
                 Icon = 0xec35, // smart_toy
@@ -73,6 +75,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "aws_bedrock",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "AWS Bedrock",
                 Description = "AWS credentials used to sign Bedrock InvokeModel requests (SigV4). Used by the AWS Bedrock LLM model node.",
                 Icon = 0xec35, // smart_toy
@@ -114,6 +117,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "pinecone",
+                Category = CredentialsCategories.Data,
                 DisplayName = "Pinecone",
                 Description = "Connection settings for a Pinecone index. Used by the Pinecone vector-store memory node.",
                 Icon = 0xe1db, // storage
@@ -148,6 +152,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "qdrant",
+                Category = CredentialsCategories.Data,
                 DisplayName = "Qdrant",
                 Description = "Connection settings for a Qdrant vector database instance (self-hosted or Qdrant Cloud). Used by vector-store memory nodes.",
                 Icon = 0xe1db, // storage
@@ -182,6 +187,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "firecrawl",
+                Category = CredentialsCategories.Web,
                 DisplayName = "Firecrawl",
                 Description = "Credentials for Firecrawl web scraping. Used by Firecrawl scraper nodes and AI scraper tools.",
                 Icon = 0xe894,
@@ -207,6 +213,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "tavily",
+                Category = CredentialsCategories.Web,
                 DisplayName = "Tavily",
                 Description = "Credentials for Tavily web search. Used by Tavily web search nodes and AI search tools.",
                 Icon = 0xe8b6,
@@ -240,6 +247,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "serpapi",
+                Category = CredentialsCategories.Web,
                 DisplayName = "SerpApi",
                 Description = "Credentials for SerpApi web search. Used by SerpApi web search nodes and AI search tools.",
                 Icon = 0xe8b6,
@@ -272,6 +280,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "searxng",
+                Category = CredentialsCategories.Web,
                 DisplayName = "SearXNG",
                 Description = "Connection settings for a SearXNG instance. Used by SearXNG web search nodes and AI search tools.",
                 Icon = 0xe8b6,
@@ -298,6 +307,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "smtp",
+                Category = CredentialsCategories.Messaging,
                 DisplayName = "SMTP Email",
                 Description = "Credentials for sending emails through an SMTP server. Used by direct email workflow nodes and email interaction channels.",
                 Icon = 0xe0be,
@@ -352,11 +362,78 @@ public static class OrchestrationCredentialsTemplates
                     },
                     new()
                     {
+                        Key = "security",
+                        Type = CredentialsFieldType.Text,
+                        Required = false,
+                        Label = "Security (auto, ssl, starttls or none)",
+                        Placeholder = "auto",
+                        DefaultValue = "auto",
+                    },
+                    new()
+                    {
                         Key = "enable_ssl",
                         Type = CredentialsFieldType.Text,
                         Required = false,
                         Label = "Enable SSL",
                         DefaultValue = "true",
+                    },
+                ],
+            }
+        );
+    }
+
+    private static void RegisterImapTemplate()
+    {
+        CredentialsTemplateRegistry.Register(
+            new CredentialsTemplate
+            {
+                Id = "imap",
+                Category = CredentialsCategories.Messaging,
+                DisplayName = "Email Inbox (IMAP)",
+                Description = "A mailbox to read through IMAP: the standard way to read e-mail, offered by nearly every provider (Gmail, Outlook, OVH, Infomaniak…). Used by the nodes and the agent tool that read, answer and file e-mails. Many providers want an app password rather than the account's own.",
+                Icon = 0xe156,
+                IconColor = "#FF2196F3",
+                Fields =
+                [
+                    new()
+                    {
+                        Key = "host",
+                        Type = CredentialsFieldType.Text,
+                        Required = true,
+                        Label = "IMAP Host",
+                        Placeholder = "imap.example.com",
+                    },
+                    new()
+                    {
+                        Key = "port",
+                        Type = CredentialsFieldType.Text,
+                        Required = false,
+                        Label = "IMAP Port",
+                        DefaultValue = "993",
+                    },
+                    new()
+                    {
+                        Key = "username",
+                        Type = CredentialsFieldType.Text,
+                        Required = true,
+                        Label = "Username",
+                        Placeholder = "me@example.com",
+                    },
+                    new()
+                    {
+                        Key = "password",
+                        Type = CredentialsFieldType.Secret,
+                        Required = true,
+                        Label = "Password (or app password)",
+                    },
+                    new()
+                    {
+                        Key = "security",
+                        Type = CredentialsFieldType.Text,
+                        Required = false,
+                        Label = "Security (auto, ssl, starttls or none)",
+                        Placeholder = "auto",
+                        DefaultValue = "auto",
                     },
                 ],
             }
@@ -369,6 +446,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "slack",
+                Category = CredentialsCategories.Messaging,
                 DisplayName = "Slack",
                 Description = "Credentials for Slack bot messaging. Used by Slack interaction channels and future Slack workflow nodes.",
                 Icon = 0xe7ef,
@@ -412,6 +490,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "openai",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "OpenAI",
                 Description = "Credentials for OpenAI models (GPT-4o, o3, etc.) and OpenAI-compatible endpoints (LM Studio, Ollama, Groq, Azure OpenAI…).",
                 Icon = 0xec35, // smart_toy
@@ -456,6 +535,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "anthropic",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "Anthropic",
                 Description = "Credentials for Anthropic Claude models (claude-opus-4, claude-sonnet-4, etc.).",
                 Icon = 0xec35, // smart_toy
@@ -500,6 +580,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "deepseek",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "DeepSeek",
                 Description = "Credentials for DeepSeek AI models. Uses an OpenAI-compatible API — works with any LLM node.",
                 Icon = 0xec35, // smart_toy
@@ -544,6 +625,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "xai",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "xAI / Grok",
                 Description = "Credentials for xAI Grok models. Uses an OpenAI-compatible API — works with any LLM node.",
                 Icon = 0xec35, // smart_toy
@@ -588,6 +670,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "gemini",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "Google Gemini",
                 Description = "Credentials for Google Gemini models via AI Studio. The Gemini API format is handled automatically.",
                 Icon = 0xec35, // smart_toy
@@ -632,6 +715,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "wordpress",
+                Category = CredentialsCategories.Publishing,
                 DisplayName = "WordPress",
                 Description = "Credentials for WordPress sites using the REST API. Requires an Application Password for authentication. Used by nodes that publish posts, upload media, or manage WordPress content.",
                 Icon = 0xef42, // article
@@ -674,6 +758,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "openai_image",
+                Category = CredentialsCategories.AiModels,
                 DisplayName = "OpenAI Image",
                 Description = "Credentials for OpenAI's image generation API (DALL-E, GPT-Image). Used by nodes that generate images from text prompts.",
                 Icon = 0xe3f4, // image
@@ -709,6 +794,7 @@ public static class OrchestrationCredentialsTemplates
             new CredentialsTemplate
             {
                 Id = "supabase",
+                Category = CredentialsCategories.Data,
                 DisplayName = "Supabase",
                 Description = "Credentials for Supabase cloud platform. Provides access to PostgreSQL database, storage, and authentication APIs.",
                 Icon = 0xe1db, // storage

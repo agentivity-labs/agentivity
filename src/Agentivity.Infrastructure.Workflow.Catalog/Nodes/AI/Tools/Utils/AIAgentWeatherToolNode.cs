@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -52,6 +53,7 @@ public sealed class AIAgentWeatherToolNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("AI Agent Weather Tool", "Retrieves the current weather for a location using the free Open-Meteo API.", "ai.tools.utils");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();

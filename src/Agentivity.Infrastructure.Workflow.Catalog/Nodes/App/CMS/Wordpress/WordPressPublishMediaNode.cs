@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Domain.Common;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.WordPress;
@@ -27,6 +28,7 @@ public sealed class WordPressPublishMediaNode : ToolNode
         _wordpressService = new WordPressService(httpClientFactory, credentialsService, logger);
 
         DefineMetadata("Publish Media to WordPress", "Uploads media files to WordPress media library.", "app.cms.wordpress");
+        DefineEffects(NodeEffects.WritesExternal);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -41,7 +43,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Tab = "Settings",
                 Group = "Connection",
                 Order = 10,
-            }
+            },
+            required: true
         );
 
         DefineInput(
@@ -53,7 +56,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Tab = "Media",
                 Group = "Source",
                 Order = 10,
-            }
+            },
+            required: true
         );
         DefineInput(
             "title",
@@ -64,7 +68,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Tab = "Media",
                 Group = "Metadata",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineInput(
             "altText",
@@ -75,7 +80,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Tab = "Media",
                 Group = "Metadata",
                 Order = 30,
-            }
+            },
+            required: false
         );
         DefineInput(
             "description",
@@ -88,7 +94,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Order = 40,
                 Multiline = true,
                 Rows = 4,
-            }
+            },
+            required: false
         );
         DefineInput(
             "caption",
@@ -101,7 +108,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Order = 50,
                 Multiline = true,
                 Rows = 3,
-            }
+            },
+            required: false
         );
 
         // Retry configuration
@@ -115,7 +123,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Tab = "Advanced",
                 Group = "Retry",
                 Order = 60,
-            }
+            },
+            required: false
         );
         DefineInput(
             "retry_delay_seconds",
@@ -127,7 +136,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
                 Tab = "Advanced",
                 Group = "Retry",
                 Order = 70,
-            }
+            },
+            required: false
         );
 
         DefineOutput("media", ArgumentType.Text, "WordPress media upload result with mediaId and mediaUrl");

@@ -1,4 +1,5 @@
 using Agentivity.Domain.Credentials;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Models.Capabilities;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -30,18 +31,20 @@ public sealed class EmbeddingsOpenAiNode : ResourceNode, IEmbeddingProvider
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.Embeddings);
 
         DefineMetadata("OpenAI Embeddings", "Embeddings via the OpenAI API — usable standalone or plugged into any vector store's \"embeddings\" input.", "ai.embeddings");
+        DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Embeddings", ResourcePortCategory.Embeddings, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", "openai", "OpenAI credentials used to embed text", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", "openai", "OpenAI credentials used to embed text", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineChoice(
             "embedding_model",
             [("text-embedding-3-small", "text-embedding-3-small (Fast, Cheap)"), ("text-embedding-3-large", "text-embedding-3-large (Best Quality)"), ("text-embedding-ada-002", "text-embedding-ada-002 (Legacy)")],
             "Embedding model",
             "text-embedding-3-small",
-            ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 }
+            ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("aimemory"));

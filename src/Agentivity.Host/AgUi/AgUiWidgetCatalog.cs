@@ -21,25 +21,25 @@ public static class AgUiWidgetCatalog
             Widgets:
             [
                 // Charts
-                new("BarChart", "charts", "Vertical or horizontal bar chart", BarChartSchema),
-                new("LineChart", "charts", "Line / time-series chart", LineOrAreaChartSchema),
-                new("PieChart", "charts", "Pie / donut chart", PieChartSchema),
-                new("AreaChart", "charts", "Filled area chart", LineOrAreaChartSchema),
-                new("RadarChart", "charts", "Spider / radar chart", RadarChartSchema),
+                new("BarChart", "charts", "Vertical or horizontal bar chart — use to compare amounts across a few categories", BarChartSchema),
+                new("LineChart", "charts", "Line / time-series chart — use for a value that evolves over time or along an ordered axis", LineOrAreaChartSchema),
+                new("PieChart", "charts", "Pie / donut chart — use for the share of each part in a whole, with a handful of parts", PieChartSchema),
+                new("AreaChart", "charts", "Filled area chart — use for cumulative or stacked values over time", LineOrAreaChartSchema),
+                new("RadarChart", "charts", "Spider / radar chart — use to compare items across several criteria on the same scale", RadarChartSchema),
                 // Data
-                new("MetricCard", "data", "Single KPI metric card with label and value", MetricCardSchema),
-                new("StatGrid", "data", "Grid of multiple stat cells", StatGridSchema),
-                new("KeyValue", "data", "Simple key-value property list", KeyValueSchema),
+                new("MetricCard", "data", "Single KPI metric card with label and value — use to highlight one key number, optionally with its trend", MetricCardSchema),
+                new("StatGrid", "data", "Grid of multiple stat cells — use to show several key figures together at a glance", StatGridSchema),
+                new("KeyValue", "data", "Simple key-value property list — use for the details of one item (a record, an order, a profile)", KeyValueSchema),
                 // Code
-                new("CodeBlock", "code", "Syntax-highlighted code block", CodeBlockSchema),
-                new("JsonViewer", "code", "Collapsible JSON tree viewer", JsonViewerSchema),
+                new("CodeBlock", "code", "Syntax-highlighted code block — use to show code, a query or a configuration to copy", CodeBlockSchema),
+                new("JsonViewer", "code", "Collapsible JSON tree viewer — use to inspect structured data that has no better layout", JsonViewerSchema),
                 // Status
-                new("StatusCard", "status", "Status badge with icon and message", StatusCardSchema),
-                new("Timeline", "status", "Vertical event timeline", TimelineSchema),
+                new("StatusCard", "status", "Status badge with icon and message — use to report the outcome of an action (success, warning, error)", StatusCardSchema),
+                new("Timeline", "status", "Vertical event timeline — use for a sequence of dated events or steps", TimelineSchema),
                 // Math
-                new("Latex", "math", "LaTeX / KaTeX mathematical expression", LatexSchema),
+                new("Latex", "math", "LaTeX / KaTeX mathematical expression — use to display a formula", LatexSchema),
                 // SVG
-                new("Svg", "svg", "Inline SVG image", SvgSchema),
+                new("Svg", "svg", "Inline SVG image — use for a simple diagram or illustration you can draw as vector shapes", SvgSchema),
                 // Media
                 new("ImageGallery", "media", "Grid of pictures with captions and links — use to show products, places or any visual results; copy picture addresses from the source, never invent them", ImageGallerySchema),
                 // Interaction
@@ -48,7 +48,7 @@ public static class AgUiWidgetCatalog
                 new("ConfirmCard", "interaction", "Confirm / cancel card with optional context block — use before irreversible actions", ConfirmCardSchema, RequiresHumanResponse: true),
                 new("RatingCard", "interaction", "Star or numbered scale rating — use to collect satisfaction or quality feedback", RatingCardSchema, RequiresHumanResponse: true),
                 new("DatePickerCard", "interaction", "Date or date-range picker — use to collect scheduling or delivery dates", DatePickerCardSchema, RequiresHumanResponse: true),
-                new("SummaryCard", "interaction", "Structured recap with key-value sections — display before a confirmation step, no submit", SummaryCardSchema, RequiresHumanResponse: false),
+                new("SummaryCard", "interaction", "Structured recap with key-value sections — use before a confirmation step to show what is about to happen, no submit", SummaryCardSchema, RequiresHumanResponse: false),
                 new("SourceInput", "interaction", "Document intake — the human uploads a file, gives a link, or pastes text. The widget only collects: the reply is a small JSON envelope {kind:'file', fileId, name} | {kind:'url', url} | {kind:'text', content}, to be read by the workflow (extract a file by fileId, scrape a url, or use the text as is) — use to ask for a CV, contract, report or any source material", SourceInputSchema, RequiresHumanResponse: true),
             ]
         );

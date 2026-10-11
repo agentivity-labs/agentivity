@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
@@ -27,6 +28,7 @@ public abstract class AIAgentWebScraperToolNodeBase : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata(displayName, description, "ai.tools.scrappers");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -34,13 +36,13 @@ public abstract class AIAgentWebScraperToolNodeBase : ResourceNode, IAgentTool
 
         if (!string.IsNullOrWhiteSpace(credentialsTemplateId))
         {
-            DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription ?? $"{displayName} credentials", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+            DefineCredentialsInput("credentials", credentialsTemplateId, credentialsDescription ?? $"{displayName} credentials", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         }
 
-        DefineInput("default_render_javascript", ArgumentType.Boolean, "Default JavaScript rendering behavior", false, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 20 });
-        DefineInput("default_extract_markdown", ArgumentType.Boolean, "Default markdown extraction behavior", true, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 });
-        DefineInput("default_extract_metadata", ArgumentType.Boolean, "Default metadata extraction behavior", true, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 40 });
-        DefineInput("default_include_html", ArgumentType.Boolean, "Return the page's raw HTML to the agent as well. Off by default: the cleaned markdown and structured data hold what the agent needs, and raw HTML can fill its context with up to 50 KB of markup per call", false, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 45 });
+        DefineInput("default_render_javascript", ArgumentType.Boolean, "Default JavaScript rendering behavior", false, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 20 }, required: false);
+        DefineInput("default_extract_markdown", ArgumentType.Boolean, "Default markdown extraction behavior", true, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 }, required: false);
+        DefineInput("default_extract_metadata", ArgumentType.Boolean, "Default metadata extraction behavior", true, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 40 }, required: false);
+        DefineInput("default_include_html", ArgumentType.Boolean, "Return the page's raw HTML to the agent as well. Off by default: the cleaned markdown and structured data hold what the agent needs, and raw HTML can fill its context with up to 50 KB of markup per call", false, ui: new ArgumentUiMetadata { Group = "Defaults", Order = 45 }, required: false);
         DefineInput(
             "default_timeout_seconds",
             ArgumentType.Number,
@@ -52,7 +54,8 @@ public abstract class AIAgentWebScraperToolNodeBase : ResourceNode, IAgentTool
                 Order = 50,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "default_max_content_length",
@@ -65,9 +68,10 @@ public abstract class AIAgentWebScraperToolNodeBase : ResourceNode, IAgentTool
                 Order = 60,
                 Min = 1000,
                 Step = 1000,
-            }
+            },
+            required: false
         );
-        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 70 });
+        DefineChoice("rate_limit_profile", [("none", "No limitation"), ("fast", "Fast"), ("medium", "Medium"), ("slow", "Slow")], "Rate limiting and retry profile", "medium", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 70 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aillm"));
     }

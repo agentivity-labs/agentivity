@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Core.Llm.Recovery;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ public sealed class AnthropicModelNode : BaseLlmModelNode
         : base("ai.llm.model.anthropic", "anthropic", LlmApiFlavor.Anthropic, llmClientFactory, logger, recoveryOptions)
     {
         DefineMetadata("Anthropic Model", "Anthropic Claude models (claude-opus-4, claude-sonnet-4, etc.).", "ai.models");
+        DefineEffects(NodeEffects.Costs);
     }
 
     protected override string DefaultBaseUrl => "https://api.anthropic.com/v1/messages";

@@ -7,6 +7,10 @@ public sealed class ToolsModeRuntime() : AgenticModeRuntimeBase(ModeIdValue, "To
 {
     public const string ModeIdValue = "tools";
 
+    public override string? Description => "Answers and may call the connected tools in a single pass, choosing which tool to use.";
+
+    public override string? WhenToUse => "Simple tasks with a few tools, such as looking something up, reading a record or sending one message. Not for multi-step work that needs planning.";
+
     public override async ValueTask<AgentRunResult> ExecuteAsync(AgentConfig config, AgentRunState state, AgentRunServices services, AgentHost agentHost, CancellationToken cancellationToken)
     {
         var infra = BuildManifest(agentHost, config, state, services, state.ResumeState);

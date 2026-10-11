@@ -27,7 +27,8 @@ public sealed class ImageDisplayNode : DisplayNode
             ArgumentType.ImageRef,
             "The image to display. Bind it to an image generator's output, e.g. `{{ some_node.image }}`.",
             defaultValue: null,
-            ui: new ArgumentUiMetadata { Group = "Display", Order = 20 }
+            ui: new ArgumentUiMetadata { Group = "Display", Order = 20 },
+            required: true
         );
         DefineOutput("value", ArgumentType.ImageRef, "The same image reference, passed through unchanged.");
 

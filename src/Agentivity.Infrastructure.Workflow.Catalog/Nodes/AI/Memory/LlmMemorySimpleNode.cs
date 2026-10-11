@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
@@ -22,13 +23,14 @@ public sealed class LlmMemorySimpleNode : ResourceNode, IEmbeddingProvider
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
         DefineMetadata("Simple LLM Memory", "Enables RAG and vector clustering using a local ONNX model (no credentials needed).", "ai.memory");
+        DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "LLM Memory", ResourcePortCategory.LlmMemory, maxConnections: -1);
         DefineResourceInputPort("embeddings", "Embeddings", ResourcePortCategory.Embeddings, "Optional — overrides the free local embedding with a connected Embeddings node.", isRequired: false);
 
-        DefineChoice("mode", [("local_clustering", "Local Vector Clustering (K-means)"), ("embedding_only", "Embeddings Only (no clustering)")], "Memory mode", "local_clustering", ui: new ArgumentUiMetadata { Group = "Settings", Order = 10 });
+        DefineChoice("mode", [("local_clustering", "Local Vector Clustering (K-means)"), ("embedding_only", "Embeddings Only (no clustering)")], "Memory mode", "local_clustering", ui: new ArgumentUiMetadata { Group = "Settings", Order = 10 }, required: false);
 
         DefineInput(
             "max_clusters",
@@ -41,7 +43,8 @@ public sealed class LlmMemorySimpleNode : ResourceNode, IEmbeddingProvider
                 Order = 20,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("aimemory"));

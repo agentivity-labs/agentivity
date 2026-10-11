@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text;
 using System.Text.Json;
 using Agentivity.Domain.Credentials;
@@ -43,23 +44,25 @@ public sealed class LlmMemoryQdrantNode : ResourceNode, IEmbeddingProvider, IVec
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
         DefineMetadata("Qdrant Memory", "RAG backed by a real Qdrant vector database — persists embeddings once and queries a real ANN index instead of re-ranking locally on every run.", "ai.memory");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal | NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "LLM Memory", ResourcePortCategory.LlmMemory, maxConnections: -1);
         DefineResourceInputPort("embeddings", "Embeddings", ResourcePortCategory.Embeddings, "Optional — overrides the credentials below with a connected Embeddings node.", isRequired: false);
 
-        DefineCredentialsInput("embedding_credentials", "openai", "OpenAI credentials used to embed text — leave unset to fall back to the free local embedding", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
-        DefineCredentialsInput("qdrant_credentials", "qdrant", "Qdrant instance connection", ui: new ArgumentUiMetadata { Group = "Connection", Order = 20 });
+        DefineCredentialsInput("embedding_credentials", "openai", "OpenAI credentials used to embed text — leave unset to fall back to the free local embedding", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
+        DefineCredentialsInput("qdrant_credentials", "qdrant", "Qdrant instance connection", ui: new ArgumentUiMetadata { Group = "Connection", Order = 20 }, required: true);
 
         DefineChoice(
             "embedding_model",
             [("text-embedding-3-small", "text-embedding-3-small (Fast, Cheap)"), ("text-embedding-3-large", "text-embedding-3-large (Best Quality)"), ("text-embedding-ada-002", "text-embedding-ada-002 (Legacy)")],
             "Embedding model",
             "text-embedding-3-small",
-            ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 }
+            ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 },
+            required: false
         );
-        DefineInput("collection_name", ArgumentType.Text, "Qdrant collection name (created automatically on first use)", "agentivity_knowledge", ui: new ArgumentUiMetadata { Group = "Settings", Order = 40 });
+        DefineInput("collection_name", ArgumentType.Text, "Qdrant collection name (created automatically on first use)", "agentivity_knowledge", ui: new ArgumentUiMetadata { Group = "Settings", Order = 40 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aimemory"));
     }

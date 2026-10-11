@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Agentivity.Domain.Workflow;
+using System.Text;
 using System.Text.Json;
 using Agentivity.Domain.Common;
 using Agentivity.Infrastructure.Arguments;
@@ -109,6 +110,7 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Internal Link Suggester", "Suggests relevant internal links using structure-first selection with semantic scoring.", "seo");
+        DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -124,7 +126,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "General",
                 Group = "Article",
                 Order = 10,
-            }
+            },
+            required: true
         );
         DefineInput(
             "article_summary",
@@ -138,7 +141,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Order = 20,
                 Multiline = true,
                 Rows = 5,
-            }
+            },
+            required: false
         );
         DefineInput(
             "site_structure",
@@ -152,7 +156,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Multiline = true,
                 Rows = 10,
                 Format = "json",
-            }
+            },
+            required: true
         );
         DefineInput(
             "max_links",
@@ -164,7 +169,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Settings",
                 Group = "Limits",
                 Order = 40,
-            }
+            },
+            required: false
         );
         DefineInput(
             "parent_pillar_url",
@@ -176,7 +182,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Settings",
                 Group = "config",
                 Order = 50,
-            }
+            },
+            required: false
         );
 
         // Quota configuration
@@ -190,7 +197,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Quotas",
                 Order = 60,
-            }
+            },
+            required: false
         );
         DefineInput(
             "quota_sibling_pillars",
@@ -202,7 +210,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Quotas",
                 Order = 70,
-            }
+            },
+            required: false
         );
         DefineInput(
             "quota_same_pillar_leaves",
@@ -214,7 +223,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Quotas",
                 Order = 80,
-            }
+            },
+            required: false
         );
         DefineInput(
             "quota_other_pillars",
@@ -226,7 +236,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Quotas",
                 Order = 90,
-            }
+            },
+            required: false
         );
         DefineInput(
             "quota_cross_pillar_leaves",
@@ -238,7 +249,8 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Quotas",
                 Order = 100,
-            }
+            },
+            required: false
         );
 
         DefineOutput("suggested_links", ArgumentType.Text, "List of suggested links (JSON array)");

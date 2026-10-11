@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Xml.Linq;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
@@ -23,11 +24,12 @@ public sealed class AIKnowledgeRssNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (RSS/Atom)", "Loads a knowledge corpus from an RSS or Atom feed and maps entries to normalized documents.", "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
-        DefineInput("feed_url", ArgumentType.Text, "RSS or Atom feed URL.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineInput("feed_url", ArgumentType.Text, "RSS or Atom feed URL.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineInput(
             "headers_json",
             ArgumentType.Text,
@@ -40,7 +42,8 @@ public sealed class AIKnowledgeRssNode : ResourceNode, IKnowledgeSource
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_items",
@@ -53,7 +56,8 @@ public sealed class AIKnowledgeRssNode : ResourceNode, IKnowledgeSource
                 Order = 30,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "timeout_seconds",
@@ -66,7 +70,8 @@ public sealed class AIKnowledgeRssNode : ResourceNode, IKnowledgeSource
                 Order = 40,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("rss"));

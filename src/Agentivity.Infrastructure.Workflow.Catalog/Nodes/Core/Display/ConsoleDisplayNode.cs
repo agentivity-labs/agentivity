@@ -26,7 +26,8 @@ public sealed class ConsoleDisplayNode : DisplayNode
             ArgumentType.Text,
             "The value to display. Bind it to any prior node's output, e.g. `{{ some_node.output }}`.",
             defaultValue: "",
-            ui: new ArgumentUiMetadata { Group = "Display", Order = 20, Multiline = true, Rows = 3 }
+            ui: new ArgumentUiMetadata { Group = "Display", Order = 20, Multiline = true, Rows = 3 },
+            required: true
         );
         DefineOutput("value", ArgumentType.Text, "The same value, passed through unchanged.");
 

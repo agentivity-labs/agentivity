@@ -30,6 +30,7 @@ public static class CredentialsEndpoints
                     id = t.Id,
                     displayName = t.DisplayName,
                     description = t.Description,
+                    category = t.Category,
                     icon = t.Icon,
                     iconColor = t.IconColor,
                     fields = t.Fields.Select(f => new

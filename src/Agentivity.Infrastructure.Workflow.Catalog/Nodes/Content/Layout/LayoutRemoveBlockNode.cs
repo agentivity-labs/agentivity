@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.Layout;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -15,6 +16,7 @@ public sealed class LayoutRemoveBlockNode : ToolNode
         : base("layout.remove_block")
     {
         DefineMetadata("Remove Block", "Removes a block from the layout at the specified path.", "content.layout");
+        DefineEffects(NodeEffects.None);
 
         DefineInput(
             "layout",
@@ -27,9 +29,10 @@ public sealed class LayoutRemoveBlockNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
-        DefineInput("target", ArgumentType.Text, "Target path to remove (e.g., 'root.main.section[2]')", ui: new ArgumentUiMetadata { Group = "Placement", Order = 20 });
+        DefineInput("target", ArgumentType.Text, "Target path to remove (e.g., 'root.main.section[2]')", ui: new ArgumentUiMetadata { Group = "Placement", Order = 20 }, required: true);
 
         DefineOutput("layout", ArgumentType.Text, "Updated DSL layout JSON");
 

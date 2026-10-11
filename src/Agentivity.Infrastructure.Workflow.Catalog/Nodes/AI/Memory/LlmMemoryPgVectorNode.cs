@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -44,13 +45,14 @@ public sealed class LlmMemoryPgVectorNode : ResourceNode, IEmbeddingProvider, IV
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
         DefineMetadata("pgvector Memory", "RAG backed by PostgreSQL's pgvector extension — persists embeddings once and queries a real ANN-ready index instead of re-ranking locally on every run.", "ai.memory");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal | NodeEffects.Costs);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "LLM Memory", ResourcePortCategory.LlmMemory, maxConnections: -1);
         DefineResourceInputPort("embeddings", "Embeddings", ResourcePortCategory.Embeddings, "Optional — overrides the credentials below with a connected Embeddings node.", isRequired: false);
 
-        DefineCredentialsInput("embedding_credentials", "openai", "OpenAI credentials used to embed text — leave unset to fall back to the free local embedding", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("embedding_credentials", "openai", "OpenAI credentials used to embed text — leave unset to fall back to the free local embedding", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineInput(
             "connection_string",
             ArgumentType.Text,
@@ -61,7 +63,8 @@ public sealed class LlmMemoryPgVectorNode : ResourceNode, IEmbeddingProvider, IV
                 Order = 20,
                 Multiline = true,
                 Rows = 4,
-            }
+            },
+            required: true
         );
 
         DefineChoice(
@@ -69,9 +72,10 @@ public sealed class LlmMemoryPgVectorNode : ResourceNode, IEmbeddingProvider, IV
             [("text-embedding-3-small", "text-embedding-3-small (Fast, Cheap)"), ("text-embedding-3-large", "text-embedding-3-large (Best Quality)"), ("text-embedding-ada-002", "text-embedding-ada-002 (Legacy)")],
             "Embedding model",
             "text-embedding-3-small",
-            ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 }
+            ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 },
+            required: false
         );
-        DefineInput("table_name", ArgumentType.Text, "Table name (created automatically on first use). Letters, digits, underscore only.", "agentivity_knowledge", ui: new ArgumentUiMetadata { Group = "Settings", Order = 40 });
+        DefineInput("table_name", ArgumentType.Text, "Table name (created automatically on first use). Letters, digits, underscore only.", "agentivity_knowledge", ui: new ArgumentUiMetadata { Group = "Settings", Order = 40 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aimemory"));
     }

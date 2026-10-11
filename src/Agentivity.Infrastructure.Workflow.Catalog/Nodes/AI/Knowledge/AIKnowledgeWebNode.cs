@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Web;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Web.Scrappers;
@@ -26,6 +27,7 @@ public sealed class AIKnowledgeWebNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (Web)", "Loads a knowledge corpus from one or more URLs and exposes normalized documents for AI consumers.", "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -41,7 +43,8 @@ public sealed class AIKnowledgeWebNode : ResourceNode, IKnowledgeSource
                 Order = 10,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: true
         );
         DefineInput(
             "timeout_seconds",
@@ -54,7 +57,8 @@ public sealed class AIKnowledgeWebNode : ResourceNode, IKnowledgeSource
                 Order = 20,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_content_length",
@@ -67,10 +71,11 @@ public sealed class AIKnowledgeWebNode : ResourceNode, IKnowledgeSource
                 Order = 30,
                 Min = 256,
                 Step = 256,
-            }
+            },
+            required: false
         );
-        DefineInput("extract_metadata", ArgumentType.Boolean, "Extract page metadata when supported by the scraper.", true, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 40 });
-        DefineInput("render_javascript", ArgumentType.Boolean, "Enable JavaScript rendering when supported by the connected scraper.", false, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 50 });
+        DefineInput("extract_metadata", ArgumentType.Boolean, "Extract page metadata when supported by the scraper.", true, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 40 }, required: false);
+        DefineInput("render_javascript", ArgumentType.Boolean, "Enable JavaScript rendering when supported by the connected scraper.", false, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 50 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("web_scrapper"));
     }

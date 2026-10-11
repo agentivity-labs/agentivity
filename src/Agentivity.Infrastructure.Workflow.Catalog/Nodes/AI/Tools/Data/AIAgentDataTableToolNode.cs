@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Domain.DataTables;
@@ -44,22 +45,24 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("AI Agent Data Table Tool", "Exposes CRUD on a shared Data Table asset as LLM-callable tools.", "ai.tools.data");
+        DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "AI Agent Data Table Tool", ResourcePortCategory.AIAgentTool, maxConnections: -1);
-        DefineAssetInput("table_id", "datatable", "The shared Data Table asset this tool reads and writes.", group: "Table", order: 0);
+        DefineAssetInput("table_id", "datatable", "The shared Data Table asset this tool reads and writes.", group: "Table", order: 0, required: true);
         DefineInput(
             "tool_name_prefix",
             ArgumentType.Text,
             "Prefix for this instance's tool names, e.g. \"trips\" → trips_select, trips_insert, trips_update, trips_delete, trips_find. Required whenever an agent has more than one Data Table tool connected — tool names must be unique per agent.",
             DefaultPrefix,
-            ui: new ArgumentUiMetadata { Group = "Tools", Order = 10 }
+            ui: new ArgumentUiMetadata { Group = "Tools", Order = 10 },
+            required: false
         );
-        DefineInput("allow_read", ArgumentType.Boolean, "Expose reading rows (select/find) to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 20 });
-        DefineInput("allow_insert", ArgumentType.Boolean, "Expose inserting new rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 21 });
-        DefineInput("allow_update", ArgumentType.Boolean, "Expose updating existing rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 22 });
-        DefineInput("allow_delete", ArgumentType.Boolean, "Expose deleting rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 23 });
+        DefineInput("allow_read", ArgumentType.Boolean, "Expose reading rows (select/find) to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 20 }, required: false);
+        DefineInput("allow_insert", ArgumentType.Boolean, "Expose inserting new rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 21 }, required: false);
+        DefineInput("allow_update", ArgumentType.Boolean, "Expose updating existing rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 22 }, required: false);
+        DefineInput("allow_delete", ArgumentType.Boolean, "Expose deleting rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 23 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("datatable"));
     }

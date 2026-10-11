@@ -360,7 +360,52 @@ public sealed class GenericLlmClient : ILlmClient
             }
         }
 
+        ApplyPromptCache(payload, conversationMessages, tools, options);
+
         return OperationResult<Dictionary<string, object?>>.Success(payload);
+    }
+
+    /// <summary>
+    /// Marks the stable start of the request for Anthropic's prompt cache: the instructions (which also covers the tools, that
+    /// come first) and the last message (which covers the whole conversation so far). The next call of the same conversation
+    /// finds both and pays about a tenth for what it re-sends. A request too small to be cached is simply not cached by the
+    /// provider, so the marks are harmless there.
+    /// </summary>
+    internal static void ApplyPromptCache(Dictionary<string, object?> payload, List<Dictionary<string, object?>> conversationMessages, IReadOnlyList<JsonObject>? tools, LlmConversationOptions options)
+    {
+        var enabled = options.PromptCache switch
+        {
+            LlmPromptCacheMode.Off => false,
+            LlmPromptCacheMode.On => true,
+            _ => tools is { Count: > 0 } || conversationMessages.Count >= 3,
+        };
+        if (!enabled)
+        {
+            return;
+        }
+
+        static Dictionary<string, object?> Mark() => new() { ["type"] = "ephemeral" };
+
+        if (payload.TryGetValue("system", out var system) && system is string systemText && systemText.Length > 0)
+        {
+            payload["system"] = new List<object> { new Dictionary<string, object?> { ["type"] = "text", ["text"] = systemText, ["cache_control"] = Mark() } };
+        }
+
+        if (conversationMessages.Count == 0)
+        {
+            return;
+        }
+
+        var last = conversationMessages[^1];
+        switch (last["content"])
+        {
+            case string text when text.Length > 0:
+                last["content"] = new List<object> { new Dictionary<string, object?> { ["type"] = "text", ["text"] = text, ["cache_control"] = Mark() } };
+                break;
+            case List<object> blocks when blocks.Count > 0 && blocks[^1] is Dictionary<string, object?> lastBlock:
+                lastBlock["cache_control"] = Mark();
+                break;
+        }
     }
 
     /// <summary>The words that stand in for a forced tool call: names the tool (or asks for one of them) and says it is required now.</summary>
@@ -572,14 +617,20 @@ public sealed class GenericLlmClient : ILlmClient
             var stopReason = root.TryGetProperty("stop_reason", out var stopEl) ? stopEl.GetString() ?? string.Empty : string.Empty;
 
             var tokensUsed = 0;
+            var cacheRead = 0;
+            var cacheWrite = 0;
             if (root.TryGetProperty("usage", out var usage))
             {
                 var inputTokens = usage.TryGetProperty("input_tokens", out var inTok) ? inTok.GetInt32() : 0;
                 var outputTokens = usage.TryGetProperty("output_tokens", out var outTok) ? outTok.GetInt32() : 0;
-                tokensUsed = inputTokens + outputTokens;
+
+                // With the prompt cache, input_tokens counts only what was not served from it: the whole input is the three.
+                cacheRead = usage.TryGetProperty("cache_read_input_tokens", out var readTok) && readTok.ValueKind == JsonValueKind.Number ? readTok.GetInt32() : 0;
+                cacheWrite = usage.TryGetProperty("cache_creation_input_tokens", out var writeTok) && writeTok.ValueKind == JsonValueKind.Number ? writeTok.GetInt32() : 0;
+                tokensUsed = inputTokens + outputTokens + cacheRead + cacheWrite;
             }
 
-            return OperationResult<LlmConversationResponse>.Success(new LlmConversationResponse(content, tokensUsed, stopReason, toolCalls, null));
+            return OperationResult<LlmConversationResponse>.Success(new LlmConversationResponse(content, tokensUsed, stopReason, toolCalls, null, CachedInputTokens: cacheRead, CacheWriteTokens: cacheWrite));
         }
         catch (JsonException ex)
         {

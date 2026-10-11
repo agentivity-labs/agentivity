@@ -27,7 +27,8 @@ public sealed class AudioDisplayNode : DisplayNode
             ArgumentType.AudioRef,
             "The audio to display. Bind it to a text-to-speech node's output, e.g. `{{ some_node.audio }}`.",
             defaultValue: null,
-            ui: new ArgumentUiMetadata { Group = "Display", Order = 20 }
+            ui: new ArgumentUiMetadata { Group = "Display", Order = 20 },
+            required: true
         );
         DefineOutput("value", ArgumentType.AudioRef, "The same audio reference, passed through unchanged.");
 

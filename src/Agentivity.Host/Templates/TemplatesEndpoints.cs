@@ -4,6 +4,7 @@ using Agentivity.Infrastructure.Agentic.Library;
 using Agentivity.Infrastructure.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using static Agentivity.Infrastructure.Http.ApiEndpointHelpers;
 
@@ -88,9 +89,10 @@ public static class TemplatesEndpoints
 
         // The body is the Template file itself. Defaults to a dry run: nothing is created unless the call says dryRun=false.
         // modelConnection: "default" (the first model connection of the list), "keep" (leave the author's), or the id of one of your credentials.
+        // folder: where everything goes, one value per folder name from the top level down (folder=Finance&folder=Invoices); none for the top level.
         v1.MapPost(
             "/templates/import",
-            async (JsonObject? template, bool? dryRun, string? modelConnection, bool? includeRows, TemplateImporter importer, CancellationToken ct) =>
+            async (JsonObject? template, bool? dryRun, string? modelConnection, bool? includeRows, [FromQuery] string[]? folder, TemplateImporter importer, CancellationToken ct) =>
             {
                 if (template is null)
                 {
@@ -100,7 +102,7 @@ public static class TemplatesEndpoints
                 TemplateImportResult result;
                 try
                 {
-                    result = await importer.ImportAsync(template, new TemplateImportOptions(dryRun ?? true, modelConnection, includeRows ?? true), ct);
+                    result = await importer.ImportAsync(template, new TemplateImportOptions(dryRun ?? true, modelConnection, includeRows ?? true, folder), ct);
                 }
                 catch (TemplateImportException ex)
                 {

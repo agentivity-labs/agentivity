@@ -3,7 +3,12 @@ namespace Agentivity.Infrastructure.Agentic.Library;
 /// <param name="DryRun">Only report what would be created: nothing is saved.</param>
 /// <param name="ModelConnection">null or "default": the first model connection of the list; "keep": leave the author's connection as it is; otherwise the id of one of the user's own credentials.</param>
 /// <param name="IncludeRows">Import the rows of the data tables the Template carries.</param>
-public sealed record TemplateImportOptions(bool DryRun = true, string? ModelConnection = null, bool IncludeRows = true);
+/// <param name="Folder">
+/// The one place everything goes, as folder names from the top level down (null or empty for the top level). Agents and teams,
+/// workflows and data tables each keep their own folders: the path is followed in each library the Template adds to, and made
+/// where it is missing.
+/// </param>
+public sealed record TemplateImportOptions(bool DryRun = true, string? ModelConnection = null, bool IncludeRows = true, IReadOnlyList<string>? Folder = null);
 
 /// <param name="Status">would_create | created</param>
 public sealed record TemplateImportItem(string Kind, string OldId, string NewId, string Name, string Status);

@@ -1,0 +1,57 @@
+<Project DefaultTargets="Build">
+  <!--
+    Builds every dynamically loaded module into the modules folder, without the platform referencing any of them.
+
+    A module is a project that imports tools/build/Agentivity.Module.targets: it is found by that, so a new module is picked up
+    by being a module, not by being listed here. Choosing which of the concurrent modules is used (Workspace.Json.Basic or
+    Advanced, ...) is the job of appsettings (Modules:Registrations); this project builds them all.
+
+      dotnet msbuild Agentivity.Modules.proj                  build and copy every module
+      dotnet msbuild Agentivity.Modules.proj -t:Clean         empty the modules folder
+      dotnet msbuild Agentivity.Modules.proj -t:Rebuild       empty it, then build and copy every module
+      dotnet msbuild Agentivity.Modules.proj -t:List          which projects are modules
+
+    ModuleOutputDirectory (or ModulesDir) redirects the folder, for example while a running host locks the real one.
+    The Api project runs the Build target before it builds, so that F5 leaves the modules up to date.
+  -->
+  <PropertyGroup>
+    <ModulesFolder Condition="'$(ModulesFolder)' == '' And '$(ModuleOutputDirectory)' != ''">$(ModuleOutputDirectory)</ModulesFolder>
+    <ModulesFolder Condition="'$(ModulesFolder)' == '' And '$(ModulesDir)' != ''">$(ModulesDir)</ModulesFolder>
+    <ModulesFolder Condition="'$(ModulesFolder)' == ''">$(MSBuildThisFileDirectory)_modules\</ModulesFolder>
+    <ModulesFolder Condition="!HasTrailingSlash('$(ModulesFolder)')">$(ModulesFolder)\</ModulesFolder>
+    <_FolderIsRedirected Condition="'$(ModuleOutputDirectory)' != '' Or '$(ModulesDir)' != ''">true</_FolderIsRedirected>
+  </PropertyGroup>
+
+  <!-- Item metadata cannot be batched in a static item, so discovery is a target the others depend on. -->
+  <Target Name="Discover">
+    <ItemGroup>
+      <_Candidate Include="$(MSBuildThisFileDirectory)src\**\*.csproj" />
+      <ModuleProject Include="@(_Candidate)" Condition="$([System.IO.File]::ReadAllText('%(FullPath)').Contains('Agentivity.Module.targets'))" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="List" DependsOnTargets="Discover">
+    <Message Importance="high" Text="Module: %(ModuleProject.Filename)" />
+  </Target>
+
+  <Target Name="Build" DependsOnTargets="Discover">
+    <Message Importance="high" Text="Modules: building @(ModuleProject->Count()) project(s) into $(ModulesFolder)" />
+    <!-- Same build as the solution's own (no extra properties) unless the folder is redirected: one instance per project. -->
+    <MSBuild Projects="@(ModuleProject)" Targets="Build" BuildInParallel="false" Condition="'$(_FolderIsRedirected)' != 'true'" />
+    <MSBuild Projects="@(ModuleProject)" Targets="Build" BuildInParallel="false" Properties="ModuleOutputDirectory=$(ModulesFolder);ModulesDir=$(ModulesFolder)" Condition="'$(_FolderIsRedirected)' == 'true'" />
+  </Target>
+
+  <Target Name="Clean">
+    <ItemGroup>
+      <_InModulesFolder Include="$(ModulesFolder)**\*" />
+    </ItemGroup>
+    <Delete Files="@(_InModulesFolder)" ContinueOnError="WarnAndContinue" />
+    <PropertyGroup Condition="Exists('$(ModulesFolder)')">
+      <_ModuleSubfolders>$([System.IO.Directory]::GetDirectories('$(ModulesFolder)'))</_ModuleSubfolders>
+    </PropertyGroup>
+    <RemoveDir Directories="$(_ModuleSubfolders)" ContinueOnError="WarnAndContinue" Condition="'$(_ModuleSubfolders)' != ''" />
+    <Message Importance="high" Text="Modules: emptied $(ModulesFolder)" />
+  </Target>
+
+  <Target Name="Rebuild" DependsOnTargets="Clean;Build" />
+</Project>

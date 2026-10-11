@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Core.Llm.Recovery;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,7 @@ public sealed class GeminiModelNode : BaseLlmModelNode
         : base("ai.llm.model.gemini", "gemini", LlmApiFlavor.Gemini, llmClientFactory, logger, recoveryOptions)
     {
         DefineMetadata("Google Gemini Model", "Google Gemini models via AI Studio (gemini-2.0-flash, gemini-2.5-pro, etc.).", "ai.models");
+        DefineEffects(NodeEffects.Costs);
     }
 
     protected override string DefaultBaseUrl => "https://generativelanguage.googleapis.com/v1beta";

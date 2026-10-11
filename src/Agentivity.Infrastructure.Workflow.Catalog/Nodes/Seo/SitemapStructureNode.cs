@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Web;
@@ -28,6 +29,7 @@ public sealed class SitemapStructureNode : BaseAINode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Sitemap Structure", "Analyzes sitemap pages using LLM to create hierarchical content structure (pillars & clusters).", "seo");
+        DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         DefineResourceInputPort("llm_model", "LLM Model", ResourcePortCategory.LlmModel, "LLM model for semantic analysis");
         DefineResourceInputPort("llm_memory", "RAG/Memory", ResourcePortCategory.LlmMemory, "RAG provider for vector clustering (optional, improves accuracy)", isRequired: false);
@@ -45,7 +47,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Multiline = true,
                 Rows = 10,
                 Format = "json",
-            }
+            },
+            required: true
         );
         DefineInput(
             "site_name",
@@ -57,7 +60,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "General",
                 Group = "Source",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_pillars",
@@ -69,7 +73,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Settings",
                 Group = "Structure",
                 Order = 30,
-            }
+            },
+            required: false
         );
         DefineInput(
             "scrape_pages",
@@ -81,7 +86,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Settings",
                 Group = "Enrichment",
                 Order = 40,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_pages_to_scrape",
@@ -93,7 +99,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Settings",
                 Group = "Enrichment",
                 Order = 50,
-            }
+            },
+            required: false
         );
 
         // ✅ Topical Clustering algorithm parameters (improved algorithm)
@@ -107,7 +114,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Clustering",
                 Order = 60,
-            }
+            },
+            required: false
         );
         DefineInput(
             "min_topic_similarity",
@@ -119,7 +127,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Clustering",
                 Order = 70,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_topics_after_reduction",
@@ -131,7 +140,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Clustering",
                 Order = 80,
-            }
+            },
+            required: false
         );
         DefineInput(
             "cluster_cohesion_threshold",
@@ -143,7 +153,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Clustering",
                 Order = 90,
-            }
+            },
+            required: false
         );
         DefineInput(
             "min_cluster_size",
@@ -155,7 +166,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Clustering",
                 Order = 100,
-            }
+            },
+            required: false
         );
 
         // ✅ Anti-leakage parameters (margin rule)
@@ -169,7 +181,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Assignment",
                 Order = 110,
-            }
+            },
+            required: false
         );
         DefineInput(
             "min_child_support",
@@ -181,7 +194,8 @@ public sealed class SitemapStructureNode : BaseAINode
                 Tab = "Advanced",
                 Group = "Assignment",
                 Order = 120,
-            }
+            },
+            required: false
         );
 
         DefineOutput("site_structure", ArgumentType.Text, "Site structure with pillars, topic clusters, and orphan pages (JSON)");

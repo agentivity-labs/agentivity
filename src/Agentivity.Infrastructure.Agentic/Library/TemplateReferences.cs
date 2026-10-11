@@ -7,13 +7,13 @@ namespace Agentivity.Infrastructure.Agentic.Library;
 /// <param name="Key">The input that holds the reference.</param>
 /// <param name="Kinds">What it may designate: an agent, a team, a workflow.</param>
 /// <param name="IsDataTable">True when it points to a shared data table rather than to an agent, a team or a workflow.</param>
-internal readonly record struct NodeReference(JsonObject Inputs, string Key, string Value, IReadOnlyList<LibraryEntityKind> Kinds, bool IsDataTable);
+public readonly record struct NodeReference(JsonObject Inputs, string Key, string Value, IReadOnlyList<LibraryEntityKind> Kinds, bool IsDataTable);
 
 /// <summary>
 /// The same references as <see cref="LibraryReferences"/>, read from the stored JSON of an entity: the import rewrites them to the
 /// new identifiers before the entity is ever turned back into a typed object.
 /// </summary>
-internal static class TemplateReferences
+public static class TemplateReferences
 {
     /// <summary>The nodes of an agent (its graph) or of a workflow; a team has none.</summary>
     public static IEnumerable<JsonObject> NodesOf(string kind, JsonObject entry)

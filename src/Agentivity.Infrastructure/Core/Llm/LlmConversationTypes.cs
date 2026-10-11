@@ -29,8 +29,27 @@ public sealed record LlmConversationOptions(
     /// API request body. Ignored by OpenAI-hosted endpoints. Use this in tests to raise the
     /// context limit beyond the server default (typically 4096) when prompts are large.
     /// </summary>
-    int? ContextLength = null
+    int? ContextLength = null,
+    /// <summary>
+    /// Whether the start of the request (instructions, tools, earlier turns) may be cached by the provider so that the next call
+    /// of the same conversation reads it back at a fraction of the price. <see cref="LlmPromptCacheMode.Auto"/> caches
+    /// conversations that are likely to continue (tools, or several turns) and leaves one-off prompts alone.
+    /// </summary>
+    LlmPromptCacheMode PromptCache = LlmPromptCacheMode.Auto
 );
+
+/// <summary>How a request uses the provider's prompt cache.</summary>
+public enum LlmPromptCacheMode
+{
+    /// <summary>Cache when the conversation is likely to be continued; not for a one-off prompt (a cache write costs more than a plain call).</summary>
+    Auto,
+
+    /// <summary>Never mark anything for the cache.</summary>
+    Off,
+
+    /// <summary>Always mark the stable start of the request.</summary>
+    On,
+}
 
 /// <summary>
 /// A single chat message in a conversation sent to the LLM.
@@ -183,7 +202,9 @@ public sealed record LlmToolCall(string Id, string Name, string ArgumentsJson)
 /// <summary>
 /// Response returned by a conversation-oriented LLM request.
 /// </summary>
-public sealed record LlmConversationResponse(string? Content, int TokensUsed, string FinishReason, IReadOnlyList<LlmToolCall> ToolCalls, string? ReasoningContent = null, bool NeedsHumanInput = false, bool IsSelectionQuestion = false)
+/// <param name="CachedInputTokens">Input tokens the provider served from its prompt cache (included in <paramref name="TokensUsed"/>).</param>
+/// <param name="CacheWriteTokens">Input tokens written to the provider's prompt cache by this call (included in <paramref name="TokensUsed"/>).</param>
+public sealed record LlmConversationResponse(string? Content, int TokensUsed, string FinishReason, IReadOnlyList<LlmToolCall> ToolCalls, string? ReasoningContent = null, bool NeedsHumanInput = false, bool IsSelectionQuestion = false, int CachedInputTokens = 0, int CacheWriteTokens = 0)
 {
     public override string ToString()
     {

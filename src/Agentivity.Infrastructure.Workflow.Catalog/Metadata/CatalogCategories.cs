@@ -55,6 +55,7 @@ public static class CatalogCategories
         Register("ai.tools.scrappers", "Scrappers", "AI tools for provider-based web scraping", NodeIconDef.Material(0xe894, "#5b55e8"), "ai.tools");
         Register("ai.tools.search", "Search", "AI tools for provider-based web search", NodeIconDef.Material(0xe8b6, "#5b55e8"), "ai.tools");
         Register("ai.tools.utils", "Utils", "Small AI utility tools", NodeIconDef.Material(0xe8d5, "#5b55e8"), "ai.tools");
+        Register("ai.tools.communication", "Communication", "AI tools that read and send messages (e-mail)", NodeIconDef.Material(0xe0be, "#5b55e8"), "ai.tools");
         Register("ai.interactions", "Interactions", "Human-in-the-loop channels and interaction resources", NodeIconDef.Material(0xe7f4, "#5b55e8"), "ai");
 
         // SEO

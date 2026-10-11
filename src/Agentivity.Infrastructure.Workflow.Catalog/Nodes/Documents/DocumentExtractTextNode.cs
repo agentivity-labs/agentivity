@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Documents;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Documents.Models;
@@ -34,6 +35,7 @@ public sealed class DocumentExtractTextNode : ControlFlowNode
         _dispatcher = DefaultDocumentExtraction.CreateDispatcher();
 
         DefineMetadata("Extract Document Text", "Reads a PDF, Word (.docx), or plain-text/Markdown file — an uploaded file (file_id) or raw bytes (file_base64) — and returns its content as Markdown, ready for an LLM prompt.", "documents");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
@@ -46,19 +48,22 @@ public sealed class DocumentExtractTextNode : ControlFlowNode
             "file_id",
             ArgumentType.Text,
             "Reference of an uploaded file (the fileId a SourceInput upload returns) — use this OR file_base64. The file name and format come from the upload",
-            ui: new ArgumentUiMetadata { Group = "Document", Order = 5 }
+            ui: new ArgumentUiMetadata { Group = "Document", Order = 5 },
+            required: true
         );
         DefineInput(
             "file_base64",
             ArgumentType.Text,
             "The document's raw bytes, base64-encoded — use this OR file_id",
-            ui: new ArgumentUiMetadata { Group = "Document", Order = 10, Multiline = true, Rows = 4 }
+            ui: new ArgumentUiMetadata { Group = "Document", Order = 10, Multiline = true, Rows = 4 },
+            required: true
         );
         DefineInput(
             "file_name",
             ArgumentType.Text,
             "Original file name, including its extension (e.g. 'resume.pdf') — the extension is what selects PDF, Word, or plain-text reading. Required with file_base64; taken from the upload when file_id is given",
-            ui: new ArgumentUiMetadata { Group = "Document", Order = 20 }
+            ui: new ArgumentUiMetadata { Group = "Document", Order = 20 },
+            required: true
         );
 
         DefineOutput("markdown", ArgumentType.Text, "The document's content as Markdown — headings, lists and emphasis preserved where the source format carries them");

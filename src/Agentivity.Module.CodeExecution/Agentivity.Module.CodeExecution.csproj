@@ -45,4 +45,5 @@
           DestinationFolder="$(RunnerOutputDirectory)%(RecursiveDir)"
           SkipUnchangedFiles="true" />
   </Target>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets')" />
 </Project>

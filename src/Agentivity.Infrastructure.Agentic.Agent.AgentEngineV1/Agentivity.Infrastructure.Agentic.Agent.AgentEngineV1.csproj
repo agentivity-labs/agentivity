@@ -23,6 +23,14 @@
     <ProjectReference Include="..\Agentivity.Infrastructure.Graph\Agentivity.Infrastructure.Graph.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
   </ItemGroup>
+  <PropertyGroup>
+    <!-- Where the module folder is, known at evaluation time so that a Clean can find what the build copied. Overridable from the CLI. -->
+    <ModulesDir Condition="'$(ModulesDir)' == ''">$(MSBuildProjectDirectory)\..\..\_modules\</ModulesDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The mode runtimes copied next to the engine (see the copy target below). -->
+    <ModuleExtraOutput Include="$(ModulesDir)Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.*.dll;$(ModulesDir)Agentivity.Infrastructure.Agentic.Agent.ModeRuntime.*.pdb" />
+  </ItemGroup>
   <Target Name="CopyModuleOutputsToModulesDirectory" AfterTargets="Build">
     <PropertyGroup>
       <!-- Overridable from the CLI (like ModuleOutputDirectory in the other module csprojs),
@@ -43,4 +51,5 @@
     <MakeDir Directories="$(ModulesDir)" />
     <Copy SourceFiles="@(ModuleOutputFiles)" DestinationFolder="$(ModulesDir)" SkipUnchangedFiles="true" />
   </Target>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets')" />
 </Project>

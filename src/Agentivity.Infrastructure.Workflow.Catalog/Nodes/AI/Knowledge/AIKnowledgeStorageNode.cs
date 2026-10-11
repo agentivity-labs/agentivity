@@ -1,4 +1,5 @@
 ﻿using Agentivity.Domain.Credentials;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Storage;
@@ -28,12 +29,13 @@ public sealed class AIKnowledgeStorageNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (Storage)", "Loads a knowledge corpus from an existing storage resource and exposes normalized documents for AI consumers.", "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceInputPort("storage", "Storage", ResourcePortCategory.Storage, "Storage resource providing the knowledge documents.");
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
-        DefineInput("pattern", ArgumentType.Text, "Storage key pattern used to select documents.", "*", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 10 });
+        DefineInput("pattern", ArgumentType.Text, "Storage key pattern used to select documents.", "*", ui: new ArgumentUiMetadata { Group = "Knowledge", Order = 10 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("storage_read_node"));
     }

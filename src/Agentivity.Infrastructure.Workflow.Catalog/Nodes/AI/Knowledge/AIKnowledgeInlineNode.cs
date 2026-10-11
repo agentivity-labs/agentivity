@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Workflows;
@@ -17,6 +18,7 @@ public sealed class AIKnowledgeInlineNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (Inline)", "Provides an inline knowledge corpus as normalized documents for AI consumers.", "ai.knowledge");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -33,7 +35,8 @@ public sealed class AIKnowledgeInlineNode : ResourceNode, IKnowledgeSource
                 Multiline = true,
                 Rows = 10,
                 Format = "json",
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("aimemory"));

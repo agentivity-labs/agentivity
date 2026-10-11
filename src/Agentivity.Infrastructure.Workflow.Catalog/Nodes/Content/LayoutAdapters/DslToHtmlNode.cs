@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Agentivity.Domain.Workflow;
+using System.Text;
 using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.Layout;
@@ -17,6 +18,7 @@ public sealed class DslToHtmlNode : DslAdapterNode
         : base("content.layoutadapters.dsl_to_html")
     {
         DefineMetadata("DSL to HTML", "Converts DSL content to semantic HTML with optional CSS framework support", "content.layoutadapters");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -36,7 +38,8 @@ public sealed class DslToHtmlNode : DslAdapterNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
         DefineInput(
@@ -49,7 +52,8 @@ public sealed class DslToHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Rendering",
                 Order = 20,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -62,7 +66,8 @@ public sealed class DslToHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Rendering",
                 Order = 30,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -74,7 +79,8 @@ public sealed class DslToHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Styling",
                 Order = 40,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -87,7 +93,8 @@ public sealed class DslToHtmlNode : DslAdapterNode
                 Tab = "Advanced",
                 Group = "Output",
                 Order = 50,
-            }
+            },
+            required: false
         );
 
         // Output

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using System.Xml.Linq;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
@@ -30,12 +31,13 @@ public sealed class AIKnowledgeSitemapNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (Sitemap)", "Loads a knowledge corpus from a sitemap and scrapes the listed pages into normalized documents.", "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceInputPort("scraper", "Web Scraper", ResourcePortCategory.WebScraper, "Optional web scraper resource used to load sitemap page URLs.", isRequired: false);
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
-        DefineInput("sitemap_url", ArgumentType.Text, "Sitemap URL to expand.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineInput("sitemap_url", ArgumentType.Text, "Sitemap URL to expand.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineInput(
             "headers_json",
             ArgumentType.Text,
@@ -48,7 +50,8 @@ public sealed class AIKnowledgeSitemapNode : ResourceNode, IKnowledgeSource
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_urls",
@@ -61,7 +64,8 @@ public sealed class AIKnowledgeSitemapNode : ResourceNode, IKnowledgeSource
                 Order = 30,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "timeout_seconds",
@@ -74,7 +78,8 @@ public sealed class AIKnowledgeSitemapNode : ResourceNode, IKnowledgeSource
                 Order = 40,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_content_length",
@@ -87,10 +92,11 @@ public sealed class AIKnowledgeSitemapNode : ResourceNode, IKnowledgeSource
                 Order = 50,
                 Min = 256,
                 Step = 256,
-            }
+            },
+            required: false
         );
-        DefineInput("extract_metadata", ArgumentType.Boolean, "Extract page metadata when supported by the scraper.", true, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 60 });
-        DefineInput("render_javascript", ArgumentType.Boolean, "Enable JavaScript rendering when supported by the connected scraper.", false, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 70 });
+        DefineInput("extract_metadata", ArgumentType.Boolean, "Extract page metadata when supported by the scraper.", true, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 60 }, required: false);
+        DefineInput("render_javascript", ArgumentType.Boolean, "Enable JavaScript rendering when supported by the connected scraper.", false, ui: new ArgumentUiMetadata { Group = "Scraping", Order = 70 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("web_scrapper"));
     }

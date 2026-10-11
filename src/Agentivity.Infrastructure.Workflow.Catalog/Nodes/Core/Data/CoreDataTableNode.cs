@@ -1,4 +1,5 @@
 using Agentivity.Domain.DataTables;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -17,12 +18,13 @@ public sealed class CoreDataTableNode : ToolNode
         : base("core.datatable")
     {
         DefineMetadata("DataTable", "Provides CRUD operations on a shared Data Table asset.", "core.data");
+        DefineEffects(NodeEffects.WritesInternal);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
         DefineResourceInputPort("data_table", "Data Table", ResourcePortCategory.DataTable, "The shared Data Table asset to operate on", isRequired: true);
 
-        DefineChoice("operation", [("insert", "Insert"), ("update", "Update"), ("delete", "Delete"), ("select", "Select"), ("find", "Find")], "Operation to perform", "select", ui: new ArgumentUiMetadata { Group = "Table", Order = 20 });
+        DefineChoice("operation", [("insert", "Insert"), ("update", "Update"), ("delete", "Delete"), ("select", "Select"), ("find", "Find")], "Operation to perform", "select", ui: new ArgumentUiMetadata { Group = "Table", Order = 20 }, required: true);
         DefineInput(
             "data",
             ArgumentType.Text,
@@ -34,7 +36,8 @@ public sealed class CoreDataTableNode : ToolNode
                 Multiline = true,
                 Rows = 10,
                 Format = "json",
-            }
+            },
+            required: false
         );
         DefineInput(
             "id",
@@ -46,10 +49,11 @@ public sealed class CoreDataTableNode : ToolNode
                 Order = 40,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: true
         );
-        DefineInput("where_column", ArgumentType.Text, "Column name for where clause (select)", ui: new ArgumentUiMetadata { Group = "Selection", Order = 50 });
-        DefineInput("where_value", ArgumentType.Text, "Value for where clause (select)", ui: new ArgumentUiMetadata { Group = "Selection", Order = 60 });
+        DefineInput("where_column", ArgumentType.Text, "Column name for where clause (select)", ui: new ArgumentUiMetadata { Group = "Selection", Order = 50 }, required: false);
+        DefineInput("where_value", ArgumentType.Text, "Value for where clause (select)", ui: new ArgumentUiMetadata { Group = "Selection", Order = 60 }, required: false);
 
         DefineOutput("row", ArgumentType.Text, "Affected row (insert/update/find)");
         DefineOutput("rows", ArgumentType.Text, "Selected rows (select)");

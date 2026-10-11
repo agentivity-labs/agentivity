@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Agentivity.Domain.Workflow;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Agentivity.Infrastructure.Arguments;
@@ -18,6 +19,7 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
         : base("content.layoutadapters.dsl_to_email_html")
     {
         DefineMetadata("DSL to Email HTML", "Converts DSL content to email-compatible HTML with table layout and inline styles", "content.layoutadapters");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -37,7 +39,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
         DefineInput(
@@ -50,7 +53,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Layout",
                 Order = 20,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -63,7 +67,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Styling",
                 Order = 30,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -76,7 +81,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Styling",
                 Order = 40,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -89,7 +95,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Styling",
                 Order = 50,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -102,7 +109,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Tab = "Settings",
                 Group = "Styling",
                 Order = 60,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -115,7 +123,8 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
                 Tab = "Advanced",
                 Group = "Output",
                 Order = 70,
-            }
+            },
+            required: false
         );
 
         // Output

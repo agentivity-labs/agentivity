@@ -1,4 +1,5 @@
 using Agentivity.Domain.Arguments;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -30,27 +31,30 @@ public sealed class TextToSpeechNode : ToolNode
         _service = new TextToSpeechService(credentialsService, httpClientFactory, logger ?? throw new ArgumentNullException(nameof(logger)));
 
         DefineMetadata("Text to Speech", "Synthesizes speech audio from text using the OpenAI TTS API.", "ai.media");
+        DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
 
-        DefineCredentialsInput("credentials", "openai", "OpenAI credentials (TTS uses the same account as chat models)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", "openai", "OpenAI credentials (TTS uses the same account as chat models)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
 
         DefineInput(
             "text",
             ArgumentType.Text,
             "Text to synthesize",
-            ui: new ArgumentUiMetadata { Group = "Speech", Order = 20, Multiline = true, Rows = 5 }
+            ui: new ArgumentUiMetadata { Group = "Speech", Order = 20, Multiline = true, Rows = 5 },
+            required: true
         );
         DefineChoice(
             "voice",
             [("alloy", "Alloy"), ("echo", "Echo"), ("fable", "Fable"), ("onyx", "Onyx"), ("nova", "Nova"), ("shimmer", "Shimmer")],
             "Voice",
             "alloy",
-            ui: new ArgumentUiMetadata { Group = "Speech", Order = 30 }
+            ui: new ArgumentUiMetadata { Group = "Speech", Order = 30 },
+            required: false
         );
-        DefineChoice("model", [("tts-1", "tts-1 (Fast)"), ("tts-1-hd", "tts-1-hd (Higher Quality)")], "Model", "tts-1", ui: new ArgumentUiMetadata { Group = "Speech", Order = 40 });
-        DefineChoice("response_format", [("mp3", "MP3"), ("opus", "Opus"), ("aac", "AAC"), ("flac", "FLAC"), ("wav", "WAV")], "Audio format", "mp3", ui: new ArgumentUiMetadata { Group = "Speech", Order = 50 });
+        DefineChoice("model", [("tts-1", "tts-1 (Fast)"), ("tts-1-hd", "tts-1-hd (Higher Quality)")], "Model", "tts-1", ui: new ArgumentUiMetadata { Group = "Speech", Order = 40 }, required: false);
+        DefineChoice("response_format", [("mp3", "MP3"), ("opus", "Opus"), ("aac", "AAC"), ("flac", "FLAC"), ("wav", "WAV")], "Audio format", "mp3", ui: new ArgumentUiMetadata { Group = "Speech", Order = 50 }, required: false);
 
         DefineOutput("audio", ArgumentType.AudioRef, "Synthesized audio reference");
 

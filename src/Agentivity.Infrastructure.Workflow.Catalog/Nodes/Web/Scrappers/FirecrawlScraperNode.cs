@@ -19,7 +19,7 @@ public sealed class FirecrawlScraperNode : WebScraperNodeBase
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Web Scraper", ResourcePortCategory.WebScraper, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", "firecrawl", "Firecrawl API credentials", ui: new InputUiMetadata { Group = "Connection", Order = 10 });
+        DefineCredentialsInput("credentials", "firecrawl", "Firecrawl API credentials", ui: new InputUiMetadata { Group = "Connection", Order = 10 }, required: true);
 
         DefineIcon(NodeIcon.Embedded("firecrawl"));
     }

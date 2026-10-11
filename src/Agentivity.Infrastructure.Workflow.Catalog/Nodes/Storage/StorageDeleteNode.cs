@@ -1,4 +1,5 @@
 ﻿using Agentivity.Domain.Credentials;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Storage;
 using Agentivity.Infrastructure.Storage.Providers;
@@ -30,10 +31,11 @@ public sealed class StorageDeleteNode : ToolNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Storage Delete", "Deletes a value from any storage provider", "storage");
+        DefineEffects(NodeEffects.WritesInternal | NodeEffects.WritesExternal);
 
         DefineResourceInputPort("storage", "Storage", ResourcePortCategory.Storage, "Storage resource");
 
-        DefineInput("key", ArgumentType.Text, "Storage key to delete", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 });
+        DefineInput("key", ArgumentType.Text, "Storage key to delete", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 }, required: true);
 
         DefineOutput("success", ArgumentType.Boolean, "Operation success");
         DefineOutput("key", ArgumentType.Text, "The storage key deleted");

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Agentivity.Infrastructure.AgUi;
 
 namespace Agentivity.Host.AgUi;
@@ -29,7 +30,7 @@ public static class AgUiWidgetBundleEndpoints
                     if (bundle is null)
                         return Results.NotFound(new { error = $"Bundle '{bundleId}' is not registered." });
 
-                    return Results.Ok(new AgUiBundleDetailResponse(bundle.Id, bundle.DisplayName, bundle.Version, bundle.Description, bundle.Widgets.Select(w => new AgUiWidgetDescriptorResponse(w.TypeKey, w.Category, w.Description)).ToList()));
+                    return Results.Ok(new AgUiBundleDetailResponse(bundle.Id, bundle.DisplayName, bundle.Version, bundle.Description, bundle.Widgets.Select(w => new AgUiWidgetDescriptorResponse(w.TypeKey, w.Category, w.Description, ParseSchema(w.ParametersSchema), w.RequiresHumanResponse)).ToList()));
                 }
             )
             .WithName("GetAgUiBundleWidgets")
@@ -39,10 +40,28 @@ public static class AgUiWidgetBundleEndpoints
 
         return routes;
     }
+
+    /// <summary>The widget's parameter schema as a JSON object, so a client reads it directly instead of unescaping a string; null when it is missing or not valid JSON.</summary>
+    private static JsonElement? ParseSchema(string? schema)
+    {
+        if (string.IsNullOrWhiteSpace(schema))
+            return null;
+        try
+        {
+            using var document = JsonDocument.Parse(schema);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 }
 
 public sealed record AgUiBundleSummaryResponse(string Id, string DisplayName, string Version, string Description, int WidgetCount);
 
 public sealed record AgUiBundleDetailResponse(string Id, string DisplayName, string Version, string Description, IReadOnlyList<AgUiWidgetDescriptorResponse> Widgets);
 
-public sealed record AgUiWidgetDescriptorResponse(string TypeKey, string Category, string Description);
+/// <param name="ParametersSchema">The JSON schema of the widget's data, as an object.</param>
+/// <param name="RequiresHumanResponse">True when the widget waits for the person to answer before the run goes on.</param>
+public sealed record AgUiWidgetDescriptorResponse(string TypeKey, string Category, string Description, JsonElement? ParametersSchema = null, bool RequiresHumanResponse = false);

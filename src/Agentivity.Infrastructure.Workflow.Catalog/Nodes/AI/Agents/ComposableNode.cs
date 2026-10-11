@@ -1,5 +1,6 @@
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Execution.Executable;
 using Agentivity.Infrastructure.Execution.Runs;
@@ -44,10 +45,13 @@ public class ComposableNode : BaseNode
         _eventBus = eventBus;
 
         DefineMetadata("Composable", "Executes an agent, a team, or a workflow from the library. Select an entity by ID — the engine is resolved automatically at runtime.", "ai.agents");
+        DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1, color: "#FF607D8B");
         DefineOutputPort("out", "Out", "Composable response");
         DefineOutputPort("error", "Error", "Execution error if any");
+        DefineOutput("output", ArgumentType.Text, "The final answer of the entity.");
+        DefineDynamicOutputs("Any named output that the entity itself declares is added next to this one, under its own name.");
 
         DefineInput(
             "entity_id",
@@ -58,7 +62,8 @@ public class ComposableNode : BaseNode
                 Tab = "General",
                 Group = "Composable",
                 Order = 5,
-            }
+            },
+            required: true
         );
 
         DefineInput(
@@ -70,7 +75,8 @@ public class ComposableNode : BaseNode
                 Tab = "General",
                 Group = "Composable",
                 Order = 10,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -84,7 +90,8 @@ public class ComposableNode : BaseNode
                 Order = 15,
                 Multiline = true,
                 Rows = 6,
-            }
+            },
+            required: true
         );
 
         DefineIcon(NodeIcon.Embedded("aillm"));

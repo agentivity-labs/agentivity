@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Agentic.Agent;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Agentic.Agent;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
@@ -13,6 +14,7 @@ public sealed class AgentGuardrailNode : ResourceNode, IAgentGuardrailSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentGuardrail);
 
         DefineMetadata("AI Agent Guardrail", "Produces a simple keyword-based guardrail that can warn, rewrite, or block selected AI-agent runtime surfaces.", "ai.guardrails");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
@@ -39,15 +41,16 @@ public sealed class AgentGuardrailNode : ResourceNode, IAgentGuardrailSource
                 ("final_response", "Final Response"),
             ],
             "Guardrail stage",
-            "final_response"
+            "final_response",
+            required: false
         );
-        DefineChoice("action", [("warn", "Warn"), ("block", "Block"), ("rewrite", "Rewrite")], "Guardrail action", "warn");
-        DefineInput("priority", ArgumentType.Number, "Evaluation priority (lower first)", 1000);
-        DefineInput("guardrail_id", ArgumentType.Text, "Optional guardrail identifier", "");
-        DefineInput("match_text", ArgumentType.Text, "Literal text to detect", "");
-        DefineInput("message", ArgumentType.Text, "Guardrail message", "");
-        DefineInput("replacement_text", ArgumentType.Text, "Replacement text used when action is rewrite", "");
-        DefineInput("ignore_case", ArgumentType.Boolean, "Ignore case while matching", true);
+        DefineChoice("action", [("warn", "Warn"), ("block", "Block"), ("rewrite", "Rewrite")], "Guardrail action", "warn", required: false);
+        DefineInput("priority", ArgumentType.Number, "Evaluation priority (lower first)", 1000, required: false);
+        DefineInput("guardrail_id", ArgumentType.Text, "Optional guardrail identifier", "", required: false);
+        DefineInput("match_text", ArgumentType.Text, "Literal text to detect", "", required: true);
+        DefineInput("message", ArgumentType.Text, "Guardrail message", "", required: false);
+        DefineInput("replacement_text", ArgumentType.Text, "Replacement text used when action is rewrite", "", required: false);
+        DefineInput("ignore_case", ArgumentType.Boolean, "Ignore case while matching", true, required: false);
 
         DefineIcon(NodeIcon.Embedded("aillm"));
     }

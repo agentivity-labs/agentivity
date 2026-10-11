@@ -23,6 +23,8 @@ public abstract class AgenticModeRuntimeBase : IAgenticModeRuntime
 {
     public string ModeId { get; }
     public string DisplayName { get; }
+    public virtual string? Description => null;
+    public virtual string? WhenToUse => null;
     public AgenticModeCapabilities Capabilities { get; }
     public AgentPolicySet DefaultPolicies { get; }
     public virtual IReadOnlyList<RuntimePolicyDescriptor> PolicyLibrary { get; } = [];

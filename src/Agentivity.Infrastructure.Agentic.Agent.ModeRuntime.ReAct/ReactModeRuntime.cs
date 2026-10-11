@@ -22,6 +22,10 @@ public sealed class ReactModeRuntime()
 {
     public const string ModeIdValue = "react";
 
+    public override string? Description => "Thinks, acts with a tool, looks at the result, and repeats until it can answer.";
+
+    public override string? WhenToUse => "Open-ended tasks where the next step depends on what was just found, such as research, investigation or troubleshooting. Slower and more costly than tools.";
+
     public override async ValueTask<AgentRunResult> ExecuteAsync(AgentConfig config, AgentRunState state, AgentRunServices services, AgentHost agentHost, CancellationToken cancellationToken)
     {
         var manifest = BuildManifest(agentHost, config, state, services, state.ResumeState);

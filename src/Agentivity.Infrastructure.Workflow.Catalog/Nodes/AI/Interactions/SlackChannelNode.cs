@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Communication;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -30,17 +31,18 @@ public sealed class SlackChannelNode : ResourceNode, IInteractionChannel, IHuman
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
         DefineMetadata("Slack Channel", "Slack workspace channel for delivering interaction requests and collecting responses.", "ai.interactions");
+        DefineEffects(NodeEffects.SendsMessage);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Channel", ResourcePortCategory.InteractionChannel, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", "slack", "Slack API credentials (Bot token)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
-        DefineInput("default_channel", ArgumentType.Text, "Default Slack channel ID for HIL interactions", ui: new ArgumentUiMetadata { Group = "Channel", Order = 30 });
-        DefineInput("mention_users", ArgumentType.Text, "Users to mention (@user1, @user2)", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 40 });
-        DefineInput("allowed_user_ids", ArgumentType.Text, "Optional Slack user IDs allowed to answer (comma-separated)", "", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 50 });
-        DefineInput("send_initial_message", ArgumentType.Boolean, "Send the initial HIL prompt to Slack before waiting for a reply", true, ui: new ArgumentUiMetadata { Group = "Settings", Order = 60 });
-        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 60, ui: new ArgumentUiMetadata { Group = "Settings", Order = 70 });
+        DefineCredentialsInput("credentials", "slack", "Slack API credentials (Bot token)", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
+        DefineInput("default_channel", ArgumentType.Text, "Default Slack channel ID for HIL interactions", ui: new ArgumentUiMetadata { Group = "Channel", Order = 30 }, required: true);
+        DefineInput("mention_users", ArgumentType.Text, "Users to mention (@user1, @user2)", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 40 }, required: false);
+        DefineInput("allowed_user_ids", ArgumentType.Text, "Optional Slack user IDs allowed to answer (comma-separated)", "", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 50 }, required: false);
+        DefineInput("send_initial_message", ArgumentType.Boolean, "Send the initial HIL prompt to Slack before waiting for a reply", true, ui: new ArgumentUiMetadata { Group = "Settings", Order = 60 }, required: false);
+        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 60, ui: new ArgumentUiMetadata { Group = "Settings", Order = 70 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("slack_channel"));
     }

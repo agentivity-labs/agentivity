@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Agentivity.Domain.Workflow;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Agentivity.Domain.Common;
@@ -134,6 +135,7 @@ public sealed class ContentGeneratorNode : BaseAINode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Content Generator", "Generates structured DSL content from diverse sources with LLM-powered content generation and deterministic layout.", "content");
+        DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -156,7 +158,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Order = 10,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: true
         );
 
         // === DATA SOURCES (all optional, any format) ===
@@ -172,7 +175,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Multiline = true,
                 Rows = 10,
                 Format = "json",
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -186,7 +190,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Order = 30,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -200,7 +205,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Order = 40,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: false
         );
 
         // === CONTENT PARAMETERS ===
@@ -214,7 +220,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Tab = "Settings",
                 Group = "Writing",
                 Order = 50,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -229,7 +236,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Order = 60,
                 Min = 100,
                 Step = 50,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -241,7 +249,8 @@ public sealed class ContentGeneratorNode : BaseAINode
                 Tab = "Settings",
                 Group = "Structure",
                 Order = 70,
-            }
+            },
+            required: false
         );
 
         // === OUTPUT ===

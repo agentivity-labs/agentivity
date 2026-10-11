@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Interactions.Forms;
 using Agentivity.Infrastructure.Workflows.Interactions;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -24,12 +25,13 @@ public sealed class FormsChannelNode : ResourceNode, IInteractionChannel, IHuman
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
         DefineMetadata("Forms Channel", "Web form-based interaction channel for collecting user input.", "ai.interactions");
+        DefineEffects(NodeEffects.SendsMessage);
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Channel", ResourcePortCategory.InteractionChannel, maxConnections: -1);
 
-        DefineInput("respondent", ArgumentType.Text, "Name or email of the person responding (for traceability in logs)", ui: new ArgumentUiMetadata { Group = "Channel", Order = 20 });
-        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 });
+        DefineInput("respondent", ArgumentType.Text, "Name or email of the person responding (for traceability in logs)", ui: new ArgumentUiMetadata { Group = "Channel", Order = 20 }, required: false);
+        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 0, ui: new ArgumentUiMetadata { Group = "Settings", Order = 30 }, required: false);
 
         DefineIcon(NodeIcon.Material(0xf1c1, "#5b55e8"));
     }

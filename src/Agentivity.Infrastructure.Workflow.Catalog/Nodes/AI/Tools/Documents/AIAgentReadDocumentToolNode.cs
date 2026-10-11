@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Core.Llm;
@@ -52,6 +53,7 @@ public sealed class AIAgentReadDocumentToolNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("AI Agent Read Document Tool", "Lets an AI agent read a document the user uploaded in the chat (PDF, Word, plain text) as Markdown.", "ai.tools.documents");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();

@@ -1,0 +1,4009 @@
+{
+  "id": "647614d0-3dea-4557-9bde-a481eb7681dc",
+  "name": "Assistant Marketing LinkedIn pour Agentivity",
+  "status": "open",
+  "createdAt": "2026-10-11T17:40:53.9203134+00:00",
+  "updatedAt": "2026-10-11T17:49:51.4814606+00:00",
+  "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+  "folderId": null,
+  "workflowFolderId": null,
+  "destinationPath": null,
+  "agentModel": {
+    "connectionId": "cred_8357abb614c14d80bca6cba26883a763",
+    "kind": "anthropic",
+    "name": "LLM API - Anthropic"
+  },
+  "registryVersion": "d48b126e5a28a763",
+  "revision": 11,
+  "entities": [
+    {
+      "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+      "kind": "workflow",
+      "name": "Analyse Agentivity",
+      "state": "created",
+      "draft": {
+        "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+        "name": "Analyse Agentivity",
+        "role": "",
+        "entryNode": "scrape_site",
+        "nodes": [
+          {
+            "id": "scrape_site",
+            "nodeType": "web.scrape",
+            "position": {
+              "x": 120,
+              "y": 140
+            },
+            "inputs": {
+              "url": "https://agentivity.io"
+            },
+            "inputsMetadata": {},
+            "metadata": {}
+          },
+          {
+            "id": "analyze_platform",
+            "nodeType": "ai.node",
+            "position": {
+              "x": 400,
+              "y": 140
+            },
+            "inputs": {
+              "agent_mode": "conversational",
+              "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+              "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+            },
+            "inputsMetadata": {},
+            "metadata": {}
+          },
+          {
+            "id": "model",
+            "nodeType": "ai.llm.model.anthropic",
+            "position": {
+              "x": 680,
+              "y": 140
+            },
+            "inputs": {
+              "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+            },
+            "inputsMetadata": {},
+            "metadata": {}
+          }
+        ],
+        "connections": [
+          {
+            "from": "model",
+            "fromPort": "resource",
+            "to": "analyze_platform",
+            "toPort": "llm_model"
+          },
+          {
+            "from": "scrape_site",
+            "fromPort": "scraped",
+            "to": "analyze_platform",
+            "toPort": "in"
+          }
+        ],
+        "metadata": {}
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+      "kind": "agent",
+      "name": "Strategiste Marketing",
+      "state": "created",
+      "draft": {
+        "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+        "name": "Strategiste Marketing",
+        "graph": {
+          "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+          "name": "Strategiste Marketing",
+          "role": "",
+          "entryNode": "strategist",
+          "nodes": [
+            {
+              "id": "strategist",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "plan_and_execute",
+                "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "model_strategist",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "model_strategist",
+              "fromPort": "resource",
+              "to": "strategist",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+      "kind": "agent",
+      "name": "Redacteur Contenu",
+      "state": "created",
+      "draft": {
+        "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+        "name": "Redacteur Contenu",
+        "graph": {
+          "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+          "name": "Redacteur Contenu",
+          "role": "",
+          "entryNode": "writer",
+          "nodes": [
+            {
+              "id": "writer",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "tools",
+                "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "model_writer",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "model_writer",
+              "fromPort": "resource",
+              "to": "writer",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+      "kind": "team",
+      "name": "Marketing LinkedIn Agentivity",
+      "state": "created",
+      "draft": {
+        "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+        "name": "Marketing LinkedIn Agentivity",
+        "orchestratorId": "manager-led",
+        "members": [
+          {
+            "topologyPositionId": "strategiste_marketing",
+            "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "memberType": "Agent",
+            "displayName": "Strategiste Marketing",
+            "group": "Strategie"
+          },
+          {
+            "topologyPositionId": "redacteur_contenu",
+            "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "memberType": "Agent",
+            "displayName": "Redacteur Contenu",
+            "group": "Contenu"
+          },
+          {
+            "topologyPositionId": "community_manager",
+            "memberEntityId": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+            "memberType": "Agent",
+            "displayName": "Community Manager",
+            "group": "Engagement"
+          },
+          {
+            "topologyPositionId": "analyste_engagement",
+            "memberEntityId": "2bc64dc1-7b0c-4e11-9ab2-4e4dfe31fc9b",
+            "memberType": "Agent",
+            "displayName": "Analyste Engagement",
+            "group": "Analyse"
+          }
+        ],
+        "connections": [],
+        "managerAgentId": "strategiste_marketing"
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+      "kind": "workflow",
+      "name": "Solution Marketing LinkedIn Agentivity",
+      "state": "created",
+      "draft": {
+        "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+        "name": "Solution Marketing LinkedIn Agentivity",
+        "role": "",
+        "entryNode": "analyze",
+        "nodes": [
+          {
+            "id": "analyze",
+            "nodeType": "workflow.run",
+            "position": {
+              "x": 120,
+              "y": 140
+            },
+            "inputs": {
+              "workflow": "Analyse Agentivity",
+              "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+            },
+            "inputsMetadata": {},
+            "metadata": {}
+          },
+          {
+            "id": "marketing_team",
+            "nodeType": "team_node",
+            "position": {
+              "x": 400,
+              "y": 140
+            },
+            "inputs": {
+              "entity_id": "Marketing LinkedIn Agentivity",
+              "entity_kind": "team",
+              "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+            },
+            "inputsMetadata": {},
+            "metadata": {}
+          }
+        ],
+        "connections": [
+          {
+            "from": "analyze",
+            "fromPort": "out",
+            "to": "marketing_team",
+            "toPort": "in"
+          }
+        ],
+        "metadata": {}
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+      "kind": "agent",
+      "name": "Analyseur Plateforme",
+      "state": "created",
+      "draft": {
+        "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+        "name": "Analyseur Plateforme",
+        "graph": {
+          "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+          "name": "Analyseur Plateforme",
+          "role": "",
+          "entryNode": "analyzer",
+          "nodes": [
+            {
+              "id": "analyzer",
+              "nodeType": "composable_node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "entity_id": "Analyse Agentivity",
+                "entity_kind": "workflow",
+                "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+      "kind": "team",
+      "name": "Agentivity Marketing Hub",
+      "state": "created",
+      "draft": {
+        "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+        "name": "Agentivity Marketing Hub",
+        "orchestratorId": "sequential",
+        "members": [
+          {
+            "topologyPositionId": "analyseur_plateforme",
+            "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "memberType": "Agent",
+            "displayName": "Analyseur Plateforme",
+            "group": "Analyse"
+          },
+          {
+            "topologyPositionId": "marketing_linkedin_agentivity",
+            "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "memberType": "Team",
+            "displayName": "Marketing LinkedIn Agentivity",
+            "group": "Marketing"
+          }
+        ],
+        "connections": [
+          {
+            "fromTopologyPositionId": "analyseur_plateforme",
+            "toTopologyPositionId": "marketing_linkedin_agentivity",
+            "types": [
+              "Message"
+            ]
+          }
+        ]
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+      "kind": "agent",
+      "name": "Community Manager",
+      "state": "created",
+      "draft": {
+        "id": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+        "name": "Community Manager",
+        "graph": {
+          "id": "990e288b-9598-4dba-a64f-682911bb4d33",
+          "name": "Community Manager",
+          "role": "",
+          "entryNode": "community_manager",
+          "nodes": [
+            {
+              "id": "community_manager",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "conversational",
+                "system_prompt": "Tu es un Community Manager expert pour LinkedIn. Tu suis les conversations autour d\u0027Agentivity, identifies les commentaires pertinents, et proposes des r\u00E9ponses engageantes qui renforcent la communaut\u00E9. Tu dois \u00EAtre authentique, utile et cr\u00E9er de la valeur dans chaque interaction.",
+                "prompt": "{{input}}"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "model",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                "model": "claude-3-5-sonnet-20241022"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "model",
+              "fromPort": "resource",
+              "to": "community_manager",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "2bc64dc1-7b0c-4e11-9ab2-4e4dfe31fc9b",
+      "kind": "agent",
+      "name": "Analyste Engagement",
+      "state": "created",
+      "draft": {
+        "id": "2bc64dc1-7b0c-4e11-9ab2-4e4dfe31fc9b",
+        "name": "Analyste Engagement",
+        "graph": {
+          "id": "9ce721c8-dfe2-4e89-92ce-409279c72a61",
+          "name": "Analyste Engagement",
+          "role": "",
+          "entryNode": "analyste_engagement",
+          "nodes": [
+            {
+              "id": "analyste_engagement",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "conversational",
+                "system_prompt": "Tu es un Analyste Engagement expert pour LinkedIn. Tu analyses la performance des posts Agentivity : engagement (likes, commentaires, partages), reach, sentiment de la communaut\u00E9. Tu identifies les tendances, ce qui fonctionne, ce qui ne fonctionne pas, et proposes des ajustements strat\u00E9giques pour am\u00E9liorer l\u0027impact.",
+                "prompt": "{{input}}"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "model",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                "model": "claude-3-5-sonnet-20241022"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "model",
+              "fromPort": "resource",
+              "to": "analyste_engagement",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    }
+  ],
+  "journal": [
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220313+00:00",
+      "op": "create_entity",
+      "message": "Created workflow \u0027Analyse Agentivity\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220317+00:00",
+      "op": "add_node",
+      "message": "Added web.scrape as \u0027scrape_site\u0027 to \u0027Analyse Agentivity\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220318+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027analyze_platform\u0027 to \u0027Analyse Agentivity\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220318+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027model\u0027 and connected it to \u0027analyze_platform\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220319+00:00",
+      "op": "connect",
+      "message": "Connected \u0027scrape_site\u0027 (scraped) to \u0027analyze_platform\u0027 (in)."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220321+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:42:36.6220322+00:00",
+      "op": "set_root",
+      "message": "\u0027Analyse Agentivity\u0027 is now the main workflow of the solution."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837882+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Strategiste Marketing\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.583789+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027strategist\u0027 to \u0027Strategiste Marketing\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837892+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027model_strategist\u0027 and connected it to \u0027strategist\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837893+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837893+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Redacteur Contenu\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837894+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027writer\u0027 to \u0027Redacteur Contenu\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837895+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027model_writer\u0027 and connected it to \u0027writer\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837895+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837896+00:00",
+      "op": "create_entity",
+      "message": "Created team \u0027Marketing LinkedIn Agentivity\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837896+00:00",
+      "op": "set_orchestrator",
+      "message": "\u0027Marketing LinkedIn Agentivity\u0027 now works as \u0027Manager-led\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837897+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Strategiste Marketing\u0027 to \u0027Marketing LinkedIn Agentivity\u0027 as \u0027strategiste_marketing\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837898+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Redacteur Contenu\u0027 to \u0027Marketing LinkedIn Agentivity\u0027 as \u0027redacteur_contenu\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837898+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Strategiste Marketing\u0027 is in the group \u0027Strategie\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837899+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Redacteur Contenu\u0027 is in the group \u0027Contenu\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.5837899+00:00",
+      "op": "set_manager",
+      "message": "\u0027Strategiste Marketing\u0027 manages \u0027Marketing LinkedIn Agentivity\u0027."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:03.58379+00:00",
+      "op": "set_root",
+      "message": "\u0027Marketing LinkedIn Agentivity\u0027 is now the main team of the solution."
+    },
+    {
+      "revision": 3,
+      "at": "2026-10-11T17:43:11.6357709+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Strategiste Marketing\u0027 is in the group \u0027Strategie\u0027."
+    },
+    {
+      "revision": 3,
+      "at": "2026-10-11T17:43:11.635771+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Redacteur Contenu\u0027 is in the group \u0027Contenu\u0027."
+    },
+    {
+      "revision": 4,
+      "at": "2026-10-11T17:43:23.1392864+00:00",
+      "op": "create_entity",
+      "message": "Created workflow \u0027Solution Marketing LinkedIn Agentivity\u0027."
+    },
+    {
+      "revision": 4,
+      "at": "2026-10-11T17:43:23.1392871+00:00",
+      "op": "add_node",
+      "message": "Added workflow.run as \u0027analyze\u0027 to \u0027Solution Marketing LinkedIn Agentivity\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 4,
+      "at": "2026-10-11T17:43:23.1392872+00:00",
+      "op": "add_node",
+      "message": "Added team_node as \u0027marketing_team\u0027 to \u0027Solution Marketing LinkedIn Agentivity\u0027."
+    },
+    {
+      "revision": 4,
+      "at": "2026-10-11T17:43:23.1392873+00:00",
+      "op": "connect",
+      "message": "Connected \u0027analyze\u0027 (out) to \u0027marketing_team\u0027 (in)."
+    },
+    {
+      "revision": 4,
+      "at": "2026-10-11T17:43:23.1392884+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748981+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Analyseur Plateforme\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748987+00:00",
+      "op": "add_node",
+      "message": "Added composable_node as \u0027analyzer\u0027 to \u0027Analyseur Plateforme\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748988+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.174899+00:00",
+      "op": "create_entity",
+      "message": "Created team \u0027Agentivity Marketing Hub\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748991+00:00",
+      "op": "set_orchestrator",
+      "message": "\u0027Agentivity Marketing Hub\u0027 now works as \u0027Sequential\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748991+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Analyseur Plateforme\u0027 to \u0027Agentivity Marketing Hub\u0027 as \u0027analyseur_plateforme\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748992+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Marketing LinkedIn Agentivity\u0027 to \u0027Agentivity Marketing Hub\u0027 as \u0027marketing_linkedin_agentivity\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748992+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Analyseur Plateforme\u0027 is in the group \u0027Analyse\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748993+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Marketing LinkedIn Agentivity\u0027 is in the group \u0027Marketing\u0027."
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:30.1748993+00:00",
+      "op": "set_root",
+      "message": "\u0027Agentivity Marketing Hub\u0027 is now the main team of the solution."
+    },
+    {
+      "revision": 6,
+      "at": "2026-10-11T17:43:32.5850933+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Analyseur Plateforme\u0027 is in the group \u0027Analyse\u0027."
+    },
+    {
+      "revision": 6,
+      "at": "2026-10-11T17:43:32.5850936+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Marketing LinkedIn Agentivity\u0027 is in the group \u0027Marketing\u0027."
+    },
+    {
+      "revision": 7,
+      "at": "2026-10-11T17:43:35.5886177+00:00",
+      "op": "connect_members",
+      "message": "Connected \u0027analyseur_plateforme\u0027 to \u0027marketing_linkedin_agentivity\u0027 (Message)."
+    },
+    {
+      "revision": 8,
+      "at": "2026-10-11T17:49:37.9873595+00:00",
+      "op": "set_orchestrator",
+      "message": "\u0027Marketing LinkedIn Agentivity\u0027 now works as \u0027Manager-led\u0027."
+    },
+    {
+      "revision": 9,
+      "at": "2026-10-11T17:49:46.1022466+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Community Manager\u0027."
+    },
+    {
+      "revision": 9,
+      "at": "2026-10-11T17:49:46.102247+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027community_manager\u0027 to \u0027Community Manager\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 9,
+      "at": "2026-10-11T17:49:46.102247+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027model\u0027 and connected it to \u0027community_manager\u0027."
+    },
+    {
+      "revision": 9,
+      "at": "2026-10-11T17:49:46.1022471+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 10,
+      "at": "2026-10-11T17:49:49.3050616+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Analyste Engagement\u0027."
+    },
+    {
+      "revision": 10,
+      "at": "2026-10-11T17:49:49.305062+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027analyste_engagement\u0027 to \u0027Analyste Engagement\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 10,
+      "at": "2026-10-11T17:49:49.3050621+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027model\u0027 and connected it to \u0027analyste_engagement\u0027."
+    },
+    {
+      "revision": 10,
+      "at": "2026-10-11T17:49:49.3050622+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 11,
+      "at": "2026-10-11T17:49:51.4814576+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Community Manager\u0027 to \u0027Marketing LinkedIn Agentivity\u0027 as \u0027community_manager\u0027, in the group \u0027Engagement\u0027."
+    },
+    {
+      "revision": 11,
+      "at": "2026-10-11T17:49:51.4814581+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Analyste Engagement\u0027 to \u0027Marketing LinkedIn Agentivity\u0027 as \u0027analyste_engagement\u0027, in the group \u0027Analyse\u0027."
+    }
+  ],
+  "revisions": [
+    {
+      "revision": 0,
+      "at": "2026-10-11T17:42:36.6220267+00:00",
+      "label": "Built from a description",
+      "entities": [],
+      "rootEntityId": null
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T17:43:03.5837817+00:00",
+      "label": "Built from a description",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "1d8a91fe-9119-412b-bdde-7f63b13c854c"
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T17:43:11.6357548+00:00",
+      "label": "set_member_group",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d"
+    },
+    {
+      "revision": 3,
+      "at": "2026-10-11T17:43:23.1392815+00:00",
+      "label": "Built from a description",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d"
+    },
+    {
+      "revision": 4,
+      "at": "2026-10-11T17:43:30.1748933+00:00",
+      "label": "Built from a description",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d"
+    },
+    {
+      "revision": 5,
+      "at": "2026-10-11T17:43:32.5850761+00:00",
+      "label": "set_member_group",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+          "kind": "agent",
+          "name": "Analyseur Plateforme",
+          "state": "created",
+          "draft": {
+            "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "name": "Analyseur Plateforme",
+            "graph": {
+              "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+              "name": "Analyseur Plateforme",
+              "role": "",
+              "entryNode": "analyzer",
+              "nodes": [
+                {
+                  "id": "analyzer",
+                  "nodeType": "composable_node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "entity_id": "Analyse Agentivity",
+                    "entity_kind": "workflow",
+                    "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+          "kind": "team",
+          "name": "Agentivity Marketing Hub",
+          "state": "created",
+          "draft": {
+            "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+            "name": "Agentivity Marketing Hub",
+            "orchestratorId": "sequential",
+            "members": [
+              {
+                "topologyPositionId": "analyseur_plateforme",
+                "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+                "memberType": "Agent",
+                "displayName": "Analyseur Plateforme",
+                "group": "Analyse"
+              },
+              {
+                "topologyPositionId": "marketing_linkedin_agentivity",
+                "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+                "memberType": "Team",
+                "displayName": "Marketing LinkedIn Agentivity",
+                "group": "Marketing"
+              }
+            ],
+            "connections": []
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c"
+    },
+    {
+      "revision": 6,
+      "at": "2026-10-11T17:43:35.5886038+00:00",
+      "label": "connect_members",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+          "kind": "agent",
+          "name": "Analyseur Plateforme",
+          "state": "created",
+          "draft": {
+            "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "name": "Analyseur Plateforme",
+            "graph": {
+              "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+              "name": "Analyseur Plateforme",
+              "role": "",
+              "entryNode": "analyzer",
+              "nodes": [
+                {
+                  "id": "analyzer",
+                  "nodeType": "composable_node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "entity_id": "Analyse Agentivity",
+                    "entity_kind": "workflow",
+                    "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+          "kind": "team",
+          "name": "Agentivity Marketing Hub",
+          "state": "created",
+          "draft": {
+            "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+            "name": "Agentivity Marketing Hub",
+            "orchestratorId": "sequential",
+            "members": [
+              {
+                "topologyPositionId": "analyseur_plateforme",
+                "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+                "memberType": "Agent",
+                "displayName": "Analyseur Plateforme",
+                "group": "Analyse"
+              },
+              {
+                "topologyPositionId": "marketing_linkedin_agentivity",
+                "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+                "memberType": "Team",
+                "displayName": "Marketing LinkedIn Agentivity",
+                "group": "Marketing"
+              }
+            ],
+            "connections": []
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c"
+    },
+    {
+      "revision": 7,
+      "at": "2026-10-11T17:49:37.987351+00:00",
+      "label": "Restructurer l\u0027\u00E9quipe Marketing en mode manager-led avec validation",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+          "kind": "agent",
+          "name": "Analyseur Plateforme",
+          "state": "created",
+          "draft": {
+            "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "name": "Analyseur Plateforme",
+            "graph": {
+              "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+              "name": "Analyseur Plateforme",
+              "role": "",
+              "entryNode": "analyzer",
+              "nodes": [
+                {
+                  "id": "analyzer",
+                  "nodeType": "composable_node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "entity_id": "Analyse Agentivity",
+                    "entity_kind": "workflow",
+                    "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+          "kind": "team",
+          "name": "Agentivity Marketing Hub",
+          "state": "created",
+          "draft": {
+            "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+            "name": "Agentivity Marketing Hub",
+            "orchestratorId": "sequential",
+            "members": [
+              {
+                "topologyPositionId": "analyseur_plateforme",
+                "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+                "memberType": "Agent",
+                "displayName": "Analyseur Plateforme",
+                "group": "Analyse"
+              },
+              {
+                "topologyPositionId": "marketing_linkedin_agentivity",
+                "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+                "memberType": "Team",
+                "displayName": "Marketing LinkedIn Agentivity",
+                "group": "Marketing"
+              }
+            ],
+            "connections": [
+              {
+                "fromTopologyPositionId": "analyseur_plateforme",
+                "toTopologyPositionId": "marketing_linkedin_agentivity",
+                "types": [
+                  "Message"
+                ]
+              }
+            ]
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c"
+    },
+    {
+      "revision": 8,
+      "at": "2026-10-11T17:49:46.1022429+00:00",
+      "label": "Built from a description",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+          "kind": "agent",
+          "name": "Analyseur Plateforme",
+          "state": "created",
+          "draft": {
+            "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "name": "Analyseur Plateforme",
+            "graph": {
+              "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+              "name": "Analyseur Plateforme",
+              "role": "",
+              "entryNode": "analyzer",
+              "nodes": [
+                {
+                  "id": "analyzer",
+                  "nodeType": "composable_node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "entity_id": "Analyse Agentivity",
+                    "entity_kind": "workflow",
+                    "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+          "kind": "team",
+          "name": "Agentivity Marketing Hub",
+          "state": "created",
+          "draft": {
+            "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+            "name": "Agentivity Marketing Hub",
+            "orchestratorId": "sequential",
+            "members": [
+              {
+                "topologyPositionId": "analyseur_plateforme",
+                "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+                "memberType": "Agent",
+                "displayName": "Analyseur Plateforme",
+                "group": "Analyse"
+              },
+              {
+                "topologyPositionId": "marketing_linkedin_agentivity",
+                "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+                "memberType": "Team",
+                "displayName": "Marketing LinkedIn Agentivity",
+                "group": "Marketing"
+              }
+            ],
+            "connections": [
+              {
+                "fromTopologyPositionId": "analyseur_plateforme",
+                "toTopologyPositionId": "marketing_linkedin_agentivity",
+                "types": [
+                  "Message"
+                ]
+              }
+            ]
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c"
+    },
+    {
+      "revision": 9,
+      "at": "2026-10-11T17:49:49.305058+00:00",
+      "label": "Built from a description",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+          "kind": "agent",
+          "name": "Analyseur Plateforme",
+          "state": "created",
+          "draft": {
+            "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "name": "Analyseur Plateforme",
+            "graph": {
+              "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+              "name": "Analyseur Plateforme",
+              "role": "",
+              "entryNode": "analyzer",
+              "nodes": [
+                {
+                  "id": "analyzer",
+                  "nodeType": "composable_node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "entity_id": "Analyse Agentivity",
+                    "entity_kind": "workflow",
+                    "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+          "kind": "team",
+          "name": "Agentivity Marketing Hub",
+          "state": "created",
+          "draft": {
+            "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+            "name": "Agentivity Marketing Hub",
+            "orchestratorId": "sequential",
+            "members": [
+              {
+                "topologyPositionId": "analyseur_plateforme",
+                "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+                "memberType": "Agent",
+                "displayName": "Analyseur Plateforme",
+                "group": "Analyse"
+              },
+              {
+                "topologyPositionId": "marketing_linkedin_agentivity",
+                "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+                "memberType": "Team",
+                "displayName": "Marketing LinkedIn Agentivity",
+                "group": "Marketing"
+              }
+            ],
+            "connections": [
+              {
+                "fromTopologyPositionId": "analyseur_plateforme",
+                "toTopologyPositionId": "marketing_linkedin_agentivity",
+                "types": [
+                  "Message"
+                ]
+              }
+            ]
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+          "kind": "agent",
+          "name": "Community Manager",
+          "state": "created",
+          "draft": {
+            "id": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+            "name": "Community Manager",
+            "graph": {
+              "id": "990e288b-9598-4dba-a64f-682911bb4d33",
+              "name": "Community Manager",
+              "role": "",
+              "entryNode": "community_manager",
+              "nodes": [
+                {
+                  "id": "community_manager",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "conversational",
+                    "system_prompt": "Tu es un Community Manager expert pour LinkedIn. Tu suis les conversations autour d\u0027Agentivity, identifies les commentaires pertinents, et proposes des r\u00E9ponses engageantes qui renforcent la communaut\u00E9. Tu dois \u00EAtre authentique, utile et cr\u00E9er de la valeur dans chaque interaction.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model",
+                  "fromPort": "resource",
+                  "to": "community_manager",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c"
+    },
+    {
+      "revision": 10,
+      "at": "2026-10-11T17:49:51.4814554+00:00",
+      "label": "Ajouter Community Manager et Analyste Engagement \u00E0 l\u0027\u00E9quipe Marketing",
+      "entities": [
+        {
+          "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+          "kind": "workflow",
+          "name": "Analyse Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "1d8a91fe-9119-412b-bdde-7f63b13c854c",
+            "name": "Analyse Agentivity",
+            "role": "",
+            "entryNode": "scrape_site",
+            "nodes": [
+              {
+                "id": "scrape_site",
+                "nodeType": "web.scrape",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "url": "https://agentivity.io"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "analyze_platform",
+                "nodeType": "ai.node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "agent_mode": "conversational",
+                  "system_prompt": "Tu es un expert en marketing B2B et en strat\u00E9gie LinkedIn. Analyse le contenu du site Agentivity et fournis une analyse structur\u00E9e.",
+                  "prompt": "Analyse ce contenu du site Agentivity et fournis :\n\n1. **R\u00E9sum\u00E9 de la plateforme** : Qu\u0027est-ce qu\u0027Agentivity ? Quels sont ses cas d\u0027usage principaux ?\n\n2. **Points forts cl\u00E9s** : Les 3-4 avantages majeurs \u00E0 promouvoir\n\n3. **Personas LinkedIn cibles** : D\u00E9finis 3-4 personas pr\u00E9cis (titre, secteur, pain points, int\u00E9r\u00EAts)\n\n4. **Strat\u00E9gie de contenu** : Th\u00E8mes, angles d\u0027attaque, types de posts pour engager chaque persona\n\n5. **Opportunit\u00E9s d\u0027engagement** : Comment cr\u00E9er de la conversation autour d\u0027Agentivity\n\nContenu du site :\n{{scrape_site.markdown}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "model",
+                "nodeType": "ai.llm.model.anthropic",
+                "position": {
+                  "x": 680,
+                  "y": 140
+                },
+                "inputs": {
+                  "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "model",
+                "fromPort": "resource",
+                "to": "analyze_platform",
+                "toPort": "llm_model"
+              },
+              {
+                "from": "scrape_site",
+                "fromPort": "scraped",
+                "to": "analyze_platform",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+          "kind": "agent",
+          "name": "Strategiste Marketing",
+          "state": "created",
+          "draft": {
+            "id": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+            "name": "Strategiste Marketing",
+            "graph": {
+              "id": "62326f9a-b0c2-490a-b8f1-b090381d6b83",
+              "name": "Strategiste Marketing",
+              "role": "",
+              "entryNode": "strategist",
+              "nodes": [
+                {
+                  "id": "strategist",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "plan_and_execute",
+                    "system_prompt": "Tu es un strat\u00E9giste marketing LinkedIn expert en B2B SaaS. Tu analyses les tendances, identifies les opportunit\u00E9s d\u0027engagement et proposes une strat\u00E9gie de contenu adapt\u00E9e \u00E0 chaque persona. Tu fournis des recommandations pr\u00E9cises et actionnables.",
+                    "prompt": "En tant que strat\u00E9giste marketing pour Agentivity :\n\n1. Analyse les tendances actuelles sur LinkedIn autour de l\u0027IA, l\u0027automatisation et les agents\n2. Identifie les opportunit\u00E9s d\u0027engagement sp\u00E9cifiques pour chaque persona\n3. Propose un calendrier de contenu (th\u00E8mes, fr\u00E9quence, formats)\n4. Sugg\u00E8re des angles d\u0027attaque pour cr\u00E9er de la conversation\n5. Recommande des hashtags et des mots-cl\u00E9s pertinents\n\nFournis une strat\u00E9gie compl\u00E8te et pr\u00EAte \u00E0 \u00EAtre mise en \u0153uvre."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_strategist",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_strategist",
+                  "fromPort": "resource",
+                  "to": "strategist",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+          "kind": "agent",
+          "name": "Redacteur Contenu",
+          "state": "created",
+          "draft": {
+            "id": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+            "name": "Redacteur Contenu",
+            "graph": {
+              "id": "5f0ca3f7-468b-4ede-a62d-9c5358ea8df5",
+              "name": "Redacteur Contenu",
+              "role": "",
+              "entryNode": "writer",
+              "nodes": [
+                {
+                  "id": "writer",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "Tu es un r\u00E9dacteur LinkedIn expert. Tu cr\u00E9es des posts engageants, pertinents et authentiques. Tu sais comment capturer l\u0027attention, cr\u00E9er de la conversation et positionner Agentivity comme une solution innovante. Tes posts sont professionnels mais accessibles, avec un ton conversationnel.",
+                    "prompt": "Tu es le r\u00E9dacteur de contenu LinkedIn pour Agentivity. Tes responsabilit\u00E9s :\n\n1. R\u00E9diger des posts engageants bas\u00E9s sur la strat\u00E9gie propos\u00E9e\n2. Adapter le ton et le message \u00E0 chaque persona\n3. Cr\u00E9er des hooks accrocheurs pour les 3 premi\u00E8res lignes\n4. Proposer des questions pour engager les commentaires\n5. Sugg\u00E9rer des r\u00E9ponses aux commentaires pour maintenir la conversation\n\nChaque post doit \u00EAtre pr\u00EAt \u00E0 publier et optimis\u00E9 pour l\u0027engagement LinkedIn."
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model_writer",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model_writer",
+                  "fromPort": "resource",
+                  "to": "writer",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+          "kind": "team",
+          "name": "Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "970bf017-a0d7-4dae-914d-8922027ae62d",
+            "name": "Marketing LinkedIn Agentivity",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "strategiste_marketing",
+                "memberEntityId": "ac12002c-4b84-43d4-98f2-39d4c4e7f945",
+                "memberType": "Agent",
+                "displayName": "Strategiste Marketing",
+                "group": "Strategie"
+              },
+              {
+                "topologyPositionId": "redacteur_contenu",
+                "memberEntityId": "bcbc90bc-b159-49f0-a00a-3180e553d876",
+                "memberType": "Agent",
+                "displayName": "Redacteur Contenu",
+                "group": "Contenu"
+              }
+            ],
+            "connections": [],
+            "managerAgentId": "strategiste_marketing"
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+          "kind": "workflow",
+          "name": "Solution Marketing LinkedIn Agentivity",
+          "state": "created",
+          "draft": {
+            "id": "f04a8def-8d61-4424-a4ca-9cc6c36ba019",
+            "name": "Solution Marketing LinkedIn Agentivity",
+            "role": "",
+            "entryNode": "analyze",
+            "nodes": [
+              {
+                "id": "analyze",
+                "nodeType": "workflow.run",
+                "position": {
+                  "x": 120,
+                  "y": 140
+                },
+                "inputs": {
+                  "workflow": "Analyse Agentivity",
+                  "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              },
+              {
+                "id": "marketing_team",
+                "nodeType": "team_node",
+                "position": {
+                  "x": 400,
+                  "y": 140
+                },
+                "inputs": {
+                  "entity_id": "Marketing LinkedIn Agentivity",
+                  "entity_kind": "team",
+                  "input": "Bas\u00E9 sur l\u0027analyse de la plateforme Agentivity, propose une strat\u00E9gie marketing LinkedIn compl\u00E8te et cr\u00E9e des posts engageants pour engager la communaut\u00E9.\n\nAnalyse re\u00E7ue:\n{{analyze.state}}"
+                },
+                "inputsMetadata": {},
+                "metadata": {}
+              }
+            ],
+            "connections": [
+              {
+                "from": "analyze",
+                "fromPort": "out",
+                "to": "marketing_team",
+                "toPort": "in"
+              }
+            ],
+            "metadata": {}
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+          "kind": "agent",
+          "name": "Analyseur Plateforme",
+          "state": "created",
+          "draft": {
+            "id": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+            "name": "Analyseur Plateforme",
+            "graph": {
+              "id": "cbc51650-2095-4d97-90c2-794dda9598f7",
+              "name": "Analyseur Plateforme",
+              "role": "",
+              "entryNode": "analyzer",
+              "nodes": [
+                {
+                  "id": "analyzer",
+                  "nodeType": "composable_node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "entity_id": "Analyse Agentivity",
+                    "entity_kind": "workflow",
+                    "input": "Analyse le site agentivity.io pour extraire les informations cl\u00E9s sur la plateforme, les personas et la strat\u00E9gie marketing"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+          "kind": "team",
+          "name": "Agentivity Marketing Hub",
+          "state": "created",
+          "draft": {
+            "id": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c",
+            "name": "Agentivity Marketing Hub",
+            "orchestratorId": "sequential",
+            "members": [
+              {
+                "topologyPositionId": "analyseur_plateforme",
+                "memberEntityId": "6cc8b92d-65a3-40d6-b1df-8a35602a953b",
+                "memberType": "Agent",
+                "displayName": "Analyseur Plateforme",
+                "group": "Analyse"
+              },
+              {
+                "topologyPositionId": "marketing_linkedin_agentivity",
+                "memberEntityId": "970bf017-a0d7-4dae-914d-8922027ae62d",
+                "memberType": "Team",
+                "displayName": "Marketing LinkedIn Agentivity",
+                "group": "Marketing"
+              }
+            ],
+            "connections": [
+              {
+                "fromTopologyPositionId": "analyseur_plateforme",
+                "toTopologyPositionId": "marketing_linkedin_agentivity",
+                "types": [
+                  "Message"
+                ]
+              }
+            ]
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+          "kind": "agent",
+          "name": "Community Manager",
+          "state": "created",
+          "draft": {
+            "id": "71128fbd-38f4-4fb9-9890-3833c085d17c",
+            "name": "Community Manager",
+            "graph": {
+              "id": "990e288b-9598-4dba-a64f-682911bb4d33",
+              "name": "Community Manager",
+              "role": "",
+              "entryNode": "community_manager",
+              "nodes": [
+                {
+                  "id": "community_manager",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "conversational",
+                    "system_prompt": "Tu es un Community Manager expert pour LinkedIn. Tu suis les conversations autour d\u0027Agentivity, identifies les commentaires pertinents, et proposes des r\u00E9ponses engageantes qui renforcent la communaut\u00E9. Tu dois \u00EAtre authentique, utile et cr\u00E9er de la valeur dans chaque interaction.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model",
+                  "fromPort": "resource",
+                  "to": "community_manager",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "2bc64dc1-7b0c-4e11-9ab2-4e4dfe31fc9b",
+          "kind": "agent",
+          "name": "Analyste Engagement",
+          "state": "created",
+          "draft": {
+            "id": "2bc64dc1-7b0c-4e11-9ab2-4e4dfe31fc9b",
+            "name": "Analyste Engagement",
+            "graph": {
+              "id": "9ce721c8-dfe2-4e89-92ce-409279c72a61",
+              "name": "Analyste Engagement",
+              "role": "",
+              "entryNode": "analyste_engagement",
+              "nodes": [
+                {
+                  "id": "analyste_engagement",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "conversational",
+                    "system_prompt": "Tu es un Analyste Engagement expert pour LinkedIn. Tu analyses la performance des posts Agentivity : engagement (likes, commentaires, partages), reach, sentiment de la communaut\u00E9. Tu identifies les tendances, ce qui fonctionne, ce qui ne fonctionne pas, et proposes des ajustements strat\u00E9giques pour am\u00E9liorer l\u0027impact.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "model",
+                  "fromPort": "resource",
+                  "to": "analyste_engagement",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "b1dd5f81-0173-4cd7-a77e-08cda8a5708c"
+    }
+  ],
+  "conversation": [
+    {
+      "role": "user",
+      "content": "j ai besoin d un assitant marketing pour linked in, le but est de promouvoir ma plateforme agentivity.io",
+      "at": "2026-10-11T17:40:53.9382992+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "assistant",
+      "content": "Je comprends : vous voulez un assistant marketing pour LinkedIn qui promeut votre plateforme Agentivity.\n\nAvant de construire cet assistant, j\u0027ai besoin de pr\u00E9ciser quelques points pour que ce soit vraiment utile :\n\n1. **Quel est votre objectif principal sur LinkedIn ?**\n   - G\u00E9n\u00E9rer des leads (prospects int\u00E9ress\u00E9s)\n   - Augmenter la visibilit\u00E9 et la notori\u00E9t\u00E9 de la plateforme\n   - Engager la communaut\u00E9 (commentaires, partages, discussions)\n   - Tout cela \u00E0 la fois\n\n2. **Que doit faire cet assistant concr\u00E8tement ?**\n   - R\u00E9diger des posts LinkedIn attrayants sur Agentivity\n   - Analyser les tendances et proposer des sujets pertinents\n   - R\u00E9pondre aux commentaires et messages\n   - Cr\u00E9er une strat\u00E9gie de contenu (calendrier, th\u00E8mes)\n   - Autre chose ?\n\n3. **Avez-vous des informations sp\u00E9cifiques sur Agentivity** que l\u0027assistant doit conna\u00EEtre ?\n   - Les cas d\u0027usage principaux\n   - Votre audience cible (qui devriez-vous atteindre ?)\n   - Les points forts de la plateforme\n   - Ou je dois les d\u00E9couvrir moi-m\u00EAme en visitant le site ?\n\nR\u00E9pondez \u00E0 ces questions et je construirai exactement ce qu\u0027il vous faut.",
+      "at": "2026-10-11T17:40:58.3631907+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "user",
+      "content": "- Engager la communaut\u00E9\n- il doit faire ce qui est n\u00E9cessaire\n- ca peut etre une \u00E9quipe, un workflow, ... n importe quoi, mais ca doit etre pro\n- cherche l audience pour commencer, d\u00E9finis les personas",
+      "at": "2026-10-11T17:42:08.1194746+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "assistant",
+      "content": "\u00CAtes-vous d\u0027accord pour que je : 1) analyse votre site, 2) d\u00E9finisse les personas et la strat\u00E9gie, 3) construise une \u00E9quipe marketing LinkedIn professionnelle ?",
+      "at": "2026-10-11T17:42:20.4070242+00:00",
+      "work": [
+        "Looking for \u201Cweb scrape fetch content from website\u201D \u2014 5 possibilities",
+        "Drafting the plan"
+      ],
+      "options": [
+        "Oui, allez-y",
+        "Modifiez quelque chose dans le plan"
+      ],
+      "pick": null,
+      "memory": "Parfait. Je vais d\u0027abord explorer votre plateforme pour bien comprendre Agentivity, puis je vous proposerai une solution professionnelle avec les personas et la strat\u00E9gie.\r\nJe vais cr\u00E9er un workflow pour analyser votre site et d\u00E9finir les personas, puis je vous proposerai la solution marketing compl\u00E8te.\r\nBien s\u00FBr. Voici mon plan :\r\n(I stated this plan to the person and asked them to confirm it. Goal: Cr\u00E9er une solution marketing professionnelle pour engager la communaut\u00E9 LinkedIn autour d\u0027Agentivity. D\u0027abord, analyser votre plateforme pour d\u00E9finir les personas et la strat\u00E9gie, puis construire un assistant (ou une \u00E9quipe) capable de g\u00E9n\u00E9rer du contenu, d\u0027identifier les opportunit\u00E9s d\u0027engagement et de proposer une strat\u00E9gie de contenu adapt\u00E9e. Steps: Analyser le site agentivity.io pour comprendre la plateforme, ses cas d\u0027usage et ses points forts; D\u00E9finir 3-4 personas LinkedIn cibles (qui devrait \u00EAtre atteint); Cr\u00E9er une strat\u00E9gie de contenu avec th\u00E8mes et angles d\u0027attaque; Construire un assistant ou une \u00E9quipe capable de : r\u00E9diger des posts engageants, proposer des sujets pertinents, analyser les tendances, et sugg\u00E9rer des r\u00E9ponses aux commentaires. To build: workflow \u0022Analyse Agentivity\u0022, agent \u0022Strat\u00E9giste Marketing LinkedIn\u0022, agent \u0022R\u00E9dacteur de Contenu LinkedIn\u0022. Needed from the person: Acc\u00E8s \u00E0 votre site agentivity.io (public); Confirmation des personas et de la strat\u00E9gie avant de finaliser.)\r\n(What I did in this turn: Looking for \u201Cweb scrape fetch content from website\u201D \u2014 5 possibilities; Drafting the plan.)\r\n(I then asked the person: \u0022\u00CAtes-vous d\u0027accord pour que je : 1) analyse votre site, 2) d\u00E9finisse les personas et la strat\u00E9gie, 3) construise une \u00E9quipe marketing LinkedIn professionnelle ?\u0022 and offered these answers: Oui, allez-y | Modifiez quelque chose dans le plan.)"
+    },
+    {
+      "role": "user",
+      "content": "Oui, allez-y",
+      "at": "2026-10-11T17:42:24.9426918+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "assistant",
+      "content": "Le n\u0153ud est bien d\u00E9fini comme point d\u0027entr\u00E9e (\u0060entryNode\u0060). L\u0027avertissement est mineur - le n\u0153ud ex\u00E9cutera le workflow d\u0027analyse. C\u0027est correct pour une \u00E9quipe en mode sequential : l\u0027Analyseur ex\u00E9cute d\u0027abord, puis passe le r\u00E9sultat \u00E0 l\u0027\u00E9quipe Marketing.\n\n\u2705 **La solution est maintenant compl\u00E8te et unifi\u00E9e :**\n\n## Agentivity Marketing Hub (\u00C9quipe principale)\n\n**Structure :**\n- **Groupe Analyse** : Agent \u0022Analyseur Plateforme\u0022 \n  - Ex\u00E9cute le workflow \u0022Analyse Agentivity\u0022\n  - Scrape votre site et extrait les insights\n  \n- **Groupe Marketing** : \u00C9quipe \u0022Marketing LinkedIn Agentivity\u0022\n  - Re\u00E7oit les insights de l\u0027analyse\n  - Strat\u00E9giste d\u00E9finit la strat\u00E9gie\n  - R\u00E9dacteur cr\u00E9e les posts engageants\n\n**Flux :** Analyse \u2192 Marketing (sequential)\n\nTout est maintenant contenu dans une seule entit\u00E9 principale. Vous pouvez **revoyez et sauvegarder** votre travail. Rien n\u0027est sauvegard\u00E9 tant que vous ne le faites pas.",
+      "at": "2026-10-11T17:43:42.2457059+00:00",
+      "work": [
+        "Looking for \u201Cscrape web page content\u201D \u2014 5 possibilities",
+        "Built \u201CAnalyse Agentivity\u201D (2 steps)",
+        "Built \u201CStrategiste Marketing\u201D, \u201CRedacteur Contenu\u201D, \u201CMarketing LinkedIn Agentivity\u201D (2 steps)",
+        "Reading \u201CMarketing LinkedIn Agentivity\u201D",
+        "\u0027Strategiste Marketing\u0027 is in the group \u0027Strategie\u0027. \u0027Redacteur Contenu\u0027 is in the group \u0027Contenu\u0027.",
+        "Checked: no problem found",
+        "Built \u201CSolution Marketing LinkedIn Agentivity\u201D (2 steps)",
+        "Built \u201CAnalyseur Plateforme\u201D, \u201CAgentivity Marketing Hub\u201D (1 step)",
+        "\u0027Analyseur Plateforme\u0027 is in the group \u0027Analyse\u0027. \u0027Marketing LinkedIn Agentivity\u0027 is in the group \u0027Marketing\u0027.",
+        "Checked: 0 problem(s) to fix, 1 to weigh",
+        "Connected \u0027analyseur_plateforme\u0027 to \u0027marketing_linkedin_agentivity\u0027 (Message).",
+        "Checked: 0 problem(s) to fix, 1 to weigh"
+      ],
+      "options": [],
+      "pick": null,
+      "memory": "Parfait ! Je commence par analyser votre site pour comprendre Agentivity, puis je construirai la solution.\r\nMaintenant je vais construire un workflow d\u0027analyse qui va :\n1. Scraper votre site pour comprendre la plateforme\n2. Analyser le contenu avec une IA pour d\u00E9finir les personas et la strat\u00E9gie\r\nJe dois pr\u00E9ciser le port de sortie. Laissez-moi corriger :\r\nExcellent ! Le workflow d\u0027analyse est cr\u00E9\u00E9. Maintenant je vais construire l\u0027\u00E9quipe marketing LinkedIn professionnelle avec deux agents sp\u00E9cialis\u00E9s :\r\nJe dois utiliser des identifiants valides sans accents. Laissez-moi corriger :\r\nJe dois utiliser les noms exacts des agents. Laissez-moi corriger avec les noms complets :\r\nExcellent ! L\u0027\u00E9quipe est cr\u00E9\u00E9e. Maintenant je vais assigner les groupes th\u00E9matiques :\r\nLaissez-moi corriger le format :\r\nLaissez-moi utiliser le format JSON pour les op\u00E9rations :\r\nJe vais v\u00E9rifier la structure de l\u0027\u00E9quipe d\u0027abord :\r\nParfait ! Maintenant je vais assigner les groupes avec les bonnes positions :\r\nParfait ! Maintenant je vais valider tout ce qui a \u00E9t\u00E9 cr\u00E9\u00E9 :\r\nVous avez raison. Je dois cr\u00E9er une solution unifi\u00E9e qui tient tout ensemble. Je vais cr\u00E9er un workflow principal qui :\n\n1. Ex\u00E9cute d\u0027abord le workflow \u0022Analyse Agentivity\u0022 pour comprendre la plateforme\n2. Puis lance l\u0027\u00E9quipe \u0022Marketing LinkedIn Agentivity\u0022 avec les insights de l\u0027analyse\n\nCela cr\u00E9e une solution compl\u00E8te et coh\u00E9rente.\r\nVous avez raison. Le workflow \u0022Solution Marketing LinkedIn Agentivity\u0022 appelle l\u0027\u00E9quipe, mais l\u0027\u00E9quipe n\u0027est pas membre d\u0027une structure plus grande. Je dois cr\u00E9er une **\u00E9quipe principale** qui contient :\n\n1. L\u0027\u00E9quipe \u0022Marketing LinkedIn Agentivity\u0022 comme membre\n2. Un agent ou workflow qui ex\u00E9cute l\u0027analyse\n\nCela cr\u00E9e une vraie solution unifi\u00E9e o\u00F9 tout est contenu dans une seule entit\u00E9.\r\nParfait ! L\u0027\u00E9quipe principale \u0022Agentivity Marketing Hub\u0022 est cr\u00E9\u00E9e et contient :\n- L\u0027agent \u0022Analyseur Plateforme\u0022 (qui ex\u00E9cute le workflow d\u0027analyse)\n- L\u0027\u00E9quipe \u0022Marketing LinkedIn Agentivity\u0022 (qui cr\u00E9e la strat\u00E9gie et le contenu)\n\nMaintenant j\u0027assigne les groupes th\u00E9matiques :\r\nMaintenant je valide :\r\nIl y a un avertissement : le n\u0153ud analyzer n\u0027est pas connect\u00E9. Dans une \u00E9quipe en mode sequential, les membres se passent le travail automatiquement. Je dois ajouter une connexion entre les deux membres de l\u0027\u00E9quipe :\r\nMaintenant je valide \u00E0 nouveau :\r\nL\u0027avertissement persiste car le n\u0153ud \u0060analyzer\u0060 \u00E0 l\u0027int\u00E9rieur de l\u0027agent \u0022Analyseur Plateforme\u0022 n\u0027a pas de connexions. Je dois le connecter \u00E0 la sortie de l\u0027agent. Laissez-moi v\u00E9rifier la structure :\r\nLe n\u0153ud est bien d\u00E9fini comme point d\u0027entr\u00E9e (\u0060entryNode\u0060). L\u0027avertissement est mineur - le n\u0153ud ex\u00E9cutera le workflow d\u0027analyse. C\u0027est correct pour une \u00E9quipe en mode sequential : l\u0027Analyseur ex\u00E9cute d\u0027abord, puis passe le r\u00E9sultat \u00E0 l\u0027\u00E9quipe Marketing.\n\n\u2705 **La solution est maintenant compl\u00E8te et unifi\u00E9e :**\n\n## Agentivity Marketing Hub (\u00C9quipe principale)\n\n**Structure :**\n- **Groupe Analyse** : Agent \u0022Analyseur Plateforme\u0022 \n  - Ex\u00E9cute le workflow \u0022Analyse Agentivity\u0022\n  - Scrape votre site et extrait les insights\n  \n- **Groupe Marketing** : \u00C9quipe \u0022Marketing LinkedIn Agentivity\u0022\n  - Re\u00E7oit les insights de l\u0027analyse\n  - Strat\u00E9giste d\u00E9finit la strat\u00E9gie\n  - R\u00E9dacteur cr\u00E9e les posts engageants\n\n**Flux :** Analyse \u2192 Marketing (sequential)\n\nTout est maintenant contenu dans une seule entit\u00E9 principale. Vous pouvez **revoyez et sauvegarder** votre travail. Rien n\u0027est sauvegard\u00E9 tant que vous ne le faites pas.\r\n(What I did in this turn: Looking for \u201Cscrape web page content\u201D \u2014 5 possibilities; Built \u201CAnalyse Agentivity\u201D (2 steps); Built \u201CStrategiste Marketing\u201D, \u201CRedacteur Contenu\u201D, \u201CMarketing LinkedIn Agentivity\u201D (2 steps); Reading \u201CMarketing LinkedIn Agentivity\u201D; \u0027Strategiste Marketing\u0027 is in the group \u0027Strategie\u0027. \u0027Redacteur Contenu\u0027 is in the group \u0027Contenu\u0027.; Checked: no problem found; Built \u201CSolution Marketing LinkedIn Agentivity\u201D (2 steps); Built \u201CAnalyseur Plateforme\u201D, \u201CAgentivity Marketing Hub\u201D (1 step); \u0027Analyseur Plateforme\u0027 is in the group \u0027Analyse\u0027. \u0027Marketing LinkedIn Agentivity\u0027 is in the group \u0027Marketing\u0027.; Checked: 0 problem(s) to fix, 1 to weigh; Connected \u0027analyseur_plateforme\u0027 to \u0027marketing_linkedin_agentivity\u0027 (Message).; Checked: 0 problem(s) to fix, 1 to weigh.)"
+    },
+    {
+      "role": "user",
+      "content": "je pense que l analyste ne doit pas etre lanc\u00E9 a chaque fois, c est fait pour etre lanc\u00E9 plusieurs fois par jours. Mais on peut analyser, sauvegarder l info, la reutiliser et de temps en temps r\u00E9analyser. Il faut cr\u00E9er le contenu, les images, poster, suivre les conversations, r\u00E9pondre, faire des plans... ca doit etre autonome comme un vrai humain le ferait, de facon organis\u00E9e",
+      "at": "2026-10-11T17:45:53.1278756+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "assistant",
+      "content": "Vous avez raison. Je dois restructurer compl\u00E8tement la solution :\n\n**Ce que vous voulez :**\n- **Analyse** : Une fois, puis r\u00E9utilis\u00E9e (stock\u00E9e)\n- **Ex\u00E9cution marketing** : Autonome, quotidienne, qui fait tout comme un humain\n  - Cr\u00E9er du contenu (posts, images)\n  - Poster sur LinkedIn\n  - Suivre les conversations\n  - R\u00E9pondre aux commentaires\n  - Planifier la strat\u00E9gie\n  - Tout de mani\u00E8re organis\u00E9e\n\n**Ce que je dois construire :**\n\n1. **Workflow \u0022Analyse Agentivity\u0022** : Lance une fois, stocke les insights (personas, strat\u00E9gie, points forts)\n\n2. **\u00C9quipe \u0022Marketing LinkedIn Agentivity\u0022** : Autonome, lance plusieurs fois par jour\n   - **Agent \u0022Planificateur\u0022** : R\u00E9cup\u00E8re les insights stock\u00E9s, planifie le jour (quoi poster, quand, comment)\n   - **Agent \u0022Cr\u00E9ateur de Contenu\u0022** : R\u00E9dige posts \u002B g\u00E9n\u00E8re images\n   - **Agent \u0022Community Manager\u0022** : Suit les conversations, r\u00E9pond aux commentaires\n   - **Agent \u0022Analyste Engagement\u0022** : Mesure la performance, propose des ajustements\n\nAvec une **m\u00E9moire partag\u00E9e** (stockage) pour garder les insights et l\u0027historique entre les ex\u00E9cutions.\n\n**Questions avant de construire :**\n\n1. **Avez-vous un compte LinkedIn connect\u00E9** o\u00F9 l\u0027assistant peut poster ? (ou c\u0027est juste pour g\u00E9n\u00E9rer le contenu ?)\n2. **Quelle fr\u00E9quence ?** Combien de posts par jour ? \u00C0 quelles heures ?\n3. **Avez-vous une API LinkedIn** ou je dois utiliser une autre approche ?\n\nConfirmez et je construis la vraie solution autonome.",
+      "at": "2026-10-11T17:45:58.8348782+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "user",
+      "content": "je n ai encore rien sur linkedin, mais je le ferai plus tard.je ne vois aucun manager/strategist, rien sur la validation avant envoi",
+      "at": "2026-10-11T17:48:15.9004307+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "assistant",
+      "content": "Vous avez raison. C\u0027est important d\u0027avoir une validation avant d\u0027envoyer. Voici la structure correcte :\n\n**\u00C9quipe \u0022Marketing LinkedIn Agentivity\u0022** (mode manager-led) :\n\n- **Manager : \u0022Strat\u00E9giste Marketing\u0022**\n  - R\u00E9cup\u00E8re les insights stock\u00E9s\n  - Planifie le jour (th\u00E8mes, angles, timing)\n  - Valide chaque cr\u00E9ation avant envoi\n  - D\u00E9cide qui travaille ensuite\n\n- **Workers (sp\u00E9cialistes) :**\n  - **\u0022Cr\u00E9ateur de Contenu\u0022** : R\u00E9dige posts engageants \u002B g\u00E9n\u00E8re images\n  - **\u0022Community Manager\u0022** : Suit les conversations, propose des r\u00E9ponses\n  - **\u0022Analyste Engagement\u0022** : Mesure la performance, propose des ajustements\n\n**Flux :**\n1. Strat\u00E9giste re\u00E7oit la demande (ex: \u0022Cr\u00E9e du contenu pour aujourd\u0027hui\u0022)\n2. Il envoie le Cr\u00E9ateur de Contenu \u2192 g\u00E9n\u00E8re post \u002B image\n3. Strat\u00E9giste valide ou demande des modifications\n4. Il envoie le Community Manager \u2192 suit les conversations\n5. Strat\u00E9giste valide les r\u00E9ponses\n6. Il envoie l\u0027Analyste \u2192 mesure et propose des ajustements\n7. Strat\u00E9giste conclut avec un r\u00E9sum\u00E9 du jour\n\n**Pour le stockage :**\n- Les insights de l\u0027analyse (personas, strat\u00E9gie) sont stock\u00E9s\n- L\u0027\u00E9quipe les r\u00E9cup\u00E8re \u00E0 chaque ex\u00E9cution\n- Historique des posts et engagement conserv\u00E9\n\n**Vous confirmez cette structure ?** Ensuite je construis tout \u00E7a.",
+      "at": "2026-10-11T17:48:20.8254637+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    },
+    {
+      "role": "user",
+      "content": "oui",
+      "at": "2026-10-11T17:49:34.4306048+00:00",
+      "work": [],
+      "options": [],
+      "pick": null,
+      "memory": null
+    }
+  ],
+  "plan": {
+    "brief": "Cr\u00E9er une solution marketing professionnelle pour engager la communaut\u00E9 LinkedIn autour d\u0027Agentivity. D\u0027abord, analyser votre plateforme pour d\u00E9finir les personas et la strat\u00E9gie, puis construire un assistant (ou une \u00E9quipe) capable de g\u00E9n\u00E9rer du contenu, d\u0027identifier les opportunit\u00E9s d\u0027engagement et de proposer une strat\u00E9gie de contenu adapt\u00E9e.",
+    "steps": [
+      "Analyser le site agentivity.io pour comprendre la plateforme, ses cas d\u0027usage et ses points forts",
+      "D\u00E9finir 3-4 personas LinkedIn cibles (qui devrait \u00EAtre atteint)",
+      "Cr\u00E9er une strat\u00E9gie de contenu avec th\u00E8mes et angles d\u0027attaque",
+      "Construire un assistant ou une \u00E9quipe capable de : r\u00E9diger des posts engageants, proposer des sujets pertinents, analyser les tendances, et sugg\u00E9rer des r\u00E9ponses aux commentaires"
+    ],
+    "needs": [
+      "Acc\u00E8s \u00E0 votre site agentivity.io (public)",
+      "Confirmation des personas et de la strat\u00E9gie avant de finaliser"
+    ],
+    "name": "Assistant Marketing LinkedIn pour Agentivity",
+    "builds": [
+      {
+        "kind": "workflow",
+        "name": "Analyse Agentivity"
+      },
+      {
+        "kind": "agent",
+        "name": "Strat\u00E9giste Marketing LinkedIn"
+      },
+      {
+        "kind": "agent",
+        "name": "R\u00E9dacteur de Contenu LinkedIn"
+      }
+    ],
+    "at": "2026-10-11T17:42:20.3930069+00:00",
+    "options": [
+      "Oui, allez-y",
+      "Modifiez quelque chose dans le plan"
+    ],
+    "goAhead": true,
+    "confirmed": true
+  }
+}

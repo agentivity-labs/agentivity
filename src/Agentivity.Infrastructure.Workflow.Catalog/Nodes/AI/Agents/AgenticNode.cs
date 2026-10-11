@@ -1,5 +1,6 @@
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Execution.Executable;
 using Agentivity.Infrastructure.Execution.Runs;
@@ -38,10 +39,14 @@ public sealed class AgenticNode : BaseNode
         _eventBus = eventBus;
 
         DefineMetadata("Library Agent", "Executes an agent or team from the agentic library. Select an entity by ID — the engine and configuration are resolved at runtime.", "ai.agents");
+        DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1, color: "#FF607D8B");
         DefineOutputPort("out", "Out", "Entity response");
         DefineOutputPort("error", "Error", "Execution error if any");
+        DefineOutput("response", ArgumentType.Text, "The final answer of the agent or team.");
+        DefineOutput("finish_reason", ArgumentType.Text, "Why the run ended.");
+        DefineDynamicOutputs("Any named output that the agent or team itself declares is added next to these, under its own name.");
 
         DefineInput(
             "agent_id",
@@ -52,7 +57,8 @@ public sealed class AgenticNode : BaseNode
                 Tab = "General",
                 Group = "Agent",
                 Order = 5,
-            }
+            },
+            required: true
         );
 
         DefineInput(
@@ -66,7 +72,8 @@ public sealed class AgenticNode : BaseNode
                 Order = 10,
                 Multiline = true,
                 Rows = 6,
-            }
+            },
+            required: true
         );
 
         DefineIcon(NodeIcon.Embedded("aillm"));

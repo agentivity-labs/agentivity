@@ -1,4 +1,5 @@
 ﻿using Agentivity.Domain.Credentials;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Storage;
 using Agentivity.Infrastructure.Storage.Providers;
@@ -30,10 +31,11 @@ public sealed class StorageWriteNode : ToolNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Storage Write", "Writes a value to any storage provider (file, database, etc.)", "storage");
+        DefineEffects(NodeEffects.WritesInternal | NodeEffects.WritesExternal);
 
         DefineResourceInputPort("storage", "Storage", ResourcePortCategory.Storage, "Storage resource to write to");
 
-        DefineInput("key", ArgumentType.Text, "Storage key", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 });
+        DefineInput("key", ArgumentType.Text, "Storage key", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 }, required: true);
         DefineInput(
             "value",
             ArgumentType.Text,
@@ -44,10 +46,11 @@ public sealed class StorageWriteNode : ToolNode
                 Order = 20,
                 Multiline = true,
                 Rows = 6,
-            }
+            },
+            required: true
         );
-        DefineInput("overwrite", ArgumentType.Boolean, "Allow overwriting existing key", true, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
-        DefineInput("expiration_minutes", ArgumentType.Number, "Optional expiration in minutes", ui: new ArgumentUiMetadata { Group = "Options", Order = 40 });
+        DefineInput("overwrite", ArgumentType.Boolean, "Allow overwriting existing key", true, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
+        DefineInput("expiration_minutes", ArgumentType.Number, "Optional expiration in minutes", ui: new ArgumentUiMetadata { Group = "Options", Order = 40 }, required: false);
 
         DefineOutput("success", ArgumentType.Boolean, "Operation success");
         DefineOutput("key", ArgumentType.Text, "The storage key used");

@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using Agentivity.Domain.Workflow;
+using System.Globalization;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
@@ -17,11 +18,12 @@ public sealed class AIKnowledgeSqliteNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (SQLite)", "Loads a knowledge corpus from a SQLite file by executing an explicit query and mapping rows to normalized documents.", "ai.knowledge");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
-        DefineInput("database_path", ArgumentType.Text, "Absolute or relative path to the SQLite database file.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineInput("database_path", ArgumentType.Text, "Absolute or relative path to the SQLite database file.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineInput(
             "query",
             ArgumentType.Text,
@@ -32,9 +34,10 @@ public sealed class AIKnowledgeSqliteNode : ResourceNode, IKnowledgeSource
                 Order = 20,
                 Multiline = true,
                 Rows = 8,
-            }
+            },
+            required: true
         );
-        DefineInput("content_column", ArgumentType.Text, "Column containing the document text.", "content", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 30 });
+        DefineInput("content_column", ArgumentType.Text, "Column containing the document text.", "content", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 30 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("core_data_table_node"));
     }

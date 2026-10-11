@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.Layout;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Content.LayoutAdapters.Elementor;
@@ -23,6 +24,7 @@ public sealed class DslToElementorNode : DslAdapterNode
         _elementorPresets = elementorPresets ?? throw new ArgumentNullException(nameof(elementorPresets));
 
         DefineMetadata("DSL to Elementor", "Converts DSL content to Elementor-compatible format for WordPress", "content.layoutadapters");
+        DefineEffects(NodeEffects.None);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
@@ -44,10 +46,11 @@ public sealed class DslToElementorNode : DslAdapterNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
-        DefineInput("title", ArgumentType.Text, "Optional page/post title", ui: new ArgumentUiMetadata { Group = "Content", Order = 20 });
+        DefineInput("title", ArgumentType.Text, "Optional page/post title", ui: new ArgumentUiMetadata { Group = "Content", Order = 20 }, required: false);
 
         DefineInput(
             "image_mappings",
@@ -60,7 +63,8 @@ public sealed class DslToElementorNode : DslAdapterNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: false
         );
 
         // Output

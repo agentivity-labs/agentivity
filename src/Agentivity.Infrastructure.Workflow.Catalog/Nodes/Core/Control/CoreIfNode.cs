@@ -21,6 +21,7 @@ public sealed class CoreIfNode : ControlFlowNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("If", "Evaluates a condition and branches execution to either the true or false path.", "core.control");
+        DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
     }
@@ -42,11 +43,12 @@ public sealed class CoreIfNode : ControlFlowNode
             ArgumentType.Structured,
             "Structured conditions (field, operator, value rows) — used instead of `condition` when it has rows. Build it with the condition builder instead of writing an expression.",
             defaultValue: "{\"combinator\":\"all\",\"rows\":[]}",
-            ui: new ArgumentUiMetadata { Editor = "condition_group", Group = "Condition", Order = 5 }
+            ui: new ArgumentUiMetadata { Editor = "condition_group", Group = "Condition", Order = 5 },
+            required: false
         );
-        DefineInput("condition", ArgumentType.Boolean, "The condition to evaluate. Ignored when `conditions` has rows.", ui: new ArgumentUiMetadata { Group = "Condition", Order = 10 });
-        DefineInput("true_branch_label", ArgumentType.Text, "Optional label for the true branch (for debugging)", ui: new ArgumentUiMetadata { Group = "Options", Order = 20 });
-        DefineInput("false_branch_label", ArgumentType.Text, "Optional label for the false branch (for debugging)", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 });
+        DefineInput("condition", ArgumentType.Boolean, "The condition to evaluate. Ignored when `conditions` has rows.", ui: new ArgumentUiMetadata { Group = "Condition", Order = 10 }, required: false);
+        DefineInput("true_branch_label", ArgumentType.Text, "Optional label for the true branch (for debugging)", ui: new ArgumentUiMetadata { Group = "Options", Order = 20 }, required: false);
+        DefineInput("false_branch_label", ArgumentType.Text, "Optional label for the false branch (for debugging)", ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
 
         // Data outputs
         DefineOutput("result", ArgumentType.Boolean, "The evaluated condition result");

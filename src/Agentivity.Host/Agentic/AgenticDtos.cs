@@ -38,7 +38,7 @@ public sealed record MoveItemRequest(string? TargetFolderId);
 
 // ── Orchestrator DTOs ─────────────────────────────────────────────────────────
 
-public sealed record OrchestratorSummaryDto(string OrchestratorId);
+public sealed record OrchestratorSummaryDto(string OrchestratorId, string? DisplayName = null, string? Description = null, string? WhenToUse = null);
 
 public sealed record OrchestratorConnectionRuleDto(string Type, string Cardinality, string Origin, string? Description);
 

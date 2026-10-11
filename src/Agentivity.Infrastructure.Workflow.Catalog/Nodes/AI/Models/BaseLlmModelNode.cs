@@ -35,14 +35,14 @@ public abstract class BaseLlmModelNode : ResourceNode, ILlmProvider
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "LLM Model", ResourcePortCategory.LlmModel, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", credentialsTemplateId, "Provider credentials", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
-        DefineInput("model", ArgumentType.Text, "Model override (leave empty to use credential default)", "", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 20 });
+        DefineCredentialsInput("credentials", credentialsTemplateId, "Provider credentials", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
+        DefineInput("model", ArgumentType.Text, "Model override (leave empty to use credential default)", "", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 20 }, required: false);
 
-        DefineInput("max_tokens", ArgumentType.Number, "Maximum tokens in response (leave empty to let the model decide)", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 });
-        DefineInput("top_p", ArgumentType.Number, "Nucleus sampling 0.0–1.0 (default: 1.0)", 1.0, ui: new ArgumentUiMetadata { Group = "Sampling", Order = 50 });
-        DefineInput("frequency_penalty", ArgumentType.Number, "Reduce repetition –2.0 to 2.0 (default: 0.0)", 0.0, ui: new ArgumentUiMetadata { Group = "Advanced", Order = 60 });
-        DefineInput("presence_penalty", ArgumentType.Number, "Encourage new topics –2.0 to 2.0 (default: 0.0)", 0.0, ui: new ArgumentUiMetadata { Group = "Advanced", Order = 70 });
-        DefineInput("context_length", ArgumentType.Number, "Context window override in tokens (LM Studio / Ollama only)", ui: new ArgumentUiMetadata { Group = "Advanced", Order = 80 });
+        DefineInput("max_tokens", ArgumentType.Number, "Maximum tokens in response (leave empty to let the model decide)", ui: new ArgumentUiMetadata { Group = "Defaults", Order = 30 }, required: false);
+        DefineInput("top_p", ArgumentType.Number, "Nucleus sampling 0.0–1.0 (default: 1.0)", 1.0, ui: new ArgumentUiMetadata { Group = "Sampling", Order = 50 }, required: false);
+        DefineInput("frequency_penalty", ArgumentType.Number, "Reduce repetition –2.0 to 2.0 (default: 0.0)", 0.0, ui: new ArgumentUiMetadata { Group = "Advanced", Order = 60 }, required: false);
+        DefineInput("presence_penalty", ArgumentType.Number, "Encourage new topics –2.0 to 2.0 (default: 0.0)", 0.0, ui: new ArgumentUiMetadata { Group = "Advanced", Order = 70 }, required: false);
+        DefineInput("context_length", ArgumentType.Number, "Context window override in tokens (LM Studio / Ollama only)", ui: new ArgumentUiMetadata { Group = "Advanced", Order = 80 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("aimodel"));
     }

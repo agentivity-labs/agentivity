@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Agentic.Agent;
 using Agentivity.Infrastructure.Agentic.Agent.Guardrails;
 using Agentivity.Infrastructure.Agentic.Agent.Policies;
@@ -34,6 +35,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         _eventBus = eventBus;
 
         DefineMetadata("AI Agent", "Runs a multi-step LLM agent with native tool calling, optional retrieval via llm_memory, and connectable knowledge sources.", "ai.agents");
+        DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1, color: "#FF607D8B");
         DefineOutputPort("out", "Out", "Default output port");
@@ -61,7 +63,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Group = "Prompting",
                 Order = 5,
             },
-            triggersReconfigure: true
+            triggersReconfigure: true,
+            required: false
         );
 
         DefineInput(
@@ -74,7 +77,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "General",
                 Group = "Prompting",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineInput(
             "prompt",
@@ -86,7 +90,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "General",
                 Group = "Prompting",
                 Order = 10,
-            }
+            },
+            required: true
         );
         DefineInput(
             "images",
@@ -97,7 +102,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "General",
                 Group = "Prompting",
                 Order = 15,
-            }
+            },
+            required: false
         );
 
         DefineInput(
@@ -110,7 +116,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Advanced",
                 Group = "Sampling",
                 Order = 10,
-            }
+            },
+            required: false
         );
         DefineInput(
             "max_iterations",
@@ -121,7 +128,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Advanced",
                 Group = "Limits",
                 Order = 30,
-            }
+            },
+            required: false
         );
         DefineInput(
             "response_quality_threshold",
@@ -136,7 +144,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Min = 0,
                 Max = 10,
                 Step = 0.5,
-            }
+            },
+            required: false
         );
 
         // Mode-specific runtime parameters — registered via OnReconfigure for the default mode.
@@ -153,7 +162,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Advanced",
                 Group = "Tools",
                 Order = 30,
-            }
+            },
+            required: false
         );
         DefineInput(
             "allow_parallel_tool_calls",
@@ -165,7 +175,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Advanced",
                 Group = "Tools",
                 Order = 40,
-            }
+            },
+            required: false
         );
         DefineInput(
             "response_schema",
@@ -177,7 +188,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "General",
                 Group = "Response",
                 Order = 50,
-            }
+            },
+            required: false
         );
         DefineInput(
             "allows_human_questions",
@@ -189,7 +201,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Advanced",
                 Group = "Interaction",
                 Order = 45,
-            }
+            },
+            required: false
         );
         DefineInput(
             "memory_top_k",
@@ -201,7 +214,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Memory",
                 Group = "Retrieval",
                 Order = 10,
-            }
+            },
+            required: false
         );
         DefineInput(
             "session_id",
@@ -213,7 +227,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Session Binding",
                 Group = "Identity",
                 Order = 10,
-            }
+            },
+            required: false
         );
         DefineInput(
             "session_scope_hint",
@@ -225,7 +240,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Session Binding",
                 Group = "Identity",
                 Order = 20,
-            }
+            },
+            required: false
         );
         DefineInput(
             "restore_session",
@@ -237,7 +253,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Session Binding",
                 Group = "Persistence",
                 Order = 30,
-            }
+            },
+            required: false
         );
         DefineInput(
             "persist_session",
@@ -249,7 +266,8 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 Tab = "Session Binding",
                 Group = "Persistence",
                 Order = 40,
-            }
+            },
+            required: false
         );
 
         DefineOutput("response", ArgumentType.Text, "Final agent response");

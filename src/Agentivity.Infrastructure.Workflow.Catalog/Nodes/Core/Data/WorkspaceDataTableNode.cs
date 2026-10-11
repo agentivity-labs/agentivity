@@ -1,4 +1,5 @@
 using Agentivity.Domain.DataTables;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.DataTables.Runtime;
 using Agentivity.Infrastructure.Workflows;
@@ -23,11 +24,12 @@ public sealed class WorkspaceDataTableNode : ResourceNode, IDataTableResource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.DataTable);
 
         DefineMetadata("Data Table", "References a shared Data Table asset (schema and rows managed under Resources).", "core.data");
+        DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Data Table", ResourcePortCategory.DataTable, maxConnections: -1);
-        DefineAssetInput("table_id", "datatable", "The shared Data Table asset to bind to");
+        DefineAssetInput("table_id", "datatable", "The shared Data Table asset to bind to", required: true);
 
         DefineIcon(NodeIcon.Embedded("datatable"));
     }

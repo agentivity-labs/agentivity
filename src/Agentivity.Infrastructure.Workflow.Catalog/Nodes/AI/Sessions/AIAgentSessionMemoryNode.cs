@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Agentic.Agent;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -20,16 +21,17 @@ public sealed class AIAgentSessionMemoryNode : ResourceNode, IAgentSession, IAge
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentSession);
 
         DefineMetadata("AI Agent Session (Memory)", "Stores AI agent conversation sessions in memory for the current application lifetime.", "ai.sessions");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "AI Agent Session", ResourcePortCategory.AIAgentSession, maxConnections: -1);
-        DefineChoice("mode", [("isolated", "Isolated"), ("shared", "Shared"), ("forked", "Forked")], "How the session is shared between connected agents", "isolated");
-        DefineInput("max_messages", ArgumentType.Number, "Maximum number of conversation messages kept in the session", 50);
-        DefineChoice("compaction_mode", [("none", "None"), ("summary", "Summary")], "Optional compaction strategy applied before persistence", "none");
-        DefineChoice("tool_state_reuse_mode", [("none", "None"), ("exact_match", "Exact Match")], "Optional reuse strategy for deterministic tool results stored in session state", "none");
-        DefineInput("tool_state_reuse_ttl_seconds", ArgumentType.Number, "Maximum age in seconds for reusable tool-state entries", 3600);
-        DefineInput("expiration_minutes", ArgumentType.Number, "Optional session expiration in minutes (0 disables expiration)", 0);
+        DefineChoice("mode", [("isolated", "Isolated"), ("shared", "Shared"), ("forked", "Forked")], "How the session is shared between connected agents", "isolated", required: false);
+        DefineInput("max_messages", ArgumentType.Number, "Maximum number of conversation messages kept in the session", 50, required: false);
+        DefineChoice("compaction_mode", [("none", "None"), ("summary", "Summary")], "Optional compaction strategy applied before persistence", "none", required: false);
+        DefineChoice("tool_state_reuse_mode", [("none", "None"), ("exact_match", "Exact Match")], "Optional reuse strategy for deterministic tool results stored in session state", "none", required: false);
+        DefineInput("tool_state_reuse_ttl_seconds", ArgumentType.Number, "Maximum age in seconds for reusable tool-state entries", 3600, required: false);
+        DefineInput("expiration_minutes", ArgumentType.Number, "Optional session expiration in minutes (0 disables expiration)", 0, required: false);
 
         DefineIcon(NodeIcon.Embedded("aillm"));
     }

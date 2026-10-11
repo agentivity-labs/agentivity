@@ -7,6 +7,10 @@ public sealed class ConversationalModeRuntime() : AgenticModeRuntimeBase(ModeIdV
 {
     public const string ModeIdValue = "conversational";
 
+    public override string? Description => "Answers directly from the conversation and its context, without using any tool.";
+
+    public override string? WhenToUse => "Chat, writing, explanations and classification, where no lookup or outside action is needed.";
+
     public override async ValueTask<AgentRunResult> ExecuteAsync(AgentConfig config, AgentRunState state, AgentRunServices services, AgentHost agentHost, CancellationToken cancellationToken)
     {
         var manifest = BuildManifest(agentHost, config, state, services, state.ResumeState);

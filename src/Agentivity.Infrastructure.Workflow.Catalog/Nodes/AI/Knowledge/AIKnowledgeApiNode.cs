@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using Agentivity.Domain.Workflow;
+using System.Text.Json;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Workflows;
@@ -22,11 +23,12 @@ public sealed class AIKnowledgeApiNode : ResourceNode, IKnowledgeSource
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
         DefineMetadata("AI Knowledge (API)", "Loads a knowledge corpus from an HTTP endpoint with explicit text or JSON mapping modes.", "ai.knowledge");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Knowledge Source", ResourcePortCategory.KnowledgeSource, maxConnections: -1);
-        DefineInput("url", ArgumentType.Text, "HTTP endpoint URL returning the knowledge payload.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
+        DefineInput("url", ArgumentType.Text, "HTTP endpoint URL returning the knowledge payload.", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
         DefineInput(
             "headers_json",
             ArgumentType.Text,
@@ -39,11 +41,12 @@ public sealed class AIKnowledgeApiNode : ResourceNode, IKnowledgeSource
                 Multiline = true,
                 Rows = 6,
                 Format = "json",
-            }
+            },
+            required: false
         );
-        DefineChoice("response_mode", [("text", "Text"), ("json-value", "JSON Value"), ("json-array", "JSON Array")], "How the HTTP response is converted to knowledge documents.", "text", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 30 });
-        DefineInput("selector", ArgumentType.Text, "Optional dot-path selector used for JSON modes (for example: data.items or data.summary).", "", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 40 });
-        DefineInput("item_text_field", ArgumentType.Text, "Field containing the document text for `json-array` object items.", "text", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 50 });
+        DefineChoice("response_mode", [("text", "Text"), ("json-value", "JSON Value"), ("json-array", "JSON Array")], "How the HTTP response is converted to knowledge documents.", "text", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 30 }, required: false);
+        DefineInput("selector", ArgumentType.Text, "Optional dot-path selector used for JSON modes (for example: data.items or data.summary).", "", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 40 }, required: false);
+        DefineInput("item_text_field", ArgumentType.Text, "Field containing the document text for `json-array` object items.", "text", ui: new ArgumentUiMetadata { Group = "Mapping", Order = 50 }, required: false);
         DefineInput(
             "timeout_seconds",
             ArgumentType.Number,
@@ -55,7 +58,8 @@ public sealed class AIKnowledgeApiNode : ResourceNode, IKnowledgeSource
                 Order = 60,
                 Min = 1,
                 Step = 1,
-            }
+            },
+            required: false
         );
 
         DefineIcon(NodeIcon.Embedded("web_scrapper"));

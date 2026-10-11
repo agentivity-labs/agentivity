@@ -1,4 +1,5 @@
-﻿using Agentivity.Infrastructure.Arguments;
+﻿using Agentivity.Domain.Workflow;
+using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.Layout;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
@@ -15,6 +16,7 @@ public sealed class LayoutReplaceBlockNode : ToolNode
         : base("layout.replace_block")
     {
         DefineMetadata("Replace Block", "Replaces a block at the specified path with one or more new blocks.", "content.layout");
+        DefineEffects(NodeEffects.None);
 
         DefineInput(
             "layout",
@@ -27,9 +29,10 @@ public sealed class LayoutReplaceBlockNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
-        DefineInput("target", ArgumentType.Text, "Target path to replace (e.g., 'root.main.block[1]')", ui: new ArgumentUiMetadata { Group = "Placement", Order = 20 });
+        DefineInput("target", ArgumentType.Text, "Target path to replace (e.g., 'root.main.block[1]')", ui: new ArgumentUiMetadata { Group = "Placement", Order = 20 }, required: true);
         DefineInput(
             "block",
             ArgumentType.Text,
@@ -41,7 +44,8 @@ public sealed class LayoutReplaceBlockNode : ToolNode
                 Multiline = true,
                 Rows = 8,
                 Format = "json",
-            }
+            },
+            required: true
         );
 
         DefineOutput("layout", ArgumentType.Text, "Updated DSL layout JSON");

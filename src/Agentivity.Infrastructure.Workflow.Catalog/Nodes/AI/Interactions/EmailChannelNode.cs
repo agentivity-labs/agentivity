@@ -1,3 +1,4 @@
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Communication;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -27,15 +28,16 @@ public sealed class EmailChannelNode : ResourceNode, IInteractionChannel, IHuman
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
         DefineMetadata("Email Channel", "Email-based interaction channel for delivering requests and collecting responses.", "ai.interactions");
+        DefineEffects(NodeEffects.SendsMessage);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "Channel", ResourcePortCategory.InteractionChannel, maxConnections: -1);
 
-        DefineCredentialsInput("credentials", "smtp", "SMTP credentials for sending emails", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 });
-        DefineInput("to", ArgumentType.Text, "Recipient email address(es)", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 30 });
-        DefineInput("reply_to", ArgumentType.Text, "Reply-to address for responses", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 40 });
-        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 1440, ui: new ArgumentUiMetadata { Group = "Settings", Order = 50 });
+        DefineCredentialsInput("credentials", "smtp", "SMTP credentials for sending emails", ui: new ArgumentUiMetadata { Group = "Connection", Order = 10 }, required: true);
+        DefineInput("to", ArgumentType.Text, "Recipient email address(es)", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 30 }, required: true);
+        DefineInput("reply_to", ArgumentType.Text, "Reply-to address for responses", ui: new ArgumentUiMetadata { Group = "Recipients", Order = 40 }, required: false);
+        DefineInput("timeout_minutes", ArgumentType.Number, "Response timeout in minutes (0 = no timeout)", 1440, ui: new ArgumentUiMetadata { Group = "Settings", Order = 50 }, required: false);
 
         DefineIcon(NodeIcon.Material(0xe0be, "#5b55e8")); // email icon
     }

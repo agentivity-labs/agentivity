@@ -32,6 +32,7 @@ public sealed class StorageReadNode : ControlFlowNode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
         DefineMetadata("Storage Read", "Reads a value from any storage provider (file, database, etc.)", "storage");
+        DefineEffects(NodeEffects.ReadsExternal);
 
         // Input port
         ClearInputPorts();
@@ -41,10 +42,11 @@ public sealed class StorageReadNode : ControlFlowNode
         ClearOutputPorts();
         DefineOutputPort("found", "Found", "Execute this path if key exists");
         DefineOutputPort("not_found", "Not Found", "Execute this path if key does not exist");
+        DefineOutput("value", ArgumentType.Text, "The stored value. Empty when the key does not exist, in which case the not_found port is taken.");
 
         DefineResourceInputPort("storage", "Storage", ResourcePortCategory.Storage, "Storage resource to read from");
 
-        DefineInput("key", ArgumentType.Text, "Storage key to read", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 });
+        DefineInput("key", ArgumentType.Text, "Storage key to read", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 }, required: true);
 
         DefineIcon(NodeIcon.Embedded("storage_read_node"));
     }

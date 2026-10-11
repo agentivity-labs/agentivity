@@ -1,0 +1,860 @@
+{
+  "id": "b6ea1885-aa9f-4f18-a78b-5b4e97345e36",
+  "name": "Trip Planning Team",
+  "status": "open",
+  "createdAt": "2026-10-11T11:42:05.1045864+00:00",
+  "updatedAt": "2026-10-11T11:43:14.5443127+00:00",
+  "rootEntityId": "35657614-cf06-4b0f-a37e-dec4ecc475ac",
+  "folderId": null,
+  "workflowFolderId": null,
+  "agentModel": {
+    "connectionId": "cred_8357abb614c14d80bca6cba26883a763",
+    "kind": "anthropic",
+    "name": "LLM API - Anthropic"
+  },
+  "registryVersion": "f67a39a52c6a77ab",
+  "revision": 2,
+  "entities": [
+    {
+      "id": "f5717484-72fe-45e0-907f-e88597ff0b48",
+      "kind": "agent",
+      "name": "Flights Specialist",
+      "state": "created",
+      "draft": {
+        "id": "f5717484-72fe-45e0-907f-e88597ff0b48",
+        "name": "Flights Specialist",
+        "graph": {
+          "id": "9eee496d-88f3-44a5-bb01-ee9bdcfd6525",
+          "name": "Flights Specialist",
+          "role": "",
+          "entryNode": "flights_agent",
+          "nodes": [
+            {
+              "id": "flights_agent",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "tools",
+                "system_prompt": "You are a flights specialist. Your role is to recommend flights for the traveller based on their trip details. Provide flight options with airlines, times, prices, and booking recommendations.",
+                "prompt": "{{input}}"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "flights_model",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                "model": "claude-3-5-sonnet-20241022"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "flights_model",
+              "fromPort": "resource",
+              "to": "flights_agent",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "fddc743c-a4d2-4121-ac3a-d54945746ed2",
+      "kind": "agent",
+      "name": "Hotels Specialist",
+      "state": "created",
+      "draft": {
+        "id": "fddc743c-a4d2-4121-ac3a-d54945746ed2",
+        "name": "Hotels Specialist",
+        "graph": {
+          "id": "53c87afa-f689-419b-991e-449a9a1a4a52",
+          "name": "Hotels Specialist",
+          "role": "",
+          "entryNode": "hotels_agent",
+          "nodes": [
+            {
+              "id": "hotels_agent",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "tools",
+                "system_prompt": "You are a hotels specialist. Your role is to recommend accommodations for the traveller based on their trip details. Provide hotel options with locations, amenities, prices, and booking recommendations.",
+                "prompt": "{{input}}"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "hotels_model",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                "model": "claude-3-5-sonnet-20241022"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "hotels_model",
+              "fromPort": "resource",
+              "to": "hotels_agent",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "cb96d138-65b1-4fe3-a594-894d17eda5b6",
+      "kind": "agent",
+      "name": "Activities Specialist",
+      "state": "created",
+      "draft": {
+        "id": "cb96d138-65b1-4fe3-a594-894d17eda5b6",
+        "name": "Activities Specialist",
+        "graph": {
+          "id": "9f572c64-2b4f-4e63-877b-49691f1b926c",
+          "name": "Activities Specialist",
+          "role": "",
+          "entryNode": "activities_agent",
+          "nodes": [
+            {
+              "id": "activities_agent",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "tools",
+                "system_prompt": "You are an activities specialist. Your role is to recommend activities and attractions for the traveller based on their trip details. Provide activity options with descriptions, times, prices, and booking recommendations.",
+                "prompt": "{{input}}"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "activities_model",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                "model": "claude-3-5-sonnet-20241022"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "activities_model",
+              "fromPort": "resource",
+              "to": "activities_agent",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "399e164c-270c-4ce1-8cff-acc8a02a5935",
+      "kind": "agent",
+      "name": "Trip Coordinator",
+      "state": "created",
+      "draft": {
+        "id": "399e164c-270c-4ce1-8cff-acc8a02a5935",
+        "name": "Trip Coordinator",
+        "graph": {
+          "id": "dabc7ae5-ae49-46e5-b596-14e48b0b1d2a",
+          "name": "Trip Coordinator",
+          "role": "",
+          "entryNode": "coordinator_agent",
+          "nodes": [
+            {
+              "id": "coordinator_agent",
+              "nodeType": "ai.node",
+              "position": {
+                "x": 120,
+                "y": 140
+              },
+              "inputs": {
+                "agent_mode": "conversational",
+                "system_prompt": "You are the trip coordinator. Your role is to gather flight, hotel, and activity recommendations from specialists and assemble them into a single comprehensive trip proposal for the traveller. Present the recommendations in a clear, organized format that the traveller can easily review and book.",
+                "prompt": "{{input}}"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            },
+            {
+              "id": "coordinator_model",
+              "nodeType": "ai.llm.model.anthropic",
+              "position": {
+                "x": 400,
+                "y": 140
+              },
+              "inputs": {
+                "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                "model": "claude-3-5-sonnet-20241022"
+              },
+              "inputsMetadata": {},
+              "metadata": {}
+            }
+          ],
+          "connections": [
+            {
+              "from": "coordinator_model",
+              "fromPort": "resource",
+              "to": "coordinator_agent",
+              "toPort": "llm_model"
+            }
+          ],
+          "metadata": {}
+        }
+      },
+      "baseFingerprint": null
+    },
+    {
+      "id": "35657614-cf06-4b0f-a37e-dec4ecc475ac",
+      "kind": "team",
+      "name": "Trip Planning Team",
+      "state": "created",
+      "draft": {
+        "id": "35657614-cf06-4b0f-a37e-dec4ecc475ac",
+        "name": "Trip Planning Team",
+        "orchestratorId": "manager-led",
+        "members": [
+          {
+            "topologyPositionId": "coordinator",
+            "memberEntityId": "399e164c-270c-4ce1-8cff-acc8a02a5935",
+            "memberType": "Agent",
+            "displayName": "Trip Coordinator",
+            "role": "coordinator",
+            "group": "Coordination"
+          },
+          {
+            "topologyPositionId": "flights",
+            "memberEntityId": "f5717484-72fe-45e0-907f-e88597ff0b48",
+            "memberType": "Agent",
+            "displayName": "Flights Specialist",
+            "role": "flights",
+            "group": "Recommendations"
+          },
+          {
+            "topologyPositionId": "hotels",
+            "memberEntityId": "fddc743c-a4d2-4121-ac3a-d54945746ed2",
+            "memberType": "Agent",
+            "displayName": "Hotels Specialist",
+            "role": "hotels",
+            "group": "Recommendations"
+          },
+          {
+            "topologyPositionId": "activities",
+            "memberEntityId": "cb96d138-65b1-4fe3-a594-894d17eda5b6",
+            "memberType": "Agent",
+            "displayName": "Activities Specialist",
+            "role": "activities",
+            "group": "Recommendations"
+          }
+        ],
+        "connections": [],
+        "managerAgentId": "coordinator"
+      },
+      "baseFingerprint": null
+    }
+  ],
+  "journal": [
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703281+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Flights Specialist\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703287+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027flights_agent\u0027 to \u0027Flights Specialist\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703288+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027flights_model\u0027 and connected it to \u0027flights_agent\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703289+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703289+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Hotels Specialist\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703292+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027hotels_agent\u0027 to \u0027Hotels Specialist\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703293+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027hotels_model\u0027 and connected it to \u0027hotels_agent\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703293+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703294+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Activities Specialist\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703295+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027activities_agent\u0027 to \u0027Activities Specialist\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703295+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027activities_model\u0027 and connected it to \u0027activities_agent\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703296+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703296+00:00",
+      "op": "create_entity",
+      "message": "Created agent \u0027Trip Coordinator\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703297+00:00",
+      "op": "add_node",
+      "message": "Added ai.node as \u0027coordinator_agent\u0027 to \u0027Trip Coordinator\u0027. It is the entry point of the graph."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703297+00:00",
+      "op": "add_resource",
+      "message": "Added ai.llm.model.anthropic as \u0027coordinator_model\u0027 and connected it to \u0027coordinator_agent\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703298+00:00",
+      "op": "complete_resources",
+      "message": "Every step already has the resources it needs."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703298+00:00",
+      "op": "create_entity",
+      "message": "Created team \u0027Trip Planning Team\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703299+00:00",
+      "op": "set_orchestrator",
+      "message": "\u0027Trip Planning Team\u0027 now works as \u0027Manager-led\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.47033+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Trip Coordinator\u0027 to \u0027Trip Planning Team\u0027 as \u0027coordinator\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.47033+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Flights Specialist\u0027 to \u0027Trip Planning Team\u0027 as \u0027flights\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.47033+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Hotels Specialist\u0027 to \u0027Trip Planning Team\u0027 as \u0027hotels\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703301+00:00",
+      "op": "add_member",
+      "message": "Added \u0027Activities Specialist\u0027 to \u0027Trip Planning Team\u0027 as \u0027activities\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703301+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Trip Coordinator\u0027 is in the group \u0027Coordination\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703302+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Flights Specialist\u0027 is in the group \u0027Recommendations\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703302+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Hotels Specialist\u0027 is in the group \u0027Recommendations\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703303+00:00",
+      "op": "set_member_group",
+      "message": "\u0027Activities Specialist\u0027 is in the group \u0027Recommendations\u0027."
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:05.4703303+00:00",
+      "op": "set_root",
+      "message": "\u0027Trip Planning Team\u0027 is now the main team of the solution."
+    },
+    {
+      "revision": 2,
+      "at": "2026-10-11T11:43:09.7823793+00:00",
+      "op": "set_manager",
+      "message": "\u0027Trip Coordinator\u0027 manages \u0027Trip Planning Team\u0027."
+    }
+  ],
+  "revisions": [
+    {
+      "revision": 0,
+      "at": "2026-10-11T11:43:05.4703225+00:00",
+      "label": "Built from a description",
+      "entities": [],
+      "rootEntityId": null
+    },
+    {
+      "revision": 1,
+      "at": "2026-10-11T11:43:09.7823771+00:00",
+      "label": "Set Trip Coordinator as manager",
+      "entities": [
+        {
+          "id": "f5717484-72fe-45e0-907f-e88597ff0b48",
+          "kind": "agent",
+          "name": "Flights Specialist",
+          "state": "created",
+          "draft": {
+            "id": "f5717484-72fe-45e0-907f-e88597ff0b48",
+            "name": "Flights Specialist",
+            "graph": {
+              "id": "9eee496d-88f3-44a5-bb01-ee9bdcfd6525",
+              "name": "Flights Specialist",
+              "role": "",
+              "entryNode": "flights_agent",
+              "nodes": [
+                {
+                  "id": "flights_agent",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "You are a flights specialist. Your role is to recommend flights for the traveller based on their trip details. Provide flight options with airlines, times, prices, and booking recommendations.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "flights_model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "flights_model",
+                  "fromPort": "resource",
+                  "to": "flights_agent",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "fddc743c-a4d2-4121-ac3a-d54945746ed2",
+          "kind": "agent",
+          "name": "Hotels Specialist",
+          "state": "created",
+          "draft": {
+            "id": "fddc743c-a4d2-4121-ac3a-d54945746ed2",
+            "name": "Hotels Specialist",
+            "graph": {
+              "id": "53c87afa-f689-419b-991e-449a9a1a4a52",
+              "name": "Hotels Specialist",
+              "role": "",
+              "entryNode": "hotels_agent",
+              "nodes": [
+                {
+                  "id": "hotels_agent",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "You are a hotels specialist. Your role is to recommend accommodations for the traveller based on their trip details. Provide hotel options with locations, amenities, prices, and booking recommendations.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "hotels_model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "hotels_model",
+                  "fromPort": "resource",
+                  "to": "hotels_agent",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "cb96d138-65b1-4fe3-a594-894d17eda5b6",
+          "kind": "agent",
+          "name": "Activities Specialist",
+          "state": "created",
+          "draft": {
+            "id": "cb96d138-65b1-4fe3-a594-894d17eda5b6",
+            "name": "Activities Specialist",
+            "graph": {
+              "id": "9f572c64-2b4f-4e63-877b-49691f1b926c",
+              "name": "Activities Specialist",
+              "role": "",
+              "entryNode": "activities_agent",
+              "nodes": [
+                {
+                  "id": "activities_agent",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "tools",
+                    "system_prompt": "You are an activities specialist. Your role is to recommend activities and attractions for the traveller based on their trip details. Provide activity options with descriptions, times, prices, and booking recommendations.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "activities_model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "activities_model",
+                  "fromPort": "resource",
+                  "to": "activities_agent",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "399e164c-270c-4ce1-8cff-acc8a02a5935",
+          "kind": "agent",
+          "name": "Trip Coordinator",
+          "state": "created",
+          "draft": {
+            "id": "399e164c-270c-4ce1-8cff-acc8a02a5935",
+            "name": "Trip Coordinator",
+            "graph": {
+              "id": "dabc7ae5-ae49-46e5-b596-14e48b0b1d2a",
+              "name": "Trip Coordinator",
+              "role": "",
+              "entryNode": "coordinator_agent",
+              "nodes": [
+                {
+                  "id": "coordinator_agent",
+                  "nodeType": "ai.node",
+                  "position": {
+                    "x": 120,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "agent_mode": "conversational",
+                    "system_prompt": "You are the trip coordinator. Your role is to gather flight, hotel, and activity recommendations from specialists and assemble them into a single comprehensive trip proposal for the traveller. Present the recommendations in a clear, organized format that the traveller can easily review and book.",
+                    "prompt": "{{input}}"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                },
+                {
+                  "id": "coordinator_model",
+                  "nodeType": "ai.llm.model.anthropic",
+                  "position": {
+                    "x": 400,
+                    "y": 140
+                  },
+                  "inputs": {
+                    "credentials": "cred_8357abb614c14d80bca6cba26883a763",
+                    "model": "claude-3-5-sonnet-20241022"
+                  },
+                  "inputsMetadata": {},
+                  "metadata": {}
+                }
+              ],
+              "connections": [
+                {
+                  "from": "coordinator_model",
+                  "fromPort": "resource",
+                  "to": "coordinator_agent",
+                  "toPort": "llm_model"
+                }
+              ],
+              "metadata": {}
+            }
+          },
+          "baseFingerprint": null
+        },
+        {
+          "id": "35657614-cf06-4b0f-a37e-dec4ecc475ac",
+          "kind": "team",
+          "name": "Trip Planning Team",
+          "state": "created",
+          "draft": {
+            "id": "35657614-cf06-4b0f-a37e-dec4ecc475ac",
+            "name": "Trip Planning Team",
+            "orchestratorId": "manager-led",
+            "members": [
+              {
+                "topologyPositionId": "coordinator",
+                "memberEntityId": "399e164c-270c-4ce1-8cff-acc8a02a5935",
+                "memberType": "Agent",
+                "displayName": "Trip Coordinator",
+                "role": "coordinator",
+                "group": "Coordination"
+              },
+              {
+                "topologyPositionId": "flights",
+                "memberEntityId": "f5717484-72fe-45e0-907f-e88597ff0b48",
+                "memberType": "Agent",
+                "displayName": "Flights Specialist",
+                "role": "flights",
+                "group": "Recommendations"
+              },
+              {
+                "topologyPositionId": "hotels",
+                "memberEntityId": "fddc743c-a4d2-4121-ac3a-d54945746ed2",
+                "memberType": "Agent",
+                "displayName": "Hotels Specialist",
+                "role": "hotels",
+                "group": "Recommendations"
+              },
+              {
+                "topologyPositionId": "activities",
+                "memberEntityId": "cb96d138-65b1-4fe3-a594-894d17eda5b6",
+                "memberType": "Agent",
+                "displayName": "Activities Specialist",
+                "role": "activities",
+                "group": "Recommendations"
+              }
+            ],
+            "connections": []
+          },
+          "baseFingerprint": null
+        }
+      ],
+      "rootEntityId": "35657614-cf06-4b0f-a37e-dec4ecc475ac"
+    }
+  ],
+  "conversation": [
+    {
+      "role": "user",
+      "content": "A team that plans trips: one coordinator who asks a flights specialist, a hotels specialist and an activities specialist, and puts everything together in a single proposal for the traveller.",
+      "at": "2026-10-11T11:42:05.1207314+00:00",
+      "work": [],
+      "options": [],
+      "pick": null
+    },
+    {
+      "role": "assistant",
+      "content": "Shall I go ahead with this plan?",
+      "at": "2026-10-11T11:42:08.0545615+00:00",
+      "work": [
+        "Drafting the plan"
+      ],
+      "options": [
+        "Go ahead",
+        "Change something"
+      ],
+      "pick": null
+    },
+    {
+      "role": "user",
+      "content": "Go ahead",
+      "at": "2026-10-11T11:42:31.0939859+00:00",
+      "work": [],
+      "options": [],
+      "pick": null
+    },
+    {
+      "role": "assistant",
+      "content": "Which model should the trip planning team use?",
+      "at": "2026-10-11T11:42:32.625404+00:00",
+      "work": [],
+      "options": [
+        "OpenAI (chat \u002B vision)",
+        "LLM API - LMStudio",
+        "LLM API - Anthropic",
+        "LLM API - Default"
+      ],
+      "pick": {
+        "kind": "model",
+        "purpose": "agent_model",
+        "connections": [
+          {
+            "id": "cred_openai_vision_001",
+            "name": "OpenAI (chat \u002B vision)",
+            "kind": "openai",
+            "description": "Same OpenAI account as cred_openai_001, pinned to a vision-capable chat model."
+          },
+          {
+            "id": "cred_llmstudio_001",
+            "name": "LLM API - LMStudio",
+            "kind": "openai",
+            "description": "Local LLM Studio instance"
+          },
+          {
+            "id": "cred_8357abb614c14d80bca6cba26883a763",
+            "name": "LLM API - Anthropic",
+            "kind": "anthropic",
+            "description": "Claude API"
+          },
+          {
+            "id": "cred_e153a48f3f3d45a8abdc40875c26100f",
+            "name": "LLM API - Default",
+            "kind": "openai",
+            "description": "Local LLM Studio instance"
+          }
+        ]
+      }
+    },
+    {
+      "role": "user",
+      "content": "Use \u0022LLM API - Anthropic\u0022 for the agents.",
+      "at": "2026-10-11T11:42:37.6381469+00:00",
+      "work": [],
+      "options": [],
+      "pick": null
+    },
+    {
+      "role": "assistant",
+      "content": "Excellent! Your **Trip Planning Team** is ready. Here\u0027s what you now have:\n\n**The Team Structure:**\n- **Trip Coordinator** (manager) \u2014 Receives the traveller\u0027s request and orchestrates the specialists. It gathers their recommendations and assembles them into a single, organized trip proposal.\n- **Flights Specialist** \u2014 Recommends flight options with airlines, times, prices, and booking details.\n- **Hotels Specialist** \u2014 Recommends accommodations with locations, amenities, prices, and booking details.\n- **Activities Specialist** \u2014 Recommends activities and attractions with descriptions, times, prices, and booking details.\n\n**How it works:**\nWhen you give the team a trip request (destination, dates, budget, preferences), the coordinator asks each specialist for recommendations. Once all three have responded, the coordinator assembles everything into a comprehensive proposal the traveller can review and book.\n\n**What you need to provide:**\n- The Anthropic API connection is already set up with your credentials.\n- When you run the team, give it the traveller\u0027s trip details: destination, travel dates, budget, preferences, and any special requirements.\n\nNothing is saved yet. Review the team in your workspace and save it when you\u0027re ready.",
+      "at": "2026-10-11T11:43:14.5442983+00:00",
+      "work": [
+        "Built \u201CFlights Specialist\u201D, \u201CHotels Specialist\u201D, \u201CActivities Specialist\u201D, \u201CTrip Coordinator\u201D, \u201CTrip Planning Team\u201D (4 steps)",
+        "Reading \u201CTrip Planning Team\u201D",
+        "\u0027Trip Coordinator\u0027 manages \u0027Trip Planning Team\u0027.",
+        "Checked: no problem found"
+      ],
+      "options": [],
+      "pick": null
+    }
+  ],
+  "plan": {
+    "brief": "A team that coordinates trip planning by gathering flight, hotel, and activity recommendations from specialists, then assembles them into a single proposal for the traveller.",
+    "steps": [],
+    "needs": [],
+    "name": "Trip Planning Team",
+    "builds": [],
+    "at": "2026-10-11T11:42:08.0376251+00:00",
+    "confirmed": true
+  }
+}

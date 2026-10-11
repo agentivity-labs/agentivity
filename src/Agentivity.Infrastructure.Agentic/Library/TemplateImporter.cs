@@ -91,12 +91,15 @@ public sealed partial class TemplateImporter(
             return new TemplateImportResult(true, templateId, name, version, root, preview, ModelPlan(options, credential, nodesFound), requires, toConfigure, problems, warnings);
         }
 
+        // One place for the whole Template: found, or made, in each library that receives something, before the first item.
+        var folders = await FoldersAsync(items, options.Folder, cancellationToken).ConfigureAwait(false);
+
         var created = new List<Item>();
         try
         {
             foreach (var item in items.OrderBy(i => i.Kind == "datatable" ? 0 : 1))
             {
-                await SaveAsync(item, file, options.IncludeRows, cancellationToken).ConfigureAwait(false);
+                await SaveAsync(item, file, options.IncludeRows, folders, cancellationToken).ConfigureAwait(false);
                 created.Add(item);
             }
         }
@@ -353,7 +356,25 @@ public sealed partial class TemplateImporter(
 
     // ── Creating ──────────────────────────────────────────────────────────────────────────────
 
-    private async Task SaveAsync(Item item, JsonObject file, bool includeRows, CancellationToken cancellationToken)
+    /// <summary>Where the items go in each library; the data tables follow the path themselves, in their own module.</summary>
+    private sealed record Folders(string? Agentic, string? Workflows, IReadOnlyList<string>? Path);
+
+    private async Task<Folders> FoldersAsync(List<Item> items, IReadOnlyList<string>? path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Agents and teams share one folder tree, which the agents hold.
+            var agentic = items.Any(i => i.Kind is "agent" or "team") ? await WorkspaceFolderPaths.FindOrCreateAsync(agents, path, cancellationToken).ConfigureAwait(false) : null;
+            var flows = items.Any(i => i.Kind == "workflow") ? await WorkspaceFolderPaths.FindOrCreateAsync(workflows, path, cancellationToken).ConfigureAwait(false) : null;
+            return new Folders(agentic, flows, path);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new TemplateImportException("save_failed", $"The folder \"{string.Join(" / ", path ?? [])}\" could not be prepared: {ex.Message}");
+        }
+    }
+
+    private async Task SaveAsync(Item item, JsonObject file, bool includeRows, Folders folders, CancellationToken cancellationToken)
     {
         var text = item.Json.ToJsonString();
         try
@@ -363,25 +384,25 @@ public sealed partial class TemplateImporter(
                 case "agent":
                 {
                     var entity = JsonSerializer.Deserialize<AgentEntity>(text, JsonDefaults.Default) ?? throw new JsonException("empty");
-                    Require((await agents.SaveAsync(entity, cancellationToken: cancellationToken).ConfigureAwait(false)).IsSuccess, item);
+                    Require((await agents.SaveAsync(entity, folders.Agentic, cancellationToken).ConfigureAwait(false)).IsSuccess, item);
                     break;
                 }
                 case "team":
                 {
                     var entity = JsonSerializer.Deserialize<TeamEntity>(text, JsonDefaults.Default) ?? throw new JsonException("empty");
-                    Require((await teams.SaveAsync(entity, cancellationToken: cancellationToken).ConfigureAwait(false)).IsSuccess, item);
+                    Require((await teams.SaveAsync(entity, folders.Agentic, cancellationToken).ConfigureAwait(false)).IsSuccess, item);
                     break;
                 }
                 case "workflow":
                 {
                     var entity = JsonSerializer.Deserialize<WorkflowEntity>(text, JsonDefaults.Default) ?? throw new JsonException("empty");
-                    Require((await workflows.SaveAsync(entity, cancellationToken: cancellationToken).ConfigureAwait(false)).IsSuccess, item);
+                    Require((await workflows.SaveAsync(entity, folders.Workflows, cancellationToken).ConfigureAwait(false)).IsSuccess, item);
                     break;
                 }
                 default:
                 {
                     var rows = includeRows && (file["data"] as JsonObject)?[item.OldId] is JsonObject tableData && tableData["rows"] is JsonArray array ? array.Select(r => JsonDocument.Parse(r!.ToJsonString()).RootElement.Clone()).ToList() : [];
-                    var table = new TemplateDataTable(item.NewId, item.Name, JsonDocument.Parse(text).RootElement.Clone(), rows);
+                    var table = new TemplateDataTable(item.NewId, item.Name, JsonDocument.Parse(text).RootElement.Clone(), rows, folders.Path);
                     if (await dataTables!.CreateAsync(table, cancellationToken).ConfigureAwait(false) is { } error)
                     {
                         throw new TemplateImportException("save_failed", error);

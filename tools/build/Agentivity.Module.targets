@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    Imported by every project that is a dynamically loaded module (an assembly the platform loads from _modules at start-up).
+
+    A module is never referenced by the platform: it is built on its own, and its own copy target puts it in the modules folder.
+    What this file adds is the other half of that contract: a Clean removes what the build copied, so that a clean build really
+    starts from nothing and copies everything again.
+
+    The modules folder is ModuleOutputDirectory (most modules) or ModulesDir (the agent engine). A module that copies more files
+    than its own assembly lists them in ModuleExtraOutput.
+  -->
+  <PropertyGroup>
+    <IsAgentivityModule>true</IsAgentivityModule>
+  </PropertyGroup>
+
+  <Target Name="RemoveModuleFromModulesDirectory" AfterTargets="Clean">
+    <PropertyGroup>
+      <_ModulesFolder>$(ModuleOutputDirectory)</_ModulesFolder>
+      <_ModulesFolder Condition="'$(_ModulesFolder)' == ''">$(ModulesDir)</_ModulesFolder>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(_ModulesFolder)' != ''">
+      <_CopiedModuleFile Include="$(_ModulesFolder)$(AssemblyName).dll;$(_ModulesFolder)$(AssemblyName).pdb;$(_ModulesFolder)$(AssemblyName).deps.json" />
+      <_CopiedModuleFile Include="@(ModuleExtraOutput)" />
+    </ItemGroup>
+    <!-- A file locked by a running host is reported, not fatal: stop the host and clean again. -->
+    <Delete Files="@(_CopiedModuleFile)" ContinueOnError="WarnAndContinue" />
+  </Target>
+</Project>

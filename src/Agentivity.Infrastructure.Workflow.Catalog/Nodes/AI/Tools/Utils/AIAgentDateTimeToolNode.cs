@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using Agentivity.Domain.Workflow;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Core.Llm;
@@ -40,6 +41,7 @@ public sealed class AIAgentDateTimeToolNode : ResourceNode, IAgentTool
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
         DefineMetadata("AI Agent Date & Time Tool", "Returns the current date/time in UTC or local time for AI agent tool calling.", "ai.tools.utils");
+        DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
         ClearOutputPorts();
