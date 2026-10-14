@@ -18,12 +18,19 @@ public sealed record RunRecoveryReport(int Rearmed, int Interrupted);
 /// HIL pause, platform restart and crash recovery are the same functionality: rebuild from
 /// durable state and re-enter through one path.
 /// <para>
-/// Given any run id, the service walks the persisted run tree UP to the branch root
-/// (invariant: a nested run is never resumed directly — its parent's re-entry cascade owns it,
-/// which replaces the old per-handler "declination" logic), gates on the run's lifecycle state,
-/// rehydrates the <see cref="RunContext"/> (same ExecutionId/StreamId via the injected
-/// <c>IRepository{ExecutionContext,ExecutionRecord}</c>), and delegates the re-entry to the
-/// <see cref="IResumableEngine"/> registered for the run's kind.
+/// One execution is a tree of runs, and a run that waits makes every run above it wait. When what a run was waiting for
+/// has come (<see cref="ResumeAsync"/> for a person's answer, <see cref="WakeAsync"/> for anything else), it is not the top
+/// of the tree that is taken up again: it is the run that called the one that was waiting, its parent, which calls it
+/// again (a run on its own, at the top, is taken up itself). When that run has finished, its own parent is taken up again
+/// in its turn, finds it finished, and goes on; and so on up to the top. A run is taken up again only once the run it was
+/// waiting for has finished, whatever the depth of the tree.
+/// </para>
+/// <para>
+/// Taking a run up again is the same for all: gate on its lifecycle state, rehydrate its <see cref="RunContext"/> (same
+/// ExecutionId/StreamId via the injected <c>IRepository{ExecutionContext,ExecutionRecord}</c>), and delegate the re-entry
+/// to the <see cref="IResumableEngine"/> registered for its kind. Recovery after a crash (<see cref="RecoverAsync"/>) is
+/// the one case that starts from the top of the branch: nothing has come, the whole branch is re-entered from its last
+/// checkpoint.
 /// </para>
 /// <para>
 /// At startup, <see cref="RecoverAllAsync"/> scans the durable records: runs waiting for a human
@@ -42,9 +49,76 @@ public sealed class DurableRunService(
     // Backstop against a corrupt/cyclic persisted tree; deeper nesting is already rejected at run time.
     private const int MaxWalkDepth = 10;
 
-    /// <summary>Resumes the branch owning <paramref name="runId"/> after a human response.</summary>
-    public ValueTask<RunResumeOutcome> ResumeAsync(Guid runId, InteractionResponse response, CancellationToken ct = default) =>
-        ReenterBranchRootAsync(runId, response, gate: static s => s is RunStatus.Paused or RunStatus.WaitingForInput, gateError: "not waiting for input", ct);
+    /// <summary>Takes up again what waits for <paramref name="runId"/>, the run that asked a person something, now that they answered.</summary>
+    public ValueTask<RunResumeOutcome> ResumeAsync(Guid runId, InteractionResponse response, CancellationToken ct = default) => TakeUpWhatWaitsForAsync(runId, response, ct);
+
+    /// <summary>
+    /// Takes up again what waits for <paramref name="runId"/>, when what that run was waiting for has come and it is not a
+    /// person's answer (a job that ended, a call that came in…): the run that was waiting is named, nothing else.
+    /// </summary>
+    public ValueTask<RunResumeOutcome> WakeAsync(Guid runId, CancellationToken ct = default) => TakeUpWhatWaitsForAsync(runId, response: null, ct);
+
+    private static bool IsWaiting(RunStatus status) => status is RunStatus.Paused or RunStatus.WaitingForInput;
+
+    /// <summary>
+    /// What <paramref name="runId"/> was waiting for has come: the run that called it is taken up again and calls it again
+    /// (that run has everything needed to do so: what it was given, where it stands). A run with no parent is taken up
+    /// itself.
+    /// </summary>
+    private async ValueTask<RunResumeOutcome> TakeUpWhatWaitsForAsync(Guid runId, InteractionResponse? response, CancellationToken ct)
+    {
+        var waiting = await runRepository.FindAsync(runId.ToString("D"), ct).ConfigureAwait(false);
+        if (waiting is null)
+            return new RunResumeOutcome(false, $"Run '{runId}' is unknown (no live entry and no durable record).");
+
+        var run = waiting;
+        if (waiting.ParentRunId is not null)
+        {
+            var parent = await runRepository.FindAsync(waiting.ParentRunId, ct).ConfigureAwait(false);
+            if (parent is null)
+                logger?.LogWarning("Run tree is broken: parent {ParentRunId} of {RunId} has no entry/record — resuming from {RunId}.", waiting.ParentRunId, waiting.RunId, waiting.RunId);
+            else
+                run = parent;
+        }
+
+        return await ReenterAsync(run, response, IsWaiting, "not waiting for input", thenItsParent: true, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Once <paramref name="settled"/> has ended, <paramref name="run"/> has finished or is waiting again. Finished, and
+    /// called by a run that is waiting for it: that run is taken up again in its turn.
+    /// </summary>
+    private async Task TakeUpItsParentWhenDoneAsync(RunContext run, Task settled)
+    {
+        try
+        {
+            await settled.ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // The engine reports its own failures on the run; the state of the run is what is read below.
+            logger?.LogDebug(ex, "Run {RunId} ended with an exception after being taken up again.", run.RunId);
+        }
+
+        try
+        {
+            var now = await runRepository.FindAsync(run.RunId, CancellationToken.None).ConfigureAwait(false);
+            if (now?.ParentRunId is null || now.Status is not (RunStatus.Completed or RunStatus.Failed or RunStatus.Cancelled))
+                return;
+
+            var parent = await runRepository.FindAsync(now.ParentRunId, CancellationToken.None).ConfigureAwait(false);
+            if (parent is null || !IsWaiting(parent.Status))
+                return;
+
+            var outcome = await ReenterAsync(parent, response: null, IsWaiting, "not waiting", thenItsParent: true, CancellationToken.None).ConfigureAwait(false);
+            if (!outcome.Success)
+                logger?.LogWarning("Run {ParentRunId} could not be taken up again after its child {RunId} finished: {Error}", parent.RunId, run.RunId, outcome.Error);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Taking up the parent of run {RunId} again failed.", run.RunId);
+        }
+    }
 
     /// <summary>
     /// Manually re-enters a run interrupted by a crash/restart, from its last checkpoint
@@ -118,6 +192,12 @@ public sealed class DurableRunService(
             entry = parent;
         }
 
+        return await ReenterAsync(entry, response, gate, gateError, thenItsParent: false, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Takes one run up again through the engine of its kind. The same for every run, wherever it is in the tree.</summary>
+    private async ValueTask<RunResumeOutcome> ReenterAsync(RunContext entry, InteractionResponse? response, Func<RunStatus, bool> gate, string gateError, bool thenItsParent, CancellationToken ct)
+    {
         if (!gate(entry.Status))
             return new RunResumeOutcome(false, $"Run '{entry.RunId}' is {gateError} (status: {entry.Status}).", entry.RunId);
 
@@ -126,7 +206,7 @@ public sealed class DurableRunService(
         if (engine is null)
             return new RunResumeOutcome(false, $"No resumable engine is registered for run kind '{entityKind}'.", entry.RunId);
 
-        // `entry` is the run's one live, cache-registered RunContext (FindAsync above returns the
+        // `entry` is the run's one live, cache-registered RunContext (FindAsync returns the
         // cached instance on a hit, or a freshly-reconstructed-and-recached one from the durable
         // record on a cache miss — either way, already the single source of truth every other
         // reader of the repository sees). Never build a second RunContext for the same run: a
@@ -140,7 +220,9 @@ public sealed class DurableRunService(
             : null;
         entry.PrepareForResume(executionCtx);
 
-        await engine.ReenterAsync(entry, response, ct).ConfigureAwait(false);
+        var settled = await engine.ReenterAsync(entry, response, ct).ConfigureAwait(false);
+        if (thenItsParent)
+            _ = TakeUpItsParentWhenDoneAsync(entry, settled);
         return new RunResumeOutcome(true, RootRunId: entry.RunId);
     }
 }

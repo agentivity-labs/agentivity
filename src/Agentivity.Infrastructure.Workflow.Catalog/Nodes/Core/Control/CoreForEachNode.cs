@@ -63,7 +63,6 @@ public sealed class CoreForEachNode : ControlFlowNode
         DefineOutput("total_count", ArgumentType.Number, "Total number of items in collection");
         DefineOutput("is_first", ArgumentType.Boolean, "True if this is the first item");
         DefineOutput("is_last", ArgumentType.Boolean, "True if this is the last item");
-        DefineOutput("results", ArgumentType.Text, "All iteration results (after completion)");
         DefineOutput("count", ArgumentType.Number, "Number of completed iterations");
 
         DefineIcon(NodeIcon.Embedded("loop"));
@@ -97,7 +96,6 @@ public sealed class CoreForEachNode : ControlFlowNode
                 ["total_count"] = 0,
                 ["is_first"] = false,
                 ["is_last"] = false,
-                ["results"] = new List<object?>(),
                 ["count"] = 0,
             };
 

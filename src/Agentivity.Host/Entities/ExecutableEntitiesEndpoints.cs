@@ -15,7 +15,7 @@ namespace Agentivity.Host.Entities;
 
 /// <summary>
 /// Catalog endpoint for <em>executable</em> entities (agents, teams, workflows) —
-/// things a <c>ComposableNode</c> / <c>TeamNode</c> can invoke as a sub-entity in a
+/// things a step that calls the library (<c>LibraryCallNode</c>) can invoke as a sub-entity in a
 /// graph. Not a generic listing for every <see cref="Agentivity.Domain.Entity"/>-derived
 /// kind: non-executable resources (e.g. DataTableEntity) have their own dedicated
 /// endpoints (see <c>DataTablesEndpoints</c>) since they don't fit

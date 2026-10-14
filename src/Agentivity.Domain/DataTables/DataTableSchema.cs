@@ -25,8 +25,7 @@ public sealed class DataTableSchema
             _columns[column.Name] = column;
         }
 
-        if (_columns.Count == 0)
-            throw new ArgumentException("Schema must have at least one column.", nameof(columns));
+        // No column is a schema too: a table that has just been created has none yet, and gets its first one afterwards.
     }
 
     public DataTableColumn? GetColumn(string name) => _columns.TryGetValue(name, out var col) ? col : null;

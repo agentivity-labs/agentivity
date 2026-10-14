@@ -44,12 +44,12 @@ public sealed class DefaultExecutableResolver(
         // Try team.
         var teamResult = await agenticLibrary.GetTeamAsync(entityId, ct).ConfigureAwait(false);
         if (teamResult.IsSuccess && teamResult.Value is not null)
-            return new TeamExecutable(teamResult.Value, agenticEngine.Value);
+            return new TeamExecutable(teamResult.Value, agenticEngine.Value, runRepository);
 
         // Try workflow.
         var workflowResult = await workflowRepository.GetAsync(entityId, ct).ConfigureAwait(false);
         if (workflowResult.IsSuccess && workflowResult.Value is not null)
-            return new WorkflowExecutable(workflowResult.Value, workflowEngine);
+            return new WorkflowExecutable(workflowResult.Value, workflowEngine, interactionStore);
 
         throw new InvalidOperationException($"Entity '{entityId}' could not be resolved as an agent, team, or workflow.");
     }
@@ -57,7 +57,7 @@ public sealed class DefaultExecutableResolver(
     public IExecutable Resolve(ExecutableKind kind, string entityId) =>
         kind switch
         {
-            ExecutableKind.Workflow => new WorkflowExecutable(entityId, entityId, workflowEngine),
+            ExecutableKind.Workflow => new WorkflowExecutable(entityId, entityId, workflowEngine, interactionStore),
             _ => throw new InvalidOperationException($"Synchronous Resolve is not supported for kind '{kind}'. Use ResolveAsync instead."),
         };
 

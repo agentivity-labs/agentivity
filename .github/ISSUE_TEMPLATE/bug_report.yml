@@ -1,0 +1,54 @@
+name: Report a bug
+description: Something does not work as the documentation says.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time. **Never paste an API key, a password or personal data here**: issues are public.
+        For a security problem, do not open an issue: see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The image tag you run (for example 0.1.5), or the commit if you built from source.
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you run it
+      options:
+        - Docker image on Windows
+        - Docker image on macOS
+        - Docker image on Linux
+        - Built from source
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: AI model provider, if an AI step is involved
+      placeholder: OpenAI, Anthropic, Gemini, DeepSeek, xAI, AWS Bedrock…
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Output of `docker logs agentivity`, with any key removed.
+      render: text

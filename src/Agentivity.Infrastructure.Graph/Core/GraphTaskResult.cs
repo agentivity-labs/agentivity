@@ -19,7 +19,8 @@ public sealed record GraphTaskResult
         Output = output;
         Error = error;
         SuspensionReason = suspensionReason;
-        WaitingForToken = WaitingForToken;
+        // 'this.': the parameter has the name of the property, and without it the token was assigned to itself and lost.
+        this.WaitingForToken = WaitingForToken;
     }
 
     /// <summary>The final status of the task execution.</summary>
@@ -81,7 +82,8 @@ public sealed record GraphTaskResult<TArtifact>
         Artifact = artifact;
         Error = error;
         SuspensionReason = suspensionReason;
-        WaitingForToken = WaitingForToken;
+        // 'this.': the parameter has the name of the property, and without it the token was assigned to itself and lost.
+        this.WaitingForToken = WaitingForToken;
     }
 
     /// <summary>The final status of the task execution.</summary>

@@ -82,7 +82,7 @@ public static class ObservabilityServiceCollectionExtensions
     /// Registers the trace pipeline core: <see cref="IAgentTraceEmitter"/>/<see cref="AgentTraceEmitter"/>.
     /// <para>
     /// This is a SEPARATE pipeline from <see cref="AddAgentTelemetryCore"/> — traces are not
-    /// telemetry, must not share sinks/emitter with BetterStack/OTel export, and must not be
+    /// telemetry, must not share sinks/emitter with the OpenTelemetry export, and must not be
     /// routed through <c>IRunEventBus</c> (chat/SSE).
     /// </para>
     /// </summary>

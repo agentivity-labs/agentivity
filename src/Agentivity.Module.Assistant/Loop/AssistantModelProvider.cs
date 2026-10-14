@@ -26,51 +26,13 @@ public interface IAssistantModelProvider
 /// local model needs no key) gets that one. When none is named, it is the first model connection of the list that holds a
 /// key. Changing the setting changes the model; nothing else is needed.
 /// </summary>
-public sealed class SettingsAssistantModelProvider(AppSettingsService settings, LlmConnectionReplacer connections, ILlmClientFactory factory, CredentialsService credentials, ILoggerFactory loggers) : IAssistantModelProvider
+public sealed class SettingsAssistantModelProvider(AppSettingsService settings, LlmConnectionReplacer connections, ILlmClientFactory factory) : IAssistantModelProvider
 {
-    /// <summary>The wire format a provider speaks: Claude and Gemini each have their own, everything else is OpenAI's.</summary>
-    public static LlmApiFlavor FlavorOf(string? templateId) =>
-        (templateId ?? "").ToLowerInvariant() switch
-        {
-            "anthropic" => LlmApiFlavor.Anthropic,
-            "gemini" => LlmApiFlavor.Gemini,
-            _ => LlmApiFlavor.OpenAI,
-        };
-
     // The value an unset setting carries.
     private const string Unset = "invalid_credential_id";
 
-    /// <summary>Where a provider's API lives when its credential names no address. Unknown providers use the credential's own.</summary>
-    public static string? DefaultBaseUrlOf(string? templateId) =>
-        (templateId ?? "").ToLowerInvariant() switch
-        {
-            "anthropic" => "https://api.anthropic.com",
-            "gemini" => "https://generativelanguage.googleapis.com/v1beta",
-            "xai" => "https://api.x.ai/v1",
-            "deepseek" => "https://api.deepseek.com/v1",
-            "openai" => "https://api.openai.com/v1",
-            _ => null,
-        };
-
-    /// <summary>
-    /// A client for any model connection of the platform, whatever its provider: it speaks the provider's own format (Claude,
-    /// Gemini, AWS Bedrock) or OpenAI's, which most others (DeepSeek, xAI, Groq, Ollama, LM Studio…) share.
-    /// </summary>
-    private async Task<ILlmClient> CreateClientAsync(string credentialId, CancellationToken ct)
-    {
-        var credential = await credentials.GetByIdAsync(credentialId, ct).ConfigureAwait(false) ?? throw new InvalidOperationException($"Model connection '{credentialId}' was not found.");
-        var template = credential.TemplateId;
-        if (string.Equals(template, "aws_bedrock", StringComparison.OrdinalIgnoreCase))
-        {
-            var accessKey = credential.GetField("access_key_id") ?? throw new InvalidOperationException("The AWS Bedrock connection has no 'access_key_id'.");
-            var secret = credential.GetField("secret_access_key") ?? throw new InvalidOperationException("The AWS Bedrock connection has no 'secret_access_key'.");
-            var region = credential.GetField("region") ?? throw new InvalidOperationException("The AWS Bedrock connection has no 'region'.");
-            var model = credential.GetField("model") ?? throw new InvalidOperationException("The AWS Bedrock connection names no model: add a 'model' to it.");
-            return new BedrockLlmClient(accessKey, secret, region, model, loggers.CreateLogger<BedrockLlmClient>());
-        }
-
-        return await factory.CreateAsync(credentialId, null, FlavorOf(template), DefaultBaseUrlOf(template), ct).ConfigureAwait(false);
-    }
+    /// <summary>A client for any model connection of the platform, whatever its provider (see <see cref="LlmClientFactory"/>).</summary>
+    private async Task<ILlmClient> CreateClientAsync(string credentialId, CancellationToken ct) => await factory.CreateAsync(credentialId, ct).ConfigureAwait(false);
 
     public async Task<AssistantModel> ResolveAsync(CancellationToken cancellationToken = default)
     {

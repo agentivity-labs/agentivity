@@ -8,5 +8,5 @@ internal static class LoopBodyLimits
     /// the run to wait for a person and be resumed later.
     /// </summary>
     internal static string CannotWaitForAPerson(string nodeId) =>
-        $"Loop body node '{nodeId}' asked a person for input, which a loop cannot wait for: it runs all its iterations in one go and cannot be suspended and resumed. Ask before or after the loop, or run each item as its own workflow.";
+        $"Loop body node '{nodeId}' has to wait (for a person's answer, or for something it called that is waiting), which a loop cannot wait for: it runs all its iterations in one go and cannot be suspended and resumed. Do it before or after the loop, or run each item as its own workflow.";
 }

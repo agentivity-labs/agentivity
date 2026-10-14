@@ -176,7 +176,7 @@ public sealed partial class WorkflowEngine
     /// Surcharge non-breaking acceptant un <see cref="RunContext"/> parent.
     /// Propage le <c>TraceId</c> et le <c>SpanId</c> depuis le contexte parent,
     /// ce qui permet de reconstruire la hiérarchie OTel complète quand ce workflow
-    /// est appelé depuis un <c>ComposableNode</c> ou un <c>WorkflowExecutable</c>.
+    /// est appelé depuis une étape qui appelle la bibliothèque (<c>LibraryCallNode</c>) ou un <c>WorkflowExecutable</c>.
     /// </summary>
     public async ValueTask<OperationResult<WorkflowRunResult>> ExecuteAsync(string workflowId, IDictionary<string, object?>? input, CancellationToken cancellationToken, RunContext? parentContext)
     {
@@ -221,7 +221,85 @@ public sealed partial class WorkflowEngine
     // Resume after human-in-the-loop interaction
     // ──────────────────────────────────────────────────────────────────────
 
-    public async ValueTask<SuspendedRunContext?> ProvideInteractionResponseAsync(Guid runId, InteractionResponse response, CancellationToken cancellationToken = default)
+    public ValueTask<SuspendedRunContext?> ProvideInteractionResponseAsync(Guid runId, InteractionResponse response, CancellationToken cancellationToken = default) =>
+        TakeUpWaitingRunAsync(runId, response ?? throw new ArgumentNullException(nameof(response)), cancellationToken);
+
+    /// <summary>
+    /// Takes up again a workflow run that something else called (a team, a step of another workflow) and that stopped to
+    /// wait. This is the one place where that is done.
+    /// <para>
+    /// A run that asked a person something goes on with their answer, read where answers are kept
+    /// (<paramref name="interactions"/>); while there is none, it is still waiting. A run that waits for anything else simply
+    /// runs its waiting step again: that step knows what it was waiting for.
+    /// </para>
+    /// </summary>
+    /// <returns>
+    /// What the run came to (it may have stopped to wait again), or <c>null</c> with <c>WaitingForToken</c> when what it
+    /// waits for has not come yet.
+    /// </returns>
+    public async ValueTask<(OperationResult<WorkflowRunResult>? Result, string WaitingForToken)> ResumeNestedAsync(Guid runId, RunContext context, IInteractionRequestStore? interactions, CancellationToken cancellationToken = default)
+    {
+        var run = GetRun(runId.ToString("D"));
+
+        // The run has ended since it was last called: it is not run again, what it came to is given back. That is how the
+        // run that called it goes on once it is taken up again in its turn.
+        if (run is { Status: RunStatus.Completed })
+            return (await ResultOfFinishedRunAsync(run, cancellationToken).ConfigureAwait(false), string.Empty);
+        if (run is { Status: RunStatus.Failed or RunStatus.Cancelled })
+            return (OperationResult<WorkflowRunResult>.Failure(run.Error ?? $"Workflow run '{runId}' ended as {run.Status}."), string.Empty);
+
+        if (run?.Payload is not { } payload)
+            return (OperationResult<WorkflowRunResult>.Failure($"Workflow run '{runId}' could not be resumed (suspended state not found or already consumed)."), string.Empty);
+
+        var waiting = WorkflowProgress.FromRecord(payload);
+        InteractionResponse? response = null;
+        if (waiting.InteractionRequestId != Guid.Empty)
+        {
+            response = interactions is null ? null : await interactions.GetResponseAsync(waiting.InteractionRequestId, cancellationToken).ConfigureAwait(false);
+            if (response is null)
+                return (null, waiting.AwaitedToken);
+        }
+
+        var suspended = await TakeUpWaitingRunAsync(runId, response, cancellationToken).ConfigureAwait(false);
+        if (suspended is null)
+            return (OperationResult<WorkflowRunResult>.Failure($"Workflow run '{runId}' could not be resumed (suspended state not found or already consumed)."), waiting.AwaitedToken);
+
+        return (await ResumeAfterInteractionAsync(suspended, cancellationToken, parentContext: context).ConfigureAwait(false), waiting.AwaitedToken);
+    }
+
+    /// <summary>
+    /// A run that another run called keeps what it came to, in the run itself, before it is marked finished: the run that
+    /// called it may only be taken up again later, and then reads it there instead of running the workflow a second time.
+    /// It takes the place of the point the run had stopped on, which no longer means anything.
+    /// </summary>
+    private void KeepWhatItProduced(string runId, Dictionary<string, object?> finalState, IEnumerable<string> executedNodes, RunContext? parentContext)
+    {
+        if (parentContext is null || GetRun(runId) is not { } run)
+            return;
+
+        var produced = new WorkflowProgress(SuspendedNodeId: string.Empty, InteractionRequestId: Guid.Empty, State: WorkflowStateSerializer.SerializeState(finalState), ExecutedNodes: [.. executedNodes], VisitedNodes: [], Pending: [], RemainingPredecessors: [], SuspendedAt: DateTime.UtcNow);
+        run.SetPayload("workflow", produced.ToRecord());
+        _runRepository.AddAsync(run).AsTask().GetAwaiter().GetResult();
+    }
+
+    /// <summary>What a finished run produced, read from the run itself (see <see cref="KeepWhatItProduced"/>).</summary>
+    private async ValueTask<OperationResult<WorkflowRunResult>> ResultOfFinishedRunAsync(RunContext run, CancellationToken cancellationToken)
+    {
+        var definition = run.EntityId is null ? null : await _workflowService.GetByIdAsync(run.EntityId, cancellationToken).ConfigureAwait(false);
+        if (definition is null)
+            return OperationResult<WorkflowRunResult>.Failure($"Workflow '{run.EntityId}' of run '{run.RunId}' not found.");
+
+        if (run.Payload is not { } payload || WorkflowProgress.FromRecord(payload) is not { SuspendedNodeId.Length: 0 } produced)
+            return OperationResult<WorkflowRunResult>.Failure($"Workflow run '{run.RunId}' has finished, and what it produced was not kept: it cannot be given back.");
+
+        return OperationResult<WorkflowRunResult>.Success(new WorkflowRunResult(definition, WorkflowStateSerializer.DeserializeState(produced.State), produced.ExecutedNodes));
+    }
+
+    /// <summary>
+    /// Puts a waiting run back to running at the step it stopped on. <paramref name="response"/> is the person's answer when
+    /// the step was waiting for one: it is left for the step under its name.
+    /// </summary>
+    public async ValueTask<SuspendedRunContext?> TakeUpWaitingRunAsync(Guid runId, InteractionResponse? response, CancellationToken cancellationToken = default)
     {
         // Atomically transition WaitingForInput → Running
         var entry = GetRun(runId.ToString("D"));
@@ -262,8 +340,8 @@ public sealed partial class WorkflowEngine
 
         var runControl = new RunControl();
 
-        var responseKey = $"__interaction_response_{persisted.SuspendedNodeId}";
-        state[responseKey] = response;
+        if (response is not null)
+            state[$"__interaction_response_{persisted.SuspendedNodeId}"] = response;
 
         SetRunControl(runId.ToString("D"), runControl);
 

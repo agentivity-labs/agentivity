@@ -1,10 +1,3 @@
-<!--
-  Source of truth: README.md at the root of agentivity_service. The export copies it to the public repository
-  (tools/export/export-manifest.json). The pictures are in docs/images (exported too, git-tracked files only).
-  Same voice as agentivity.io: plain words, no code on this page (the code lives in the documentation), the platform first.
-  Remove this comment before publishing.
--->
-
 <p align="center">
   <a href="https://www.agentivity.io/?utm_source=github&utm_medium=readme&utm_campaign=repo">
     <img src="docs/images/studio-hero.png" alt="The Agentivity Studio: a manager and three specialists on the canvas of an AI team, and the list of agents on the right" width="900">
@@ -115,7 +108,14 @@ lists ready-made Solutions. Each one is a complete use case in a single file, to
 The **Community edition** is free forever and runs on your own machine or server, with the Studio included. It comes as
 a Docker image.
 
-**[Install the Community edition →](https://www.agentivity.io/community?utm_source=github&utm_medium=readme&utm_campaign=repo)**
+```bash
+docker run -d --name agentivity -p 5005:5005 -v agentivity-data:/app/_data agentivitylabs/agentivity
+```
+
+Then open `http://localhost:5005` in your browser: the Studio opens. You need Docker and, to run a team, an API key
+from an AI model provider.
+
+**[Full install guide →](https://www.agentivity.io/community?utm_source=github&utm_medium=readme&utm_campaign=repo)**
 
 Not technical? Hosted plans are on the way, with nothing to install:
 **[join the waitlist](https://www.agentivity.io/?utm_source=github&utm_medium=readme&utm_campaign=repo#cta)**.

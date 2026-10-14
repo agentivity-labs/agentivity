@@ -20,6 +20,7 @@ namespace Agentivity.Infrastructure.Workflows;
 /// <param name="Pending">Node ids queued for execution once the suspended node completes.</param>
 /// <param name="RemainingPredecessors">Per-node count of predecessors not yet completed.</param>
 /// <param name="SuspendedAt">When the suspension occurred.</param>
+/// <param name="WaitingForToken">What the run waits for, whatever it is. Absent in payloads written before it existed: the interaction request is then what is awaited.</param>
 public sealed record WorkflowProgress(
     string SuspendedNodeId,
     Guid InteractionRequestId,
@@ -28,9 +29,13 @@ public sealed record WorkflowProgress(
     List<string> VisitedNodes,
     List<string> Pending,
     Dictionary<string, int> RemainingPredecessors,
-    DateTime SuspendedAt
+    DateTime SuspendedAt,
+    string? WaitingForToken = null
 ) : IRecordConvertible<JsonElement>
 {
+    /// <summary>What the run waits for, as a token to hand up to whoever called it.</summary>
+    public string AwaitedToken => string.IsNullOrWhiteSpace(WaitingForToken) ? InteractionRequestId.ToString() : WaitingForToken;
+
     public JsonElement ToRecord() => JsonSerializer.SerializeToElement(this);
 
     public static WorkflowProgress FromRecord(JsonElement record) =>

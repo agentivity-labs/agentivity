@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Agentivity.Infrastructure.Workflows;
+using Agentivity.Infrastructure.Workflows.Nodes;
 
 namespace Agentivity.Infrastructure.Agentic.Library;
 
@@ -22,27 +23,9 @@ internal static class LibraryReferences
             }
         }
 
-        switch (node.NodeType.ToLowerInvariant())
+        if (LibraryCallSteps.KindOf(node.NodeType) is { } kind)
         {
-            case "agentic_node":
-                Add(Text("agent_id"), LibraryEntityKind.Agent, LibraryEntityKind.Team);
-                break;
-            case "team_node":
-                Add(Text("entity_id"), LibraryEntityKind.Team);
-                break;
-            case "composable_node":
-                var kinds = Text("entity_kind")?.ToLowerInvariant() switch
-                {
-                    "agent" => new[] { LibraryEntityKind.Agent },
-                    "team" => new[] { LibraryEntityKind.Team },
-                    "workflow" => new[] { LibraryEntityKind.Workflow },
-                    _ => new[] { LibraryEntityKind.Agent, LibraryEntityKind.Team, LibraryEntityKind.Workflow },
-                };
-                Add(Text("entity_id"), kinds);
-                break;
-            case "workflow.run":
-                Add(Text("workflow"), LibraryEntityKind.Workflow);
-                break;
+            Add(Text(LibraryCallSteps.EntityInput), LibraryKinds.Of(kind));
         }
     }
 

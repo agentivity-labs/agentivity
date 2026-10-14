@@ -55,7 +55,7 @@ internal sealed class WorkflowNodeTask : GraphTask
     /// <summary>
     /// Carries the suspension request when <c>reason == "human_loop"</c>.
     /// </summary>
-    internal WorkflowSuspendedException? SuspendedBy { get; private set; }
+    internal WorkflowWaitException? SuspendedBy { get; private set; }
 
     // ── Sync bridging helpers over the async IRepository surface ────────────
     // FindAsync's cache-hit path is synchronous under the hood (ConcurrentDictionary
@@ -155,7 +155,7 @@ internal sealed class WorkflowNodeTask : GraphTask
         {
             var msg = $"Failed to resolve inputs for node '{_node.Id}': {ex.Message}";
             _logger.LogError(ex, "Input resolution failed for node {NodeId}", _node.Id);
-            return GraphTaskResult.Failed(msg);
+            return Failed(msg);
         }
 
         // Store resolved inputs in the registry so the inspector can display them.
@@ -187,7 +187,7 @@ internal sealed class WorkflowNodeTask : GraphTask
         {
             handlerResult = await _workflowNode.ExecuteAsync(config, services, cancellationToken).ConfigureAwait(false);
         }
-        catch (WorkflowSuspendedException suspended)
+        catch (WorkflowWaitException suspended)
         {
             SuspendedBy = suspended; // kept for backward compat (e.g. tests inspecting the property)
             // Record in the shared context so WorkflowExecutionStore can persist the HIL state
@@ -207,16 +207,26 @@ internal sealed class WorkflowNodeTask : GraphTask
         }
         catch (Exception ex)
         {
-            return GraphTaskResult.Failed($"Execution of node '{_node.Id}' failed: {ex.Message}");
+            return Failed($"Execution of node '{_node.Id}' failed: {ex.Message}");
         }
 
         if (handlerResult is null)
         {
-            return GraphTaskResult.Failed($"Node '{_node.Id}' returned no result.");
+            return Failed($"Node '{_node.Id}' returned no result.");
         }
 
         HandlerResult = handlerResult;
         return GraphTaskResult.Completed(handlerResult);
+    }
+
+    /// <summary>The step failed: it goes on by its Error exit when that exit leads somewhere, otherwise the workflow stops (<see cref="StepExits"/>).</summary>
+    private GraphTaskResult Failed(string message)
+    {
+        if (StepExits.GoOnByError(_definition, _node.Id, message) is not { } byError)
+            return GraphTaskResult.Failed(message);
+
+        HandlerResult = byError;
+        return GraphTaskResult.Completed(byError);
     }
 
     private static ExecutionCorrelationContext BuildCorrelationContext(Guid runId, string workflowId, string? nodeId = null) =>

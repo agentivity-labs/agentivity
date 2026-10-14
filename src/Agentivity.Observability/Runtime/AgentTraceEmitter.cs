@@ -10,7 +10,7 @@ namespace Agentivity.Observability.Runtime;
 /// <see cref="IAgentTraceSink"/> implementations only (e.g. <c>DebugTraceProjectionSink</c>).
 /// <para>
 /// Deliberately separate from <see cref="AgentTelemetryEmitter"/>: traces are not telemetry
-/// and must not share sinks, registration, or this emitter with BetterStack/OTel export.
+/// and must not share sinks, registration, or this emitter with the OpenTelemetry export.
 /// </para>
 /// </summary>
 public sealed class AgentTraceEmitter(IEnumerable<IAgentTraceSink> sinks) : IAgentTraceEmitter

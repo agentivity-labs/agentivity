@@ -247,14 +247,13 @@ public sealed class AgentivityHost : IAgentivityHost
             }
         );
 
-        // Agentic library disabled (e.g. the open-source edition): hide the nodes that execute library entities.
-        // The generic ai.node stays — it only needs the agent engine.
+        // Agentic library disabled (e.g. the open-source edition): hide the steps that call an agent or a team of the library.
+        // The step that calls a workflow stays, and so does the generic ai.node — it only needs the agent engine.
         if (!Agentivity.Infrastructure.Agentic.Features.AgenticCoreFeatures.IsLibraryEnabled(builder.Configuration))
         {
             var libraryNodeTypes = new HashSet<Type>
             {
-                typeof(Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Agents.AgenticNode),
-                typeof(Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Agents.ComposableNode),
+                typeof(Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Agents.AgentCallNode),
                 typeof(Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Agents.TeamNode),
             };
             foreach (var descriptor in builder.Services.Where(d => d.ImplementationType is not null && libraryNodeTypes.Contains(d.ImplementationType)).ToList())
@@ -320,20 +319,8 @@ public sealed class AgentivityHost : IAgentivityHost
             options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
         });
 
-        // Dev-only: the Flutter Studio (flutter run -d web-server) and this API run on different
-        // localhost ports with no reverse proxy in front locally, so the browser blocks the Studio's
-        // fetch calls without an explicit CORS policy. Never enabled outside Development — the
-        // deployed Studio is served from the same origin as the API in production.
-        if (builder.Environment.IsDevelopment())
-        {
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy(
-                    "DevStudio",
-                    policy => policy.SetIsOriginAllowed(origin => Uri.TryCreate(origin, UriKind.Absolute, out var uri) && (uri.IsLoopback || uri.Host == "localhost")).AllowAnyHeader().AllowAnyMethod().AllowCredentials()
-                );
-            });
-        }
+        // Which web pages may call the API (ApiCors).
+        builder.Services.AddApiCors(builder.Configuration);
 
         storeStub.Configure(builder.Services);
 
@@ -343,10 +330,7 @@ public sealed class AgentivityHost : IAgentivityHost
         // (NodeInstanceRegistry), and an agent can run before any workflow does.
         _ = _app.Services.GetRequiredService<INodeFactory>();
 
-        if (_app.Environment.IsDevelopment())
-        {
-            _app.UseCors("DevStudio");
-        }
+        _app.UseApiCors();
 
         _app.UseExceptionHandler();
 

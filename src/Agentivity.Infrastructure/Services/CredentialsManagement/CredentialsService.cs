@@ -1,4 +1,5 @@
 using Agentivity.Domain.Credentials;
+using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Stores;
 
 namespace Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -22,9 +23,17 @@ public sealed class CredentialsService
     public Task<IReadOnlyList<Credentials>> GetAllAsync(CancellationToken cancellationToken = default) => _store.GetAllAsync(cancellationToken);
 
     /// <summary>
-    /// Gets credentials by template ID (with secrets masked).
+    /// Gets credentials by template ID (with secrets masked). The family of the connections to a model
+    /// (<see cref="LlmCredentialTester.LanguageModelFamily"/>) gives every connection to a model, whatever its kind.
     /// </summary>
-    public Task<IReadOnlyList<Credentials>> GetByTemplateAsync(string templateId, CancellationToken cancellationToken = default) => _store.GetByTemplateAsync(templateId, cancellationToken);
+    public async Task<IReadOnlyList<Credentials>> GetByTemplateAsync(string templateId, CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(templateId, LlmCredentialTester.LanguageModelFamily, StringComparison.OrdinalIgnoreCase))
+            return await _store.GetByTemplateAsync(templateId, cancellationToken).ConfigureAwait(false);
+
+        var all = await _store.GetAllAsync(cancellationToken).ConfigureAwait(false);
+        return [.. all.Where(c => LlmCredentialTester.IsLanguageModelTemplate(c.TemplateId))];
+    }
 
     /// <summary>
     /// Gets a credential by ID (with secrets decrypted).

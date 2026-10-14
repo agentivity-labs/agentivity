@@ -22,6 +22,9 @@ internal sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> log
 
         var (status, code, userMessage) = exception switch
         {
+            // What the client sent cannot be read (too large, malformed): its request is at fault, not the server.
+            BadHttpRequestException { StatusCode: StatusCodes.Status413PayloadTooLarge } => (StatusCodes.Status413PayloadTooLarge, "request_too_large", "What was sent is too large."),
+            BadHttpRequestException bad => (bad.StatusCode, "bad_request", "The request is invalid."),
             ArgumentException => (StatusCodes.Status400BadRequest, "bad_request", "The request is invalid."),
             KeyNotFoundException => (StatusCodes.Status404NotFound, "not_found", "The requested resource was not found."),
             UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "forbidden", "Access to this resource is denied."),

@@ -1,12 +1,10 @@
-<!-- DRAFT. TODO(founder): set a working private address in {{SECURITY_CONTACT}}. Do not promise response times that nobody will keep. -->
-
 # Security
 
 ## Report a vulnerability
 
 Please report security problems **privately**, not in a public issue.
 
-Write to {{SECURITY_CONTACT}} and include:
+Write to **hello@agentivity.io** and include:
 
 - what you found and where
 - the steps to reproduce it

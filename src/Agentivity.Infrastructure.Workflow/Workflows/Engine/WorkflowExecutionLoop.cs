@@ -137,7 +137,7 @@ public sealed partial class WorkflowEngine
             {
                 graphResult = await _graphHost.AwaitCompletionAsync(session.GraphId, runControl.Token).ConfigureAwait(false);
             }
-            catch (WorkflowSuspendedException)
+            catch (WorkflowWaitException)
             {
                 // HIL suspension: WorkflowExecutionStore.SaveAsync already persisted the run state
                 // when GraphHost caught the IGraphSignalException. Update the registry and notify.
@@ -161,7 +161,7 @@ public sealed partial class WorkflowEngine
                     Notify(runId, WorkflowRunStreamNotifications.RunUpdated(runId, reason: "waiting_for_input", state: WorkflowRunState.WaitingForInput.ToString()));
                 }
                 _logger.LogInformation("Workflow {RunId} suspended at node '{NodeId}'", runId, hil?.NodeId ?? "unknown");
-                return OperationResult<WorkflowRunResult>.Success(new WorkflowRunResult(definition, state, orchestrator.ExecutedNodes.ToList()) { Suspended = true, InteractionRequestId = hil?.InteractionRequestId });
+                return OperationResult<WorkflowRunResult>.Success(new WorkflowRunResult(definition, state, orchestrator.ExecutedNodes.ToList()) { Suspended = true, InteractionRequestId = hil?.InteractionRequestId, WaitingForToken = hil?.WaitingForToken });
             }
             catch (OperationCanceledException) when (runControl.IsCancelled)
             {
@@ -172,6 +172,7 @@ public sealed partial class WorkflowEngine
             if (graphResult.OverallStatus == GraphTaskStatus.Failed)
             {
                 var err = graphResult.FinalSnapshot.Tasks.FirstOrDefault(t => t.State.RuntimeStatus == GraphTaskRuntimeStatus.Failed)?.State.Error ?? "Workflow failed.";
+                SetRunState(runIdStr, RunStatus.Failed, err);
                 return OperationResult<WorkflowRunResult>.Failure(err);
             }
 
@@ -183,6 +184,7 @@ public sealed partial class WorkflowEngine
 
             // Completed
             var finalState = state.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value, StringComparer.OrdinalIgnoreCase);
+            KeepWhatItProduced(runIdStr, finalState, orchestrator.ExecutedNodes, parentContext);
             SetRunState(runIdStr, RunStatus.Completed, completedAt: DateTimeOffset.UtcNow);
 
             _logger.LogInformation("Workflow run {WorkflowRunId} completed for workflow {WorkflowId} after {DurationMs} ms", runId, definition.Id, (long)Math.Max(0, (DateTime.UtcNow - runStartedAtUtc).TotalMilliseconds));
@@ -286,7 +288,7 @@ public sealed partial class WorkflowEngine
         {
             graphResult = await _graphHost.AwaitCompletionAsync(session.GraphId, runControl.Token).ConfigureAwait(false);
         }
-        catch (WorkflowSuspendedException)
+        catch (WorkflowWaitException)
         {
             // HIL suspension again: WorkflowExecutionStore.SaveAsync already persisted the run state.
             var hil = orchestrator.WorkflowContext.HilSuspension;
@@ -309,7 +311,7 @@ public sealed partial class WorkflowEngine
                 Notify(runId, WorkflowRunStreamNotifications.RunUpdated(runId, reason: "waiting_for_input", state: WorkflowRunState.WaitingForInput.ToString()));
             }
             _logger.LogInformation("Workflow {RunId} suspended at node '{NodeId}'", runId, hil?.NodeId ?? "unknown");
-            return OperationResult<WorkflowRunResult>.Success(new WorkflowRunResult(definition, state, orchestrator.ExecutedNodes.ToList()) { Suspended = true, InteractionRequestId = hil?.InteractionRequestId });
+            return OperationResult<WorkflowRunResult>.Success(new WorkflowRunResult(definition, state, orchestrator.ExecutedNodes.ToList()) { Suspended = true, InteractionRequestId = hil?.InteractionRequestId, WaitingForToken = hil?.WaitingForToken });
         }
         catch (OperationCanceledException) when (runControl.IsCancelled)
         {
@@ -321,6 +323,7 @@ public sealed partial class WorkflowEngine
         if (graphResult.OverallStatus == GraphTaskStatus.Failed)
         {
             var err = graphResult.FinalSnapshot.Tasks.FirstOrDefault(t => t.State.RuntimeStatus == GraphTaskRuntimeStatus.Failed)?.State.Error ?? "Workflow failed.";
+            SetRunState(runIdStr, RunStatus.Failed, err);
             return OperationResult<WorkflowRunResult>.Failure(err);
         }
 
@@ -331,6 +334,7 @@ public sealed partial class WorkflowEngine
         }
 
         var finalState = state.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value, StringComparer.OrdinalIgnoreCase);
+        KeepWhatItProduced(runIdStr, finalState, orchestrator.ExecutedNodes, parentContext);
         SetRunState(runIdStr, RunStatus.Completed, completedAt: DateTimeOffset.UtcNow);
         Notify(runId, WorkflowRunStreamNotifications.RunUpdated(runId, reason: "completed", state: WorkflowRunState.Completed.ToString()), terminal: true);
 

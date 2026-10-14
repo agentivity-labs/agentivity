@@ -8,7 +8,7 @@ namespace Agentivity.Observability.Abstractions;
 /// (e.g. <c>DebugTraceProjectionSink</c>) for the server's own debug trace view.
 /// <para>
 /// This is a SEPARATE pipeline from <see cref="IAgentTelemetryEmitter"/>: traces are not
-/// telemetry. They must not be routed through <see cref="IAgentTelemetrySink"/> (BetterStack/OTel)
+/// telemetry. They must not be routed through <see cref="IAgentTelemetrySink"/> (the OpenTelemetry export)
 /// nor through <c>IRunEventBus</c> (chat/SSE). Callers that need both telemetry and a debug
 /// trace projection for the same event must inject and call both emitters explicitly.
 /// </para>

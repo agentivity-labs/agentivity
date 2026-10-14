@@ -15,6 +15,18 @@ public enum LibraryEntityKind
     Workflow,
 }
 
+internal static class LibraryKinds
+{
+    /// <summary>The kind of library item a step that calls the library calls.</summary>
+    public static LibraryEntityKind Of(Agentivity.Domain.Executable.ExecutableKind kind) =>
+        kind switch
+        {
+            Agentivity.Domain.Executable.ExecutableKind.Agent => LibraryEntityKind.Agent,
+            Agentivity.Domain.Executable.ExecutableKind.Team => LibraryEntityKind.Team,
+            _ => LibraryEntityKind.Workflow,
+        };
+}
+
 public sealed record LlmReplacementRoot(LibraryEntityKind Kind, string Id);
 
 /// <param name="Status">updated | unchanged | no_llm | outside_scope | failed</param>

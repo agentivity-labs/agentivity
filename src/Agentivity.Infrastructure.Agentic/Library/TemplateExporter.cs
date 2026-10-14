@@ -34,7 +34,6 @@ public sealed partial class TemplateExporter(
     private const string ModelNodePrefix = "ai.llm.model.";
     /// <summary>Every Template is a solution: its root carries this tag (so it shows up as a Solution in the library), and the Template itself does not list it as a tag.</summary>
     private const string SolutionTag = "solution";
-    private static readonly string[] LlmCredentialTemplates = ["anthropic", "openai", "gemini", "xai", "deepseek", "aws_bedrock"];
 
     [GeneratedRegex("^[a-z0-9]+(?:-[a-z0-9]+)*$")]
     private static partial Regex Slug();
@@ -359,7 +358,7 @@ public sealed partial class TemplateExporter(
 
         foreach (var credential in all.Where(c => collected.CredentialIds.Contains(c.Id)))
         {
-            families.Add(LlmCredentialTemplates.Contains(credential.TemplateId, StringComparer.OrdinalIgnoreCase) ? "llm" : credential.TemplateId.ToLowerInvariant());
+            families.Add(Agentivity.Infrastructure.Core.Llm.LlmCredentialTester.IsLanguageModelTemplate(credential.TemplateId) ? Agentivity.Infrastructure.Core.Llm.LlmCredentialTester.LanguageModelFamily : credential.TemplateId.ToLowerInvariant());
         }
 
         return [.. families];

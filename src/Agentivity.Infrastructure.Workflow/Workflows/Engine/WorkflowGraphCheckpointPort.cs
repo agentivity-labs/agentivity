@@ -42,7 +42,8 @@ internal sealed class WorkflowGraphCheckpointPort : IGraphCheckpointPort
             VisitedNodes: [.. orch.WorkflowContext.VisitedNodes],
             Pending: orch.GetPendingNodeIds(),
             RemainingPredecessors: new Dictionary<string, int>(orch.GetRemainingPredecessors(), StringComparer.OrdinalIgnoreCase),
-            SuspendedAt: DateTime.UtcNow
+            SuspendedAt: DateTime.UtcNow,
+            WaitingForToken: hil.WaitingForToken
         );
 
         SetPayload(orch.RunId.ToString("D"), "workflow", progress.ToRecord());

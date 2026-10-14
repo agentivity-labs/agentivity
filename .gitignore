@@ -11,6 +11,7 @@ _logs/
 _modules/
 _data/credentials.json
 _data/settings.json
+**/_data/assistant/
 .env
 .env.*
 !.env.example

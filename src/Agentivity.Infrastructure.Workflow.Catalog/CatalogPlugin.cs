@@ -36,7 +36,6 @@ using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.Control;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.Data;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.File;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.VariablesState;
-using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.Workflow;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Interactions;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Seo;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Documents;
@@ -127,14 +126,13 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
             typeof(ConsoleDisplayNode),
             typeof(ImageDisplayNode),
             typeof(AudioDisplayNode),
-            typeof(WorkflowNode),
+            typeof(WorkflowCallNode),
             typeof(LayoutAddBlockNode),
             typeof(LayoutRemoveBlockNode),
             typeof(LayoutMoveBlockNode),
             typeof(LayoutReplaceBlockNode),
             typeof(AiNode),
-            typeof(AgenticNode),
-            typeof(ComposableNode),
+            typeof(AgentCallNode),
             typeof(TeamNode),
             typeof(LlmPromptNode),
             typeof(AIKnowledgeInlineNode),

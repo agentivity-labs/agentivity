@@ -27,5 +27,10 @@ public interface IResumableEngine
     /// checkpoint. Long-running continuation should be fire-and-forget — the caller only awaits the
     /// re-entry hand-off.
     /// </summary>
-    ValueTask ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct);
+    /// <returns>
+    /// The continuation: a task that ends when the run has settled again (it finished, failed, or stopped to wait once
+    /// more). Awaiting the call itself only awaits the hand-off; this task is what tells when the run is done, which is how
+    /// the run that called it can be taken up again in its turn. Already ended when nothing was re-entered.
+    /// </returns>
+    ValueTask<Task> ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct);
 }

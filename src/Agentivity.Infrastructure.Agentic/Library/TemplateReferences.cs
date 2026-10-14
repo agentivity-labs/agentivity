@@ -37,43 +37,10 @@ public static class TemplateReferences
         string? Text(string key) => inputs[key] is JsonValue value && value.TryGetValue<string>(out var text) && !string.IsNullOrWhiteSpace(text) ? text.Trim() : null;
 
         var nodeType = (node["nodeType"] as JsonValue)?.GetValue<string>()?.ToLowerInvariant() ?? string.Empty;
-        switch (nodeType)
+        // The steps that call something of the library name it by its id, in the same input.
+        if (Agentivity.Infrastructure.Workflows.Nodes.LibraryCallSteps.KindOf(nodeType) is { } kind && Text(Agentivity.Infrastructure.Workflows.Nodes.LibraryCallSteps.EntityInput) is { } called)
         {
-            case "agentic_node":
-                if (Text("agent_id") is { } agent)
-                {
-                    yield return new NodeReference(inputs, "agent_id", agent, [LibraryEntityKind.Agent, LibraryEntityKind.Team], false);
-                }
-
-                break;
-            case "team_node":
-                if (Text("entity_id") is { } team)
-                {
-                    yield return new NodeReference(inputs, "entity_id", team, [LibraryEntityKind.Team], false);
-                }
-
-                break;
-            case "composable_node":
-                if (Text("entity_id") is { } entity)
-                {
-                    IReadOnlyList<LibraryEntityKind> kinds = Text("entity_kind")?.ToLowerInvariant() switch
-                    {
-                        "agent" => [LibraryEntityKind.Agent],
-                        "team" => [LibraryEntityKind.Team],
-                        "workflow" => [LibraryEntityKind.Workflow],
-                        _ => [LibraryEntityKind.Agent, LibraryEntityKind.Team, LibraryEntityKind.Workflow],
-                    };
-                    yield return new NodeReference(inputs, "entity_id", entity, kinds, false);
-                }
-
-                break;
-            case "workflow.run":
-                if (Text("workflow") is { } workflow)
-                {
-                    yield return new NodeReference(inputs, "workflow", workflow, [LibraryEntityKind.Workflow], false);
-                }
-
-                break;
+            yield return new NodeReference(inputs, Agentivity.Infrastructure.Workflows.Nodes.LibraryCallSteps.EntityInput, called, [LibraryKinds.Of(kind)], false);
         }
 
         // The data table nodes name their table in table_id.

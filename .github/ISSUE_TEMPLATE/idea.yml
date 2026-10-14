@@ -1,0 +1,20 @@
+name: Suggest an idea
+description: Something you would like Agentivity to do.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What are you trying to do?
+      description: The work you want done, in your own words. The situation helps us more than the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you do it today?
+      description: With Agentivity, with another tool, or by hand.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help

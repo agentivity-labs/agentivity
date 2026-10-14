@@ -28,12 +28,25 @@ public static class UploadsEndpoints
                 // Leave headroom over the file limit for the multipart envelope.
                 httpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = uploads.MaxFileSizeBytes + 1024 * 1024;
 
+                // A file over the limit gets one answer, whether this endpoint sees it or the server stops reading it first.
+                var limitMb = uploads.MaxFileSizeBytes / (1024 * 1024);
+                IResult TooLarge() => ApiError(StatusCodes.Status413PayloadTooLarge, code: "file_too_large", userMessage: $"That file is too large: the limit is {limitMb} MB.", detail: $"The limit is {limitMb} MB.");
+
                 if (!httpContext.Request.HasFormContentType)
                 {
                     return ApiValidationError(code: "file_required", userMessage: "A file is required.", detail: "Expected multipart/form-data with a 'file' field.");
                 }
 
-                var form = await httpContext.Request.ReadFormAsync(ct);
+                IFormCollection form;
+                try
+                {
+                    form = await httpContext.Request.ReadFormAsync(ct);
+                }
+                catch (BadHttpRequestException ex) when (ex.StatusCode == StatusCodes.Status413PayloadTooLarge)
+                {
+                    return TooLarge();
+                }
+
                 IFormFile? file = form.Files["file"];
                 if (file is null || file.Length == 0)
                 {
@@ -42,7 +55,7 @@ public static class UploadsEndpoints
 
                 if (file.Length > uploads.MaxFileSizeBytes)
                 {
-                    return ApiValidationError(code: "file_too_large", userMessage: "That file is too large.", detail: $"The limit is {uploads.MaxFileSizeBytes / (1024 * 1024)} MB.");
+                    return TooLarge();
                 }
 
                 await using var stream = file.OpenReadStream();

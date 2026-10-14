@@ -91,23 +91,17 @@ public sealed record ExecutorResult(
     public static ExecutorResult FromTaskOutput(TaskOutput output) => new(Content: output.Content, Outputs: ImmutableDictionary<string, object?>.Empty, Artifacts: output.Artifacts, RoutingHint: output.NextAgentTopologyPositionId, Confidence: output.Confidence);
 
     /// <summary>
-    /// Extrait le contenu textuel principal depuis un state de workflow engine.
-    /// Cherche les clés "output", "result", "response", "content" dans l'ordre.
+    /// What a finished workflow gives back to what called it. Its text is what its last step produced: the last step that
+    /// ran and gave a text under one of the usual names (output, result, response, content), each step's outputs being kept
+    /// in the state as "step.name". A workflow none of whose steps gave one gives the text kept under one of these names
+    /// alone, when there is one.
     /// </summary>
-    public static ExecutorResult FromWorkflowState(IReadOnlyDictionary<string, object?> state)
+    public static ExecutorResult FromWorkflowState(IReadOnlyDictionary<string, object?> state, IReadOnlyList<string> executedSteps)
     {
-        var primaryKeys = new[] { "output", "result", "response", "content" };
-        var content = string.Empty;
+        string[] names = ["output", "result", "response", "content"];
+        var keys = executedSteps.Reverse().SelectMany(step => names.Select(name => $"{step}.{name}")).Concat(names);
+        var content = keys.Select(key => state.TryGetValue(key, out var value) ? value?.ToString() : null).FirstOrDefault(text => !string.IsNullOrWhiteSpace(text));
 
-        foreach (var key in primaryKeys)
-        {
-            if (state.TryGetValue(key, out var val) && val is not null)
-            {
-                content = val.ToString() ?? string.Empty;
-                break;
-            }
-        }
-
-        return new(content, state, []);
+        return new(content ?? string.Empty, state, []);
     }
 }

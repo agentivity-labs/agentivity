@@ -322,8 +322,14 @@ public sealed record WorkflowRunResult(WorkflowEntity Definition, IReadOnlyDicti
     /// </summary>
     public bool Suspended { get; init; }
 
-    /// <summary>The pending interaction request when <see cref="Suspended"/> is true.</summary>
+    /// <summary>The pending interaction request when <see cref="Suspended"/> is true and the run waits for a person it asked itself.</summary>
     public Guid? InteractionRequestId { get; init; }
+
+    /// <summary>
+    /// What the run waits for when <see cref="Suspended"/> is true, whatever it is (a person's answer, or what something it
+    /// called is waiting for). Handed up unchanged by whoever called this workflow.
+    /// </summary>
+    public string? WaitingForToken { get; init; }
 }
 
 /// <summary>

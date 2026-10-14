@@ -8,7 +8,7 @@ namespace Agentivity.Observability.Abstractions;
 /// <para>
 /// This is intentionally a SEPARATE abstraction from <see cref="IAgentTelemetrySink"/>:
 /// traces are NOT telemetry. Telemetry sinks (<see cref="IAgentTelemetrySink"/>) export
-/// monitoring data to external observability backends (e.g. BetterStack via OpenTelemetry).
+/// monitoring data to external observability backends (through OpenTelemetry).
 /// Trace sinks project the same underlying envelopes into an in-process debug trace tree
 /// consumed by the server itself. The two must never be conflated or share a registration.
 /// </para>

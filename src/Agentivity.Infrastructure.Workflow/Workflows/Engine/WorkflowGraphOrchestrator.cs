@@ -328,35 +328,40 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
             return null;
         }
 
-        // Write outputs into shared state
+        // Write outputs into shared state (not the exit the step chose)
         foreach (var pair in handlerResult)
         {
-            state[$"{taskId}.{pair.Key}"] = pair.Value;
+            if (!pair.Key.StartsWith("__", StringComparison.Ordinal))
+                state[$"{taskId}.{pair.Key}"] = pair.Value;
         }
 
         _context.ExecutedNodes.Add(taskId);
         _context.VisitedNodes.Add(taskId);
 
-        var outputs = handlerResult.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value, StringComparer.OrdinalIgnoreCase);
+        var exits = handlerResult.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value, StringComparer.OrdinalIgnoreCase);
+        var outputs = exits.Where(kvp => !kvp.Key.StartsWith("__", StringComparison.Ordinal)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
+        // A step that failed and went on by its Error exit is shown as failed; the workflow goes on all the same.
+        var failed = StepExits.WentByError(exits);
 
         UpsertStep(
             _runIdStr,
             taskId,
             step =>
             {
-                step.Status = RunStatus.Completed;
+                step.Status = failed ? RunStatus.Failed : RunStatus.Completed;
+                step.Error = failed ? outputs[StepExits.Error]?.ToString() : step.Error;
                 step.Outputs = outputs;
             }
         );
-        await _notifyAsync(_runId, WorkflowRunStreamNotifications.NodeUpdated(_runId, taskId, WorkflowNodeRunState.Completed.ToString()), false).ConfigureAwait(false);
+        await _notifyAsync(_runId, WorkflowRunStreamNotifications.NodeUpdated(_runId, taskId, (failed ? WorkflowNodeRunState.Failed : WorkflowNodeRunState.Completed).ToString()), false).ConfigureAwait(false);
 
         // Resolve node type for telemetry
         var completedNodeDef = _definition.FindNode(taskId);
         var completedNodeType = completedNodeDef?.NodeType ?? taskId;
         await _emitNodeCompletedAsync(_runId, _workflowId, taskId, completedNodeType, state, ct).ConfigureAwait(false);
 
-        // Find and submit ready successors
-        var successorTasks = await GetReadySuccessorsAsync(taskId, ct).ConfigureAwait(false);
+        // Find and submit ready successors, by the exits the step goes on by
+        var successorTasks = await GetReadySuccessorsAsync(taskId, exits, ct).ConfigureAwait(false);
         return successorTasks.Count > 0 ? successorTasks : Array.Empty<GraphTask>();
     }
 
@@ -462,10 +467,10 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
     /// Decrements predecessor counts for successors of <paramref name="completedNodeId"/>
     /// and returns tasks that are now ready (remainingPredecessors == 0 and not yet visited/submitted).
     /// </summary>
-    private async ValueTask<List<GraphTask>> GetReadySuccessorsAsync(string completedNodeId, CancellationToken ct)
+    private async ValueTask<List<GraphTask>> GetReadySuccessorsAsync(string completedNodeId, IDictionary<string, object?> exits, CancellationToken ct)
     {
         var readyTasks = new List<GraphTask>();
-        var outgoing = GetOutgoingConnections(completedNodeId);
+        var outgoing = GetOutgoingConnections(completedNodeId).Where(c => StepExits.IsFollowed(c, exits)).ToList();
 
         foreach (var connection in outgoing)
         {
@@ -542,7 +547,7 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
         return readyTasks;
     }
 
-    /// <summary>Executes a loop control-flow node inline (same as WorkflowControlFlow.ExecuteLoopAsync).</summary>
+    /// <summary>Executes a loop control-flow node inline: each item runs through the body of the loop.</summary>
     private async ValueTask<OperationResult<WorkflowRunResult>> ExecuteLoopAsync(string loopNodeId, ControlFlowResult controlResult, CancellationToken ct)
     {
         var state = _context.State;
@@ -558,8 +563,6 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
         {
             _logger.LogWarning("No nodes connected to loop port '{Port}' of {NodeId}", loopPort, loopNodeId);
         }
-
-        var allIterationResults = new List<IDictionary<string, object?>>();
 
         for (var i = 0; i < items.Count; i++)
         {
@@ -578,18 +581,13 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
                 if (iterResult.IsFailure)
                     return iterResult;
             }
-
-            var iterationState = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["index"] = i, ["item"] = item };
-            allIterationResults.Add(iterationState);
         }
 
-        state[$"{statePrefix}.results"] = System.Text.Json.JsonSerializer.Serialize(allIterationResults);
         state[$"{statePrefix}.count"] = items.Count;
         state[$"{statePrefix}.completed"] = true;
 
         var outputs = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
         {
-            ["results"] = allIterationResults,
             ["count"] = items.Count,
             ["__control_flow_type"] = ControlFlowType.LoopComplete.ToString(),
             ["__exit_port"] = controlResult.CompletePort,
@@ -673,7 +671,7 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
         {
             handlerResult = await nodeImpl.ExecuteAsync(config, services, ct).ConfigureAwait(false);
         }
-        catch (Agentivity.Infrastructure.Workflows.Interactions.WorkflowSuspendedException)
+        catch (Agentivity.Infrastructure.Workflows.Interactions.WorkflowWaitException)
         {
             var msg = LoopBodyLimits.CannotWaitForAPerson(nodeDef.Id);
             _logger.LogError("Loop body node {NodeId} tried to suspend the run", nodeDef.Id);
@@ -683,7 +681,10 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
         {
             var msg = $"Execution of loop body node '{nodeDef.Id}' failed: {ex.Message}";
             _logger.LogError(ex, "Loop body node {NodeId} execution failed", nodeDef.Id);
-            return OperationResult<WorkflowRunResult>.Failure(msg);
+            // It goes on by its Error exit when that exit leads somewhere (StepExits), otherwise the loop stops.
+            handlerResult = StepExits.GoOnByError(_definition, nodeDef.Id, msg);
+            if (handlerResult is null)
+                return OperationResult<WorkflowRunResult>.Failure(msg);
         }
 
         if (handlerResult is null)
@@ -694,24 +695,29 @@ internal sealed class WorkflowGraphOrchestrator : GraphOrchestrator
 
         foreach (var pair in handlerResult)
         {
-            state[$"{nodeId}.{pair.Key}"] = pair.Value;
+            if (!pair.Key.StartsWith("__", StringComparison.Ordinal))
+                state[$"{nodeId}.{pair.Key}"] = pair.Value;
         }
 
-        var loopOutputs = handlerResult.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value, StringComparer.OrdinalIgnoreCase);
+        var loopExits = handlerResult.ToDictionary(kvp => kvp.Key, kvp => (object?)kvp.Value, StringComparer.OrdinalIgnoreCase);
+        var loopOutputs = loopExits.Where(kvp => !kvp.Key.StartsWith("__", StringComparison.Ordinal)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
+        var loopStepFailed = StepExits.WentByError(loopExits);
         UpsertStep(
             _runIdStr,
             nodeDef.Id,
             step =>
             {
-                step.Status = RunStatus.Completed;
+                step.Status = loopStepFailed ? RunStatus.Failed : RunStatus.Completed;
+                step.Error = loopStepFailed ? loopOutputs[StepExits.Error]?.ToString() : step.Error;
                 step.Outputs = loopOutputs;
             }
         );
         await _notifyAsync(_runId, WorkflowRunStreamNotifications.NodeUpdated(_runId, nodeDef.Id, WorkflowNodeRunState.Completed.ToString()), false).ConfigureAwait(false);
         await _emitNodeCompletedAsync(_runId, _workflowId, nodeDef.Id, nodeDef.NodeType, state, ct).ConfigureAwait(false);
 
-        // Recurse into successors
-        var successors = _definition.Connections.Where(c => string.Equals(c.From, nodeId, StringComparison.OrdinalIgnoreCase) && string.Equals(c.FromPort, "out", StringComparison.OrdinalIgnoreCase)).Select(c => c.To).ToList();
+        // Recurse into successors: by Out, or by the exit the step chose (Error, when it failed)
+        var exitPort = StepExits.ChosenExit(loopExits) ?? "out";
+        var successors = _definition.Connections.Where(c => string.Equals(c.From, nodeId, StringComparison.OrdinalIgnoreCase) && string.Equals(c.FromPort, exitPort, StringComparison.OrdinalIgnoreCase)).Select(c => c.To).ToList();
 
         foreach (var successorId in successors)
         {

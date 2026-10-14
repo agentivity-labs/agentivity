@@ -29,13 +29,13 @@ public sealed class StandaloneAgentResumableEngine(
 {
     public string Kind => "agent";
 
-    public async ValueTask ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct)
+    public async ValueTask<Task> ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct)
     {
         var agentId = run.EntityId;
         if (agentId is null || run.Payload is not { } payload)
         {
             logger?.LogWarning("Agent run {RunId} has no progress payload — cannot re-enter.", run.RunId);
-            return;
+            return Task.CompletedTask;
         }
         var progress = AgentProgress.FromRecord(payload);
 
@@ -43,7 +43,7 @@ public sealed class StandaloneAgentResumableEngine(
         if (!agentResult.IsSuccess || agentResult.Value is null)
         {
             logger?.LogWarning("Agent '{AgentId}' of run {RunId} could not be resolved — cannot re-enter.", agentId, run.RunId);
-            return;
+            return Task.CompletedTask;
         }
 
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["input"] = progress.Input };
@@ -51,7 +51,7 @@ public sealed class StandaloneAgentResumableEngine(
         var streamId = run.Execution.StreamId;
         var entryNodeId = agentResult.Value.Graph.EntryNode;
 
-        _ = Task.Run(
+        return Task.Run(
             async () =>
             {
                 try

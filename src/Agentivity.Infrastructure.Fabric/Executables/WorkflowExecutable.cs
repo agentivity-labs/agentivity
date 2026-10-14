@@ -14,20 +14,23 @@ public sealed class WorkflowExecutable : IExecutable
 {
     private readonly string _workflowId;
     private readonly WorkflowEngine _engine;
+    private readonly IInteractionRequestStore? _interactionStore;
 
-    public WorkflowExecutable(WorkflowEntity entity, WorkflowEngine workflowEngine)
+    public WorkflowExecutable(WorkflowEntity entity, WorkflowEngine workflowEngine, IInteractionRequestStore? interactionStore = null)
     {
         ArgumentNullException.ThrowIfNull(entity);
         _workflowId = entity.Id;
         _engine = workflowEngine;
+        _interactionStore = interactionStore;
         Definition = entity;
     }
 
-    public WorkflowExecutable(string workflowId, string displayName, WorkflowEngine workflowEngine)
+    public WorkflowExecutable(string workflowId, string displayName, WorkflowEngine workflowEngine, IInteractionRequestStore? interactionStore = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(workflowId);
         _workflowId = workflowId;
         _engine = workflowEngine;
+        _interactionStore = interactionStore;
         Definition = new MinimalWorkflowDefinition(workflowId, displayName ?? workflowId);
     }
 
@@ -40,10 +43,26 @@ public sealed class WorkflowExecutable : IExecutable
         // workflow engine's internal run tracking (run-inspector, stream events) correlates
         // against a different id than the one the caller (and the frontend) actually knows about.
         var runId = Guid.TryParse(context.RunId, out var parsedRunId) ? parsedRunId : Guid.NewGuid();
-        var operationResult = await _engine.ExecuteAsync(runId, _workflowId, input, ct, parentContext: context).ConfigureAwait(false);
+
+        // Called again for a run that stopped to wait: the run is taken up where it stopped. A run that waits does not stay
+        // in memory: its call returned (WaitingFor), and this is the call that follows.
+        if (context.IsResume)
+        {
+            var (resumed, waitingFor) = await _engine.ResumeNestedAsync(runId, context, _interactionStore, ct).ConfigureAwait(false);
+            return resumed is null ? ExecutorResult.WaitingFor(waitingFor) : ToResult(resumed);
+        }
+
+        return ToResult(await _engine.ExecuteAsync(runId, _workflowId, input, ct, parentContext: context).ConfigureAwait(false));
+    }
+
+    /// <summary>What the caller is told: the workflow finished, or it stopped to wait and the caller must wait with it.</summary>
+    private ExecutorResult ToResult(Agentivity.Domain.Common.OperationResult<WorkflowRunResult> operationResult)
+    {
         if (!operationResult.IsSuccess || operationResult.Value is null)
             throw new InvalidOperationException($"Workflow '{_workflowId}' failed: {operationResult.Error}");
-        return ExecutorResult.FromWorkflowState(operationResult.Value.State);
+
+        var run = operationResult.Value;
+        return run.Suspended ? ExecutorResult.WaitingFor(run.WaitingForToken ?? string.Empty) : ExecutorResult.FromWorkflowState(run.State, run.ExecutedNodes);
     }
 
     private sealed record MinimalWorkflowDefinition(string Id, string Name) : IExecutableDefinition

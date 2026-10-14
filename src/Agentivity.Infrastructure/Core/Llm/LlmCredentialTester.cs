@@ -44,6 +44,12 @@ public sealed class LlmCredentialTester(IHttpClientFactory httpClientFactory)
     private const string AnthropicVersion = "2023-06-01";
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
+    /// <summary>
+    /// The name of the family of the connections to a model. It is not a kind of connection: asking for the connections of
+    /// this family gives those of every kind in <see cref="LanguageModelTemplates"/>.
+    /// </summary>
+    public const string LanguageModelFamily = "llm";
+
     /// <summary>The credential templates that hold a language-model connection.</summary>
     public static readonly IReadOnlyList<string> LanguageModelTemplates = ["anthropic", "openai", "gemini", "xai", "deepseek", "aws_bedrock"];
 
