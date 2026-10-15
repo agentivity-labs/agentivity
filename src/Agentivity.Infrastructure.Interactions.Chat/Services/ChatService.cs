@@ -95,6 +95,57 @@ public sealed class ChatService(IInteractionThreadStore threadStore, IInteractio
         return await PostMessageAsync(thread.Id, request, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A person answers <paramref name="question"/>, whatever the channel it was asked through. The answer is said in the
+    /// conversation the question was asked in (the one of its execution when it was asked elsewhere), and the run that asked
+    /// is taken up again. The question is named: nothing is guessed from the text.
+    /// </summary>
+    public async ValueTask<ChatAnswerResult> AnswerAsync(InteractionRequest question, ChatMessageRequest answer, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        ArgumentNullException.ThrowIfNull(answer);
+
+        var thread = (ChatChannel.TryGetThreadId(question, out var threadId) ? await threadStore.GetThreadAsync(threadId, cancellationToken).ConfigureAwait(false) : null)
+            ?? await threadStore.GetOrCreateDefaultThreadAsync(question.RunId, question.ExecutionId, question.StreamId, cancellationToken).ConfigureAwait(false);
+
+        var said = answer with { AuthorType = "user", InteractionRequestId = question.Id };
+        var message = await threadStore
+            .AddMessageAsync(
+                thread.Id,
+                new ThreadMessage
+                {
+                    Id = Guid.NewGuid(),
+                    ThreadId = thread.Id,
+                    RunId = thread.RunId,
+                    AuthorType = ThreadAuthorType.User,
+                    AuthorId = said.AuthorId,
+                    AuthorName = said.AuthorName,
+                    Text = said.Text,
+                    Metadata = CreateChatMessageMetadata(said),
+                },
+                cancellationToken
+            )
+            .ConfigureAwait(false);
+
+        var response = new InteractionResponse
+        {
+            RequestId = question.Id,
+            Outcome = ChatChannel.ParseInboundOutcome(new Dictionary<string, object?> { ["interaction.outcome"] = said.Outcome }),
+            Success = true,
+            ResponseText = said.Text,
+            MessageId = message.Id.ToString(),
+            ThreadId = thread.Id.ToString(),
+            ConversationId = thread.Id.ToString(),
+            Channel = question.ChannelType,
+            RespondedBy = said.AuthorName ?? said.AuthorId,
+            Data = said.Data,
+            Metadata = new Dictionary<string, object?>(question.Metadata, StringComparer.OrdinalIgnoreCase),
+            Messages = [new InteractionMessage { MessageId = message.Id.ToString(), ThreadId = thread.Id.ToString(), ConversationId = thread.Id.ToString(), AuthorId = said.AuthorId, AuthorName = said.AuthorName, Text = message.Text, CreatedAt = message.CreatedAt }],
+        };
+        var resumed = await interactionBridge.ResumeAsync(question.Id, response, cancellationToken).ConfigureAwait(false);
+        return new ChatAnswerResult(thread, message, resumed);
+    }
+
     private async ValueTask<InteractionThread> RequireThreadAsync(Guid threadId, CancellationToken cancellationToken) => await threadStore.GetThreadAsync(threadId, cancellationToken).ConfigureAwait(false) ?? throw new KeyNotFoundException($"Chat thread '{threadId}' not found.");
 
     private async ValueTask<InteractionThread> RequireThreadAsync(Guid runId, Guid threadId, CancellationToken cancellationToken)
@@ -165,3 +216,5 @@ public sealed record ChatMessageRequest(string Text, string? AuthorType, string?
 public sealed record ChatResumedInteractionResult(Guid RunId, Guid RequestId);
 
 public sealed record ChatPostMessageResult(InteractionThread Thread, ThreadMessage Message, ChatResumedInteractionResult? Interaction);
+
+public sealed record ChatAnswerResult(InteractionThread Thread, ThreadMessage Message, InteractionResumeResult Resumed);

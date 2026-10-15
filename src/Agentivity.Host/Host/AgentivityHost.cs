@@ -382,7 +382,6 @@ public sealed class AgentivityHost : IAgentivityHost
         _app.MapRunsApi();
         _app.MapRunMetricsApi();
         _app.MapExecutionsApi();
-        _app.MapRunInteractionsApi();
         _app.MapModuleCatalogEndpoints();
         _app.MapWorkflowsApi();
         _app.MapWorkflowNodeSessionsApi();

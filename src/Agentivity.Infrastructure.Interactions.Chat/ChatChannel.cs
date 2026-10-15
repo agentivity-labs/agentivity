@@ -743,7 +743,7 @@ public sealed class ChatChannel : IInteractionChannel, IHumanInteractionChannel,
         );
     }
 
-    private static bool TryGetThreadId(InteractionRequest request, out Guid threadId)
+    internal static bool TryGetThreadId(InteractionRequest request, out Guid threadId)
     {
         foreach (var candidate in new[] {
             request.ThreadId,
@@ -818,7 +818,7 @@ public sealed class ChatChannel : IInteractionChannel, IHumanInteractionChannel,
 
     private static string? GetMeta(IReadOnlyDictionary<string, object?> meta, string key) => meta.TryGetValue(key, out var v) ? v?.ToString() : null;
 
-    private static InteractionOutcome ParseInboundOutcome(IReadOnlyDictionary<string, object?> data)
+    internal static InteractionOutcome ParseInboundOutcome(IReadOnlyDictionary<string, object?> data)
     {
         if (!data.TryGetValue("interaction.outcome", out var raw) || raw is null)
             return InteractionOutcome.Submitted;

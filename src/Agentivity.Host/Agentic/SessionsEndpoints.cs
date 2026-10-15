@@ -235,48 +235,39 @@ internal static class ExecutionsEndpoints
             .WithTags("Executions");
 
         // POST /api/v1/executions/{executionId}/respond
-        // The client only needs (executionId, requestId, response) — no internal runId required.
+        // The one way to answer a question of an execution, whatever the channel it was asked through: the answer names
+        // its question (several can wait at once), and the backend finds the run that asked it. No runId is needed.
         v1.MapPost(
                 "/executions/{executionId}/respond",
-                async (string executionId, SessionHilRespondRequest body, [FromServices] IInteractionRequestStore interactionStore, [FromServices] IInteractionBridge interactionBridge, CancellationToken ct) =>
+                async (string executionId, SessionHilRespondRequest body, [FromServices] IInteractionRequestStore interactionStore, [FromServices] ChatService chatService, CancellationToken ct) =>
                 {
                     if (string.IsNullOrWhiteSpace(body?.Response))
-                        return ValidationError("response_required", "A response message is required.");
+                        return ApiEndpointHelpers.ApiValidationError(code: "response_required", userMessage: "A response is required.", detail: "The 'response' field must not be empty.");
 
-                    // Resolve the pending request by requestId (session-scoped, no runId needed).
-                    var pending = body.RequestId.HasValue
-                        ? await interactionStore.GetRequestAsync(body.RequestId.Value, ct).ConfigureAwait(false)
-                        : interactionStore.GetPendingRequests().FirstOrDefault(r => string.Equals(r.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase) || string.Equals(r.RunId.ToString("D"), executionId, StringComparison.OrdinalIgnoreCase));
+                    if (body.RequestId is not Guid requestId)
+                        return ApiEndpointHelpers.ApiValidationError(code: "request_id_required", userMessage: "Say which question this answers: a requestId is required.", detail: "The 'requestId' field must name a question of the execution (see /executions/{executionId}/hil/pending).");
 
-                    if (pending is null)
-                        return Results.NotFound(new { error = "No pending HIL request found for this session." });
+                    var question = await interactionStore.GetRequestAsync(requestId, ct).ConfigureAwait(false);
+                    if (question is null || !BelongsTo(question, executionId))
+                        return ApiEndpointHelpers.ApiNotFound(code: "question_not_found", userMessage: "This question was not found in this execution.", detail: $"Request '{requestId}' is not a question of execution '{executionId}'.");
 
-                    // Guard: ensure the request actually belongs to this session.
-                    if (!string.IsNullOrWhiteSpace(pending.ExecutionId) && !string.Equals(pending.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase) && !string.Equals(pending.RunId.ToString("D"), executionId, StringComparison.OrdinalIgnoreCase))
-                        return Results.NotFound(new { error = "No pending HIL request found for this session." });
+                    if (await interactionStore.GetResponseAsync(requestId, ct).ConfigureAwait(false) is not null)
+                        return ApiEndpointHelpers.ApiConflictError(code: "already_answered", userMessage: "This question has already been answered.", detail: $"Request '{requestId}' already has a response.");
 
-                    // IInteractionBridge.ResumeAsync saves the response and resumes the run through
-                    // DurableRunService (single resume path — walks to the branch root, dispatches
-                    // the IResumableEngine for the run kind).
-                    var response = new InteractionResponse
-                    {
-                        RequestId = pending.Id,
-                        Outcome = InteractionOutcome.Submitted,
-                        ResponseText = body.Response,
-                        Channel = pending.ChannelType,
-                        RespondedAt = DateTime.UtcNow,
-                    };
-                    var result = await interactionBridge.ResumeAsync(pending.Id, response, ct).ConfigureAwait(false);
+                    var answer = new ChatMessageRequest(Text: body.Response, AuthorType: "user", AuthorId: body.AuthorId, AuthorName: body.AuthorName, Metadata: string.Equals(body.Source, "widget", StringComparison.OrdinalIgnoreCase) ? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["interaction.source"] = "widget" } : null, Outcome: body.Outcome);
+                    var result = await chatService.AnswerAsync(question, answer, ct).ConfigureAwait(false);
 
-                    if (!result.IsSuccess)
-                        return Results.Problem(result.Error, statusCode: 422);
+                    if (!result.Resumed.IsSuccess)
+                        return Results.Problem(result.Resumed.Error, statusCode: 422);
 
                     return Results.Ok(
                         new
                         {
                             executionId,
-                            runId = pending.RunId,
-                            requestId = pending.Id,
+                            runId = question.RunId,
+                            requestId = question.Id,
+                            threadId = result.Thread.Id,
+                            messageId = result.Message.Id,
                             state = "resumed",
                         }
                     );
@@ -373,6 +364,35 @@ internal static class ExecutionsEndpoints
             )
             .WithName("ListExecutionThreadMessages")
             .WithSummary("List messages in a thread, validated to belong to the execution")
+            .WithTags("Executions");
+
+        // POST /api/v1/executions/{executionId}/threads/{threadId}/messages
+        // A person writes in the conversation of an execution. To answer a question, /respond names it.
+        v1.MapPost(
+                "/executions/{executionId}/threads/{threadId:guid}/messages",
+                async (string executionId, Guid threadId, ExecutionMessageRequest body, [FromServices] ChatService chatService, CancellationToken ct) =>
+                {
+                    if (string.IsNullOrWhiteSpace(body?.Text))
+                        return ApiEndpointHelpers.ApiValidationError(code: "text_required", userMessage: "A message is required.", detail: "The 'text' field must not be empty.");
+
+                    var thread = await chatService.GetThreadAsync(threadId, ct).ConfigureAwait(false);
+                    if (thread is null || !string.Equals(thread.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase))
+                        return ApiEndpointHelpers.ApiNotFound(code: "thread_not_found", userMessage: "This conversation was not found in this execution.", detail: $"Thread '{threadId}' is not a conversation of execution '{executionId}'.");
+
+                    var result = await chatService.PostMessageAsync(threadId, new ChatMessageRequest(Text: body.Text, AuthorType: "user", AuthorId: body.AuthorId, AuthorName: body.AuthorName, Metadata: null), ct).ConfigureAwait(false);
+                    return Results.Ok(
+                        new
+                        {
+                            executionId,
+                            threadId = result.Thread.Id,
+                            messageId = result.Message.Id,
+                            interactionRequestId = result.Interaction?.RequestId,
+                        }
+                    );
+                }
+            )
+            .WithName("PostExecutionThreadMessage")
+            .WithSummary("Write a message in a conversation of an execution")
             .WithTags("Executions");
 
         // ── POST /api/v1/executions ──────────────────────────────────────────
@@ -555,16 +575,20 @@ internal static class ExecutionsEndpoints
             .Select(x => x.Entry)
             .ToArray();
 
-    private static IResult ValidationError(string code, string message) =>
-        Results.BadRequest(
-            new
-            {
-                status = "failed",
-                code,
-                message,
-            }
-        );
+    /// <summary>
+    /// A question is one of an execution when it was asked in it (a standalone agent's run has the id of its execution). A
+    /// question that does not say its execution is taken as one of it, as it always was.
+    /// </summary>
+    private static bool BelongsTo(InteractionRequest question, string executionId) =>
+        string.IsNullOrWhiteSpace(question.ExecutionId)
+        || string.Equals(question.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(question.RunId.ToString("D"), executionId, StringComparison.OrdinalIgnoreCase);
 }
 
-/// <summary>Session-scoped HIL response. Only requestId + response are needed — the backend resolves the run.</summary>
-public sealed record SessionHilRespondRequest(string Response, Guid? RequestId = null);
+/// <summary>The answer to one question of an execution. <paramref name="RequestId"/> names the question; the backend finds the run that asked it.</summary>
+/// <param name="Source"><c>"widget"</c> when the answer was given through a widget (it shows the answer itself, so the conversation does not show it again).</param>
+/// <param name="Outcome">For an approval: <c>"approved"</c>, <c>"rejected"</c>, <c>"revised"</c>…</param>
+public sealed record SessionHilRespondRequest(string Response, [property: System.Text.Json.Serialization.JsonConverter(typeof(LenientGuidConverter))] Guid? RequestId = null, string? Source = null, string? Outcome = null, string? AuthorId = null, string? AuthorName = null);
+
+/// <summary>A message written in a conversation of an execution.</summary>
+public sealed record ExecutionMessageRequest(string Text, string? AuthorId = null, string? AuthorName = null);

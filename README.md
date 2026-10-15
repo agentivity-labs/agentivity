@@ -148,9 +148,11 @@ The Studio, the AI teams and the ready-made examples are part of the Docker imag
 
 ## Community
 
+- **Ask a question or show what you built:** [Discussions](https://github.com/agentivity-labs/agentivity/discussions)
 - **Report a bug or ask for a feature:** [open an issue](https://github.com/agentivity-labs/agentivity/issues)
 - **Contribute:** see [CONTRIBUTING.md](CONTRIBUTING.md). A short contributor agreement applies.
 - **Report a security problem:** see [SECURITY.md](SECURITY.md)
+- **Code of conduct:** see [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - **Anything else:** hello@agentivity.io
 
 ## License

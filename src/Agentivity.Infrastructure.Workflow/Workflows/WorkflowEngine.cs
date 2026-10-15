@@ -441,13 +441,4 @@ public sealed partial class WorkflowEngine
             RunStatus.Cancelled => WorkflowRunState.Cancelled,
             _ => WorkflowRunState.Running,
         };
-
-    internal static WorkflowNodeRunState MapToWorkflowNodeRunState(RunStatus s) =>
-        s switch
-        {
-            RunStatus.Running => WorkflowNodeRunState.Running,
-            RunStatus.Completed => WorkflowNodeRunState.Completed,
-            RunStatus.Failed => WorkflowNodeRunState.Failed,
-            _ => WorkflowNodeRunState.NotStarted,
-        };
 }

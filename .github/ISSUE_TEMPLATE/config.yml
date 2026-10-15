@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Ask a question
+    url: https://github.com/agentivity-labs/agentivity/discussions
+    about: Questions, ideas and what you built, in the Discussions.
   - name: Install and first steps
     url: https://www.agentivity.io/docs?utm_source=github&utm_medium=issues&utm_campaign=repo
     about: The install guide, what to do when the install fails, and the guides.

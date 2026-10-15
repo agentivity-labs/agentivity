@@ -265,9 +265,8 @@ internal static class ExecutionStreamEndpoints
                 while (reader.TryRead(out var queued))
                     await WriteTriggerEventAsync(response, queued, ct).ConfigureAwait(false);
 
-                if (@event.Terminal)
-                    break;
-
+                // The end of one run is not the end of this stream: it carries every run, and stays open until the client
+                // leaves or the server stops.
                 readTask = reader.ReadAsync(ct).AsTask();
             }
         }

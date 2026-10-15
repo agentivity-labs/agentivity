@@ -47,6 +47,9 @@ public enum WorkflowNodeRunState
     Running,
     Completed,
     Failed,
+
+    /// <summary>The step asked a person something and waits for the answer.</summary>
+    WaitingForInput,
 }
 
 public sealed record WorkflowNodeRunStatus(string NodeId, WorkflowNodeRunState State, string? Error, IReadOnlyDictionary<string, object?>? Inputs = null, IReadOnlyDictionary<string, object?>? Outputs = null, IReadOnlyList<string>? StatusMessages = null, DebugTraceItem? Trace = null);

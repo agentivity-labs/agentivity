@@ -388,8 +388,9 @@ public static class WorkflowsEndpoints
 
             if (string.Equals(step.SubType, "resource", StringComparison.OrdinalIgnoreCase))
             {
-                // Resource node: state derived from all connected parent nodes (the To side).
-                var parentStates = entry.Transitions.Where(c => string.Equals(c.FromStepId, step.Id, StringComparison.OrdinalIgnoreCase)).Select(c => entry.Steps.TryGetValue(c.ToStepId, out var s) ? MapRegistryStateToNodeState(s.Status) : WorkflowNodeRunState.NotStarted).ToList();
+                // Resource node: state derived from all connected parent nodes (the To side). A resource asks nothing: when
+                // the step it serves waits for a person, the resource is in use.
+                var parentStates = entry.Transitions.Where(c => string.Equals(c.FromStepId, step.Id, StringComparison.OrdinalIgnoreCase)).Select(c => entry.Steps.TryGetValue(c.ToStepId, out var s) ? MapRegistryStateToNodeState(s.Status) : WorkflowNodeRunState.NotStarted).Select(s => s == WorkflowNodeRunState.WaitingForInput ? WorkflowNodeRunState.Running : s).ToList();
 
                 effectiveState = parentStates.Count > 0 ? PickStateByPriority(parentStates) : WorkflowNodeRunState.NotStarted;
             }
@@ -441,9 +442,10 @@ public static class WorkflowsEndpoints
     private static WorkflowNodeRunState MapRegistryStateToNodeState(Agentivity.Domain.Run.RunStatus state) =>
         state switch
         {
-            // Active states → Running (highest priority in PickStateByPriority).
+            // Active states (highest priority in PickStateByPriority). A step that asked a person says so: it is what
+            // tells which step an execution waits on.
             Agentivity.Domain.Run.RunStatus.Running => WorkflowNodeRunState.Running,
-            Agentivity.Domain.Run.RunStatus.WaitingForInput => WorkflowNodeRunState.Running,
+            Agentivity.Domain.Run.RunStatus.WaitingForInput => WorkflowNodeRunState.WaitingForInput,
             Agentivity.Domain.Run.RunStatus.Paused => WorkflowNodeRunState.Running,
             // Terminal states.
             Agentivity.Domain.Run.RunStatus.Completed => WorkflowNodeRunState.Completed,

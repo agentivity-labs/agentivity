@@ -359,7 +359,8 @@ internal static class RunsEndpointMappings
             .WithTags("Runs");
 
         // POST /api/v1/runs/{runId}/unpause
-        // Note: /resume is reserved for the AG-UI HIL interrupt endpoint (RunInteractionsEndpoints).
+        // A run that waits for a person is taken up by answering its question, at the level of its execution
+        // (POST /api/v1/executions/{executionId}/respond), not here.
         v1.MapPost(
                 "/runs/{runId}/unpause",
                 async (string runId, [FromServices] IRepository<RunContext, RunRecord> runRepository, [FromServices] ITeamEngine? teamEngine, CancellationToken ct) =>
@@ -380,7 +381,24 @@ internal static class RunsEndpointMappings
                 }
             )
             .WithName("UnpauseUnifiedRun")
-            .WithSummary("Unpause a paused run for any entity kind (/resume is reserved for HIL)")
+            .WithSummary("Unpause a paused run for any entity kind")
+            .WithTags("Runs");
+
+        // POST /api/v1/runs/{runId}/recover
+        // Manually re-enters a run marked Interrupted by the startup recovery (crash/restart
+        // orphan). Re-entry starts from the last checkpoint — completed work is not re-executed.
+        v1.MapPost(
+                "/runs/{runId:guid}/recover",
+                async (Guid runId, [FromServices] DurableRunService durableRunService, CancellationToken ct) =>
+                {
+                    var outcome = await durableRunService.RecoverAsync(runId, ct).ConfigureAwait(false);
+                    return outcome.Success
+                        ? Results.Ok(new { runId = outcome.RootRunId, state = "recovering" })
+                        : Results.Problem(outcome.Error, statusCode: 409);
+                }
+            )
+            .WithName("RecoverRun")
+            .WithSummary("Re-enter an interrupted run from its last checkpoint")
             .WithTags("Runs");
 
         // GET /api/v1/runs/{runId}/entities/traces

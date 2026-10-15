@@ -11,8 +11,8 @@ namespace Agentivity.Host.Agentic;
 /// <summary>
 /// CRUD endpoints for agents.
 /// Routes: /api/v1/agentic/agents
-/// Run lifecycle: POST /api/v1/runs  |  GET /api/v1/runs?entityId=  |  GET /api/v1/runs/{runId}
-/// HIL resume:   POST /api/v1/runs/{runId}/resume
+/// Starting:     POST /api/v1/executions  |  GET /api/v1/runs?entityId=  |  GET /api/v1/runs/{runId}
+/// Answering:    POST /api/v1/executions/{executionId}/respond
 /// </summary>
 internal static class AgentsEndpoints
 {
