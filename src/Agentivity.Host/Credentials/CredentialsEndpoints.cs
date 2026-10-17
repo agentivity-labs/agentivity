@@ -74,11 +74,33 @@ public static class CredentialsEndpoints
             async (CreateCredentialsRequest request, CredentialsService service, CancellationToken ct) =>
             {
                 var fields = request.Fields.Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
+                if (CredentialsService.MissingRequired(request.TemplateId, fields) is { } missing)
+                    return ApiValidationError(code: "credentials_field_required", userMessage: missing, detail: missing, context: new { templateId = request.TemplateId });
+
                 var credentials = await service.CreateAsync(request.Name, request.TemplateId, request.Description, fields, ct);
                 return Results.Created($"/api/v1/credentials/{credentials.Id}", ToDto(credentials));
             }
         )
             .WithSummary("Create a credential");
+
+        // The models a connection being typed can use: what was typed (a key left as the mask is the stored one), tried with the
+        // provider's "list the models" call, from the server — the key never reaches the browser, and nothing is saved.
+        v1.MapPost(
+            "/credentials/models",
+            async (ModelsOfConnectionRequest request, CredentialsService service, LlmCredentialTester tester, CancellationToken ct) =>
+            {
+                var fields = (request.Fields ?? []).Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
+                var draft = await service.ComposeAsync(request.Id, request.TemplateId, fields, ct);
+                if (draft is null)
+                {
+                    return ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{request.Id}' not found.", context: new { id = request.Id });
+                }
+
+                var result = await tester.TestAsync(draft, ct);
+                return Results.Ok(new { status = result.Status, message = result.Message, models = result.Models });
+            }
+        )
+            .WithSummary("List the models a connection being typed can use");
 
         // Checks a language-model credential without spending a token (the provider's "list the models" call), from the server:
         // the key never reaches the browser. Always 200 with a status, unless the credential does not exist.
@@ -103,6 +125,9 @@ public static class CredentialsEndpoints
             async (string id, UpdateCredentialsRequest request, CredentialsService service, CancellationToken ct) =>
             {
                 var fields = request.Fields.Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
+                if (await service.GetByIdAsync(id, ct) is { } stored && CredentialsService.MissingRequired(stored.TemplateId, fields, stored) is { } missing)
+                    return ApiValidationError(code: "credentials_field_required", userMessage: missing, detail: missing, context: new { id });
+
                 var credentials = await service.UpdateAsync(id, request.Name, request.Description, fields, ct);
                 return credentials is not null ? Results.Ok(ToDto(credentials)) : ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{id}' not found.", context: new { id });
             }
@@ -143,3 +168,6 @@ internal sealed record CreateCredentialsRequest(string Name, string TemplateId, 
 internal sealed record UpdateCredentialsRequest(string Name, string? Description, List<CredentialsFieldDto> Fields);
 
 internal sealed record CredentialsFieldDto(string Key, string Value);
+
+/// <summary>A connection being typed: the stored one it changes (<see cref="Id"/>, when it is not new), its kind, and what was typed.</summary>
+internal sealed record ModelsOfConnectionRequest(string? Id, string TemplateId, List<CredentialsFieldDto>? Fields);

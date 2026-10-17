@@ -18,17 +18,12 @@ public sealed class LlmClientFactory(CredentialsService credentialsService, IHtt
             _ => LlmApiFlavor.OpenAI,
         };
 
-    /// <summary>Where a provider's API lives when its credential names no address. Unknown providers use the credential's own.</summary>
+    /// <summary>
+    /// Where a provider's API lives when its credential names no address: the address the kind of connection proposes, written
+    /// once, in its definition (and changed there if the provider moves). Null for a kind that proposes none.
+    /// </summary>
     public static string? DefaultBaseUrlOf(string? templateId) =>
-        (templateId ?? "").ToLowerInvariant() switch
-        {
-            "anthropic" => "https://api.anthropic.com",
-            "gemini" => "https://generativelanguage.googleapis.com/v1beta",
-            "xai" => "https://api.x.ai/v1",
-            "deepseek" => "https://api.deepseek.com/v1",
-            "openai" => "https://api.openai.com/v1",
-            _ => null,
-        };
+        string.IsNullOrWhiteSpace(templateId) ? null : CredentialsTemplateRegistry.Get(templateId)?.Fields.FirstOrDefault(f => string.Equals(f.Key, "base_url", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
 
     /// <summary>
     /// A client for a connection, whatever its provider: it speaks the provider's own format (Claude, Gemini, AWS Bedrock) or

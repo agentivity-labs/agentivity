@@ -106,6 +106,14 @@ public static class OrchestrationCredentialsTemplates
                         Placeholder = "us-east-1",
                         HelpText = "The AWS region where Bedrock model access is enabled for this account.",
                     },
+                    new()
+                    {
+                        Key = "model",
+                        Type = CredentialsFieldType.Text,
+                        Required = true,
+                        Label = "Model",
+                        HelpText = "The Bedrock model ID, exactly as the AWS console shows it under Model access (Bedrock gives no list to choose from). A step can still choose another one.",
+                    },
                 ],
             }
         );
@@ -519,10 +527,9 @@ public static class OrchestrationCredentialsTemplates
                     {
                         Key = "model",
                         Type = CredentialsFieldType.Text,
-                        Required = false,
-                        Label = "Default Model",
-                        DefaultValue = "gpt-4o",
-                        HelpText = "Default model identifier used when the node does not override it.",
+                        Required = true,
+                        Label = "Model",
+                        HelpText = "The model this connection uses, exactly as the provider names it: choose it in the list the provider gives once the key is entered. A step can still choose another one.",
                     },
                 ],
             }
@@ -557,17 +564,16 @@ public static class OrchestrationCredentialsTemplates
                         Type = CredentialsFieldType.Text,
                         Required = false,
                         Label = "Base URL",
-                        DefaultValue = "https://api.anthropic.com/v1/messages",
-                        HelpText = "Anthropic API endpoint. Leave as default unless using a proxy.",
+                        DefaultValue = "https://api.anthropic.com",
+                        HelpText = "The address of the Anthropic API. Keep it unless you go through a proxy, or Anthropic moves it.",
                     },
                     new()
                     {
                         Key = "model",
                         Type = CredentialsFieldType.Text,
-                        Required = false,
-                        Label = "Default Model",
-                        DefaultValue = "claude-opus-4-5",
-                        HelpText = "Default model identifier used when the node does not override it.",
+                        Required = true,
+                        Label = "Model",
+                        HelpText = "The model this connection uses, exactly as the provider names it: choose it in the list the provider gives once the key is entered. A step can still choose another one.",
                     },
                 ],
             }
@@ -609,10 +615,9 @@ public static class OrchestrationCredentialsTemplates
                     {
                         Key = "model",
                         Type = CredentialsFieldType.Text,
-                        Required = false,
-                        Label = "Default Model",
-                        DefaultValue = "deepseek-chat",
-                        HelpText = "Model identifier (e.g., deepseek-chat, deepseek-reasoner).",
+                        Required = true,
+                        Label = "Model",
+                        HelpText = "The model this connection uses, exactly as the provider names it: choose it in the list the provider gives once the key is entered. A step can still choose another one.",
                     },
                 ],
             }
@@ -654,10 +659,9 @@ public static class OrchestrationCredentialsTemplates
                     {
                         Key = "model",
                         Type = CredentialsFieldType.Text,
-                        Required = false,
-                        Label = "Default Model",
-                        DefaultValue = "grok-3",
-                        HelpText = "Model identifier (e.g., grok-3, grok-3-mini).",
+                        Required = true,
+                        Label = "Model",
+                        HelpText = "The model this connection uses, exactly as the provider names it: choose it in the list the provider gives once the key is entered. A step can still choose another one.",
                     },
                 ],
             }
@@ -699,10 +703,9 @@ public static class OrchestrationCredentialsTemplates
                     {
                         Key = "model",
                         Type = CredentialsFieldType.Text,
-                        Required = false,
-                        Label = "Default Model",
-                        DefaultValue = "gemini-2.0-flash",
-                        HelpText = "Model identifier (e.g., gemini-2.0-flash, gemini-2.5-pro).",
+                        Required = true,
+                        Label = "Model",
+                        HelpText = "The model this connection uses, exactly as the provider names it: choose it in the list the provider gives once the key is entered. A step can still choose another one.",
                     },
                 ],
             }

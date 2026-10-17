@@ -78,7 +78,14 @@ public sealed class LlmCredentialTester(IHttpClientFactory httpClientFactory)
             return Result(LlmCredentialTestStatus.InvalidKey, "There is no API key in these credentials.", [], configuredModel);
         }
 
-        using var request = BuildRequest(template, credential, apiKey.Trim());
+        // The address of the connection, as the model calls use it — or else the one its kind proposes.
+        var address = ((string.IsNullOrWhiteSpace(credential.GetField("base_url")) ? null : credential.GetField("base_url")) ?? LlmClientFactory.DefaultBaseUrlOf(template))?.Trim().TrimEnd('/');
+        if (string.IsNullOrEmpty(address))
+        {
+            return Result(LlmCredentialTestStatus.Error, "These credentials name no address for the API: fill in the Base URL.", [], configuredModel);
+        }
+
+        using var request = BuildRequest(template, address, apiKey.Trim());
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(Timeout);
 
@@ -99,16 +106,15 @@ public sealed class LlmCredentialTester(IHttpClientFactory httpClientFactory)
         }
     }
 
-    private static HttpRequestMessage BuildRequest(string template, CredentialModel credential, string apiKey)
+    // Only the path of the call is added to the address of the connection.
+    private static HttpRequestMessage BuildRequest(string template, string baseUrl, string apiKey)
     {
-        var baseUrl = (credential.GetField("base_url") ?? DefaultBaseUrl(template)).Trim().TrimEnd('/');
         HttpRequestMessage request;
 
         switch (template)
         {
             case "anthropic":
-                // The credential holds the messages endpoint; the model list lives next to it.
-                request = new HttpRequestMessage(HttpMethod.Get, StripSuffix(baseUrl, "/messages") + "/models?limit=100");
+                request = new HttpRequestMessage(HttpMethod.Get, baseUrl + "/v1/models?limit=100");
                 request.Headers.TryAddWithoutValidation("x-api-key", apiKey);
                 request.Headers.TryAddWithoutValidation("anthropic-version", AnthropicVersion);
                 break;
@@ -118,7 +124,7 @@ public sealed class LlmCredentialTester(IHttpClientFactory httpClientFactory)
                 break;
             default:
                 // OpenAI and the providers that speak its format (xAI, DeepSeek, ...).
-                request = new HttpRequestMessage(HttpMethod.Get, StripSuffix(baseUrl, "/chat/completions") + "/models");
+                request = new HttpRequestMessage(HttpMethod.Get, baseUrl + "/models");
                 request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + apiKey);
                 break;
         }
@@ -193,18 +199,6 @@ public sealed class LlmCredentialTester(IHttpClientFactory httpClientFactory)
 
         return models;
     }
-
-    private static string DefaultBaseUrl(string template) =>
-        template switch
-        {
-            "anthropic" => "https://api.anthropic.com/v1/messages",
-            "gemini" => "https://generativelanguage.googleapis.com/v1beta",
-            "xai" => "https://api.x.ai/v1",
-            "deepseek" => "https://api.deepseek.com/v1",
-            _ => "https://api.openai.com/v1",
-        };
-
-    private static string StripSuffix(string value, string suffix) => value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) ? value[..^suffix.Length] : value;
 
     private static string StripPrefix(string value, string prefix) => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? value[prefix.Length..] : value;
 
