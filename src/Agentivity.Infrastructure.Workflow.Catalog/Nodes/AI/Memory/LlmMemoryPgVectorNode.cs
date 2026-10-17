@@ -44,7 +44,7 @@ public sealed class LlmMemoryPgVectorNode : ResourceNode, IEmbeddingProvider, IV
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
-        DefineMetadata("pgvector Memory", "RAG backed by PostgreSQL's pgvector extension — persists embeddings once and queries a real ANN-ready index instead of re-ranking locally on every run.", "ai.memory");
+        DefineMetadata("pgvector Memory", "RAG backed by PostgreSQL's pgvector extension — persists embeddings once and queries a real ANN-ready index instead of re-ranking locally on every run.", "ai.memory", whenToUse: "To let an AI Agent or LLM Prompt search large knowledge sources stored once in your PostgreSQL database (with the pgvector extension) and reused across runs. Needs a PostgreSQL connection string; the table is created on first use.");
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal | NodeEffects.Costs);
 
         ClearInputPorts();

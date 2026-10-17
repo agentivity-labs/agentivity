@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Agentivity.Domain.Arguments;
+using Agentivity.Infrastructure.Core;
 using Agentivity.Infrastructure.Core.Llm;
 
 namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Llm;
@@ -57,7 +58,8 @@ internal static class ImageAttachmentResolver
         byte[] bytes;
         if (!string.IsNullOrWhiteSpace(imageRef.LocalPath) && File.Exists(imageRef.LocalPath))
         {
-            bytes = await File.ReadAllBytesAsync(imageRef.LocalPath, cancellationToken).ConfigureAwait(false);
+            // The person's image, or one the workflows made — never another file of the installation, which would go to the model.
+            bytes = await File.ReadAllBytesAsync(InstallationFiles.Current.EnsureOutside(imageRef.LocalPath), cancellationToken).ConfigureAwait(false);
         }
         else if (!string.IsNullOrWhiteSpace(imageRef.Url) && Uri.TryCreate(imageRef.Url, UriKind.Absolute, out Uri? uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {

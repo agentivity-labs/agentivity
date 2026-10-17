@@ -26,7 +26,7 @@ public sealed class StorageSupabaseNode : ResourceNode
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.DatabaseStorage); // Register with abstract type (storage.database.*)
 
-        DefineMetadata("Supabase Storage", "Provides access to Supabase database key-value storage.", "storage");
+        DefineMetadata("Supabase Storage", "Provides access to Supabase database key-value storage.", "storage", whenToUse: "To keep values in your own Supabase project, where other tools can read them too. It needs Supabase credentials (project URL and API key) and a table made for it; connect it to Storage Read, Storage Write or Storage Delete.");
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal);
 
         ClearInputPorts();

@@ -34,7 +34,7 @@ public sealed class WebScrapeNode : ControlFlowNode
         _credentialsService = credentialsService ?? throw new ArgumentNullException(nameof(credentialsService));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 
-        DefineMetadata("Scrape Web Page", "Reads a web page as Markdown, ready for an LLM prompt. Uses the connected web scraper, or the free Direct scraper when none is connected.", "web");
+        DefineMetadata("Scrape Web Page", "Reads a web page as Markdown, ready for an LLM prompt. Uses the connected web scraper, or the free Direct scraper when none is connected.", "web", whenToUse: "To read the content of one web page from its link, for example a link a person gave, so an AI step can work on it. Not for finding pages on a subject: use a web search instead.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

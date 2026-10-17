@@ -20,7 +20,7 @@ public sealed class CoreIfNode : ControlFlowNode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("If", "Evaluates a condition and branches execution to either the true or false path.", "core.control");
+        DefineMetadata("If", "Evaluates a condition and branches execution to either the true or false path.", "core.control", whenToUse: "To take one of two paths depending on a condition, for example whether a value is empty or above a threshold. For more than two paths, use Switch instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();

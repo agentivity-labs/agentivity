@@ -10,9 +10,6 @@ public static class CatalogCategories
 {
     public static void RegisterAll()
     {
-        if (NodeCategoryRegistry.All.Count > 0)
-            return;
-
         // Root categories
         Register("core", "Core", "Fundamental workflow blocks", NodeIconDef.Material(0xe87d, "#64748b"));
         Register("content", "Content", "Content creation", NodeIconDef.Material(0xe24d, "#8b5cf6"));
@@ -31,7 +28,6 @@ public static class CatalogCategories
         Register("core.workflow", "Workflow", "Sub-workflow orchestration", NodeIconDef.Material(0xe8f4, "#64748b"), "core");
 
         // Content children
-        Register("content.articles", "Articles", "Article-focused content nodes", NodeIconDef.Material(0xe873, "#8b5cf6"), "content");
         Register("content.layout", "Layout", "Layout manipulation", NodeIconDef.Material(0xe99b, "#ec4899"), "content");
         Register("content.layoutadapters", "Layout Adapters", "Layout format conversion nodes", NodeIconDef.Material(0xe8f4, "#8b5cf6"), "content");
 
@@ -56,6 +52,8 @@ public static class CatalogCategories
         Register("ai.tools.search", "Search", "AI tools for provider-based web search", NodeIconDef.Material(0xe8b6, "#5b55e8"), "ai.tools");
         Register("ai.tools.utils", "Utils", "Small AI utility tools", NodeIconDef.Material(0xe8d5, "#5b55e8"), "ai.tools");
         Register("ai.tools.communication", "Communication", "AI tools that read and send messages (e-mail)", NodeIconDef.Material(0xe0be, "#5b55e8"), "ai.tools");
+        Register("ai.tools.data", "Data", "AI tools that read and write Data Tables", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai.tools");
+        Register("ai.tools.documents", "Documents", "AI tools that read documents (PDF, Word, text)", NodeIconDef.Material(0xe873, "#5b55e8"), "ai.tools");
         Register("ai.interactions", "Interactions", "Human-in-the-loop channels and interaction resources", NodeIconDef.Material(0xe7f4, "#5b55e8"), "ai");
 
         // SEO
@@ -66,11 +64,19 @@ public static class CatalogCategories
         Register("web.scrappers", "Scrappers", "Web scraping resource nodes and providers", NodeIconDef.Material(0xe894, "#10b981"), "web");
         Register("web.search", "Search", "Web search nodes backed by external search providers", NodeIconDef.Material(0xe8b6, "#10b981"), "web");
 
+        // Documents
+        Register("documents", "Documents", "Read the text of documents (PDF, Word, text)", NodeIconDef.Material(0xe873, "#0ea5e9"));
+
         // Storage
         Register("storage", "Storage", "Key-value storage operations", NodeIconDef.Material(0xe1db, "#d97706"));
 
         NodeCategoryRegistry.Freeze();
     }
 
-    private static void Register(string id, string name, string desc, NodeIconDef icon, string? parent = null) => NodeCategoryRegistry.Register(new NodeCategory(id, name, desc, icon, parent));
+    // Only when missing: a category of that id already there (a plugin's, an earlier host of the same process) is kept as it is.
+    private static void Register(string id, string name, string desc, NodeIconDef icon, string? parent = null)
+    {
+        if (!NodeCategoryRegistry.Exists(id))
+            NodeCategoryRegistry.Register(new NodeCategory(id, name, desc, icon, parent));
+    }
 }

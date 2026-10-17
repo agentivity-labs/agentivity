@@ -30,7 +30,8 @@ public static class AiAssistantEndpoints
                 var response = await assistant.ChatAsync(request, ct);
                 return response.Success ? Results.Ok(response) : ApiError(StatusCodes.Status503ServiceUnavailable, code: "assistant_chat_failed", userMessage: "The AI assistant could not answer right now.", detail: response.Error ?? "The AI assistant request failed.");
             }
-        );
+        )
+            .WithSummary("Chat with the AI assistant");
 
         v1.MapPost(
             "/ai-assistant/chat-stream",
@@ -170,7 +171,8 @@ public static class AiAssistantEndpoints
                     await context.Response.Body.FlushAsync(ct);
                 }
             }
-        );
+        )
+            .WithSummary("Stream an AI assistant reply as events");
 
         v1.MapPost(
             "/ai-assistant/suggest-nodes",
@@ -182,7 +184,8 @@ public static class AiAssistantEndpoints
                 var response = await assistant.SuggestNodesAsync(request, ct);
                 return response.Success ? Results.Ok(response) : ApiError(StatusCodes.Status503ServiceUnavailable, code: "assistant_node_suggestion_failed", userMessage: "The AI assistant could not suggest nodes right now.", detail: response.Error ?? "The node suggestion request failed.");
             }
-        );
+        )
+            .WithSummary("Suggest nodes for a task description");
 
         v1.MapPost(
             "/ai-assistant/configure-node",
@@ -199,7 +202,8 @@ public static class AiAssistantEndpoints
                     ? Results.Ok(response)
                     : ApiError(StatusCodes.Status503ServiceUnavailable, code: "assistant_node_configuration_failed", userMessage: "The AI assistant could not configure this node right now.", detail: response.Error ?? "The node configuration request failed.");
             }
-        );
+        )
+            .WithSummary("Configure a node from a stated intent");
 
         v1.MapGet(
             "/ai-assistant/health",
@@ -212,7 +216,8 @@ public static class AiAssistantEndpoints
                         version = "1.0.0-mvp",
                     }
                 )
-        );
+        )
+            .WithSummary("Check that the AI assistant is up");
 
         return routes;
     }

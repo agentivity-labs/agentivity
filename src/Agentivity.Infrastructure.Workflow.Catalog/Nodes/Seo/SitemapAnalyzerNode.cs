@@ -25,7 +25,7 @@ public sealed class SitemapAnalyzerNode : ToolNode
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Sitemap Analyzer", "Parses XML sitemap and extracts page information for SEO analysis.", "seo");
+        DefineMetadata("Sitemap Analyzer", "Parses XML sitemap and extracts page information for SEO analysis.", "seo", whenToUse: "To list the pages of a website from its XML sitemap (such as https://example.com/sitemap.xml), optionally with each page's title and description, as the start of an SEO workflow. Give its pages to Sitemap Structure.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         DefineInput("sitemap_url", ArgumentType.Text, "Sitemap XML URL (e.g., https://example.com/sitemap.xml)", ui: new ArgumentUiMetadata { Group = "Sitemap", Order = 10 }, required: true);

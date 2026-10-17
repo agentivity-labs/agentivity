@@ -24,7 +24,7 @@ public sealed class FormsChannelNode : ResourceNode, IInteractionChannel, IHuman
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
-        DefineMetadata("Forms Channel", "Web form-based interaction channel for collecting user input.", "ai.interactions");
+        DefineMetadata("Forms Channel", "Web form-based interaction channel for collecting user input.", "ai.interactions", whenToUse: "To collect answers from a person through a form shown in the app, with only the fields needed. Plug it into an AI Agent so it can ask for missing information as a form and wait for it.");
         DefineEffects(NodeEffects.SendsMessage);
         ClearInputPorts();
         ClearOutputPorts();

@@ -13,15 +13,26 @@ public static class NodeCategoryRegistry
 
     public static IReadOnlyDictionary<string, NodeCategory> All => _frozen is not null ? _frozen : _categories;
 
+    /// <summary>
+    /// Adds a category, or replaces the one of that id. Also once the registry is frozen: a plugin brings its own categories with
+    /// its steps, after the catalogue (<see cref="Freeze"/> is then done again, with it).
+    /// </summary>
     public static void Register(NodeCategory category)
     {
         ArgumentNullException.ThrowIfNull(category);
-        if (_frozen is not null)
-            throw new InvalidOperationException("Registry is frozen.");
-        _categories[category.Id] = category;
+        lock (_categories)
+        {
+            _categories[category.Id] = category;
+            if (_frozen is not null)
+                Freeze();
+        }
     }
 
-    public static void Freeze() => _frozen = _categories.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+    public static void Freeze()
+    {
+        lock (_categories)
+            _frozen = _categories.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+    }
 
     public static NodeCategory? Get(string id) => All.GetValueOrDefault(id);
 

@@ -21,7 +21,7 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
     private readonly ILogger _logger;
     private readonly IWebSearchService _searchService;
 
-    protected AIKnowledgeWebSearchNodeBase(string nodeType, string displayName, string description, string credentialsTemplateId, string credentialsDescription, IWebSearchService searchService, IHttpClientFactory httpClientFactory, CredentialsService credentialsService, ILoggerFactory loggerFactory)
+    protected AIKnowledgeWebSearchNodeBase(string nodeType, string displayName, string description, string whenToUse, string credentialsTemplateId, string credentialsDescription, IWebSearchService searchService, IHttpClientFactory httpClientFactory, CredentialsService credentialsService, ILoggerFactory loggerFactory)
         : base(nodeType)
     {
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
@@ -32,7 +32,7 @@ public abstract class AIKnowledgeWebSearchNodeBase : ResourceNode, IKnowledgeSou
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata(displayName, description, "ai.knowledge");
+        DefineMetadata(displayName, description, "ai.knowledge", whenToUse: whenToUse);
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         ClearInputPorts();

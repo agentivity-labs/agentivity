@@ -35,7 +35,7 @@ public sealed class ChatChannelNode : ResourceNode, IInteractionChannel, IHumanI
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
-        DefineMetadata("Chat Channel", "Internal local chat channel for workflow conversations, human-in-the-loop responses, and AG-UI rich widgets.", "ai.interactions");
+        DefineMetadata("Chat Channel", "Internal local chat channel for workflow conversations, human-in-the-loop responses, and AG-UI rich widgets.", "ai.interactions", whenToUse: "To let an AI Agent talk with the user in the app's chat: send messages, ask a question and wait for the reply, show rich cards. Plug it into the Human Loop Channel of an AI Agent, or use it with an interaction step.");
         DefineEffects(NodeEffects.WritesInternal);
         ClearInputPorts();
         ClearOutputPorts();

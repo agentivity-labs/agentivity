@@ -18,7 +18,7 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
     public DslToEmailHtmlNode()
         : base("content.layoutadapters.dsl_to_email_html")
     {
-        DefineMetadata("DSL to Email HTML", "Converts DSL content to email-compatible HTML with table layout and inline styles", "content.layoutadapters");
+        DefineMetadata("DSL to Email HTML", "Converts DSL content to email-compatible HTML with table layout and inline styles", "content.layoutadapters", whenToUse: "To turn a page layout in DSL format into the HTML of an e-mail, such as a newsletter, that displays well in mail apps, in your brand colors. For a web page, use DSL to HTML instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
@@ -30,7 +30,7 @@ public sealed class DslToEmailHtmlNode : DslAdapterNode
         DefineInput(
             "dsl_content",
             ArgumentType.Text,
-            "PageNode JSON in DSL format",
+            "Page layout in DSL format (JSON), as Content Generator gives it",
             ui: new ArgumentUiMetadata
             {
                 Tab = "Content",

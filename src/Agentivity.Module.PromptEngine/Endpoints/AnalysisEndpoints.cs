@@ -26,6 +26,7 @@ public static class AnalysisEndpoints
                     return PromptEngineEndpointErrors.FromInvalidOperation(ex);
                 }
             }
-        );
+        )
+            .WithSummary("Analyze the quality of a prompt");
     }
 }

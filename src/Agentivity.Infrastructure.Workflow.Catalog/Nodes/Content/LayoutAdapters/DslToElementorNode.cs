@@ -23,7 +23,7 @@ public sealed class DslToElementorNode : DslAdapterNode
     {
         _elementorPresets = elementorPresets ?? throw new ArgumentNullException(nameof(elementorPresets));
 
-        DefineMetadata("DSL to Elementor", "Converts DSL content to Elementor-compatible format for WordPress", "content.layoutadapters");
+        DefineMetadata("DSL to Elementor", "Converts DSL content to Elementor-compatible format for WordPress", "content.layoutadapters", whenToUse: "To turn a page layout in DSL format, such as the one Content Generator gives, into an Elementor page for Publish to WordPress. To show images already uploaded, give a JSON list linking each image to its WordPress media ID.");
         DefineEffects(NodeEffects.None);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
@@ -38,7 +38,7 @@ public sealed class DslToElementorNode : DslAdapterNode
         DefineInput(
             "dsl_content",
             ArgumentType.Text,
-            "PageNode JSON in DSL format",
+            "Page layout in DSL format (JSON), as Content Generator gives it",
             ui: new ArgumentUiMetadata
             {
                 Group = "Content",

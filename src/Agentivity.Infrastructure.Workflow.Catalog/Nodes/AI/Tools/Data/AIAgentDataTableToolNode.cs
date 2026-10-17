@@ -5,6 +5,7 @@ using Agentivity.Domain.DataTables;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.DataTables.Runtime;
+using Agentivity.Infrastructure.Storage.Workspace;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.Data;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
@@ -34,6 +35,12 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
 {
     private const string DefaultPrefix = "datatable";
 
+    // How many rows one select gives at most, unless the tool says otherwise: enough to work with, never a whole big table.
+    private const int DefaultMaxRows = 100;
+
+    // How long one SQL query may run before it is stopped.
+    private static readonly TimeSpan QueryTimeout = TimeSpan.FromSeconds(5);
+
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
     private readonly DataTableRowStore _rowStore;
@@ -44,7 +51,7 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
         _rowStore = rowStore ?? throw new ArgumentNullException(nameof(rowStore));
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent Data Table Tool", "Exposes CRUD on a shared Data Table asset as LLM-callable tools.", "ai.tools.data");
+        DefineMetadata("AI Agent Data Table Tool", "Exposes CRUD on a shared Data Table asset as LLM-callable tools.", "ai.tools.data", whenToUse: "To let an agent search, add, change or delete rows of a Data Table, for example bookings or leads shared by several agents. Turn off what the agent must not do; questions in SQL (totals, averages) stay off unless you turn them on.");
         DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();
@@ -59,10 +66,26 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
             ui: new ArgumentUiMetadata { Group = "Tools", Order = 10 },
             required: false
         );
+        DefineInput(
+            "max_rows",
+            ArgumentType.Number,
+            $"The most rows one select gives the agent (default {DefaultMaxRows}; 0 for no limit). When a search finds more, the agent is told how many there are and how to get the next ones.",
+            DefaultMaxRows,
+            ui: new ArgumentUiMetadata { Group = "Tools", Order = 11, Min = 0, Step = 1 },
+            required: false
+        );
         DefineInput("allow_read", ArgumentType.Boolean, "Expose reading rows (select/find) to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 20 }, required: false);
         DefineInput("allow_insert", ArgumentType.Boolean, "Expose inserting new rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 21 }, required: false);
         DefineInput("allow_update", ArgumentType.Boolean, "Expose updating existing rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 22 }, required: false);
         DefineInput("allow_delete", ArgumentType.Boolean, "Expose deleting rows to the agent.", true, ui: new ArgumentUiMetadata { Group = "Permissions", Order = 23 }, required: false);
+        DefineInput(
+            "allow_query",
+            ArgumentType.Boolean,
+            "Expose read-only SQL on this table to the agent (one SELECT at a time: totals, groups, averages…). Off unless turned on.",
+            false,
+            ui: new ArgumentUiMetadata { Group = "Permissions", Order = 24 },
+            required: false
+        );
 
         DefineIcon(NodeIcon.Embedded("datatable"));
     }
@@ -87,38 +110,25 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
     {
         cancellationToken.ThrowIfCancellationRequested();
         string prefix = ResolvePrefix(binding);
-        DataTableSchema? schema = null;
+        LiveDataTable? table = null;
         string? tableId = binding.GetString("table_id")?.Trim();
         if (!string.IsNullOrEmpty(tableId))
         {
-            schema = (await _rowStore.GetOrLoadAsync(tableId, cancellationToken).ConfigureAwait(false)).Schema;
+            table = await _rowStore.OpenAsync(tableId, cancellationToken).ConfigureAwait(false);
         }
 
-        IReadOnlyList<DataTableColumn> columns = schema?.Columns ?? [];
+        IReadOnlyList<DataTableColumn> columns = table?.Schema.Columns ?? [];
         var tools = new List<JsonObject>();
 
         if (ResolveFlag(binding, "allow_read"))
         {
-            var whereColumn = new JsonObject { ["type"] = "string", ["description"] = "Column name to filter on (optional)." };
-            if (columns.Count > 0)
-            {
-                whereColumn["enum"] = new JsonArray(columns.Select(c => (JsonNode?)JsonValue.Create(c.Name)).ToArray());
-            }
-
-            var selectSchema = new JsonObject
-            {
-                ["type"] = "object",
-                ["properties"] = new JsonObject
-                {
-                    ["where_column"] = whereColumn,
-                    ["where_value"] = new JsonObject { ["type"] = "string", ["description"] = "Value that column must equal (optional, requires where_column)." },
-                },
-                ["additionalProperties"] = false,
-            };
+            int? maxRows = ResolveMaxRows(binding);
             tools.Add(LlmToolDefinitionJson.Create(
                 $"{prefix}_select",
-                "List rows from the Data Table, optionally filtered to rows where one column equals a value. Omit both arguments to get every row.",
-                selectSchema.ToJsonString(),
+                "Search the rows of the Data Table: conditions in 'where' (all must be true), a sort in 'order_by', the columns to return in 'columns'. "
+                    + (maxRows is { } max ? $"At most {max} rows come back at once; the answer always gives the total found, and 'next_offset' when there are more. " : "The answer always gives the total found. ")
+                    + "Ask for only what you need: narrow with conditions rather than reading everything, and use limit 0 to count without reading.",
+                BuildSelectSchema(table?.SearchableColumns ?? []).ToJsonString(),
                 allowToolStateReuse: true
             ));
             tools.Add(LlmToolDefinitionJson.Create(
@@ -129,6 +139,27 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
                   "type": "object",
                   "properties": { "id": { "type": "number", "description": "The row's id." } },
                   "required": ["id"],
+                  "additionalProperties": false
+                }
+                """,
+                allowToolStateReuse: true
+            ));
+        }
+
+        if (table is not null && binding.GetBool("allow_query") == true)
+        {
+            int? maxRows = ResolveMaxRows(binding);
+            tools.Add(LlmToolDefinitionJson.Create(
+                $"{prefix}_query",
+                $"Run ONE read-only SQL SELECT ({table.SqlDialect}) on the table {table.DescribeForQuery(prefix)} "
+                    + "It can only read this table: no change, no other table. "
+                    + (maxRows is { } max ? $"At most {max} rows come back; when there are more, the answer gives the total. " : string.Empty)
+                    + "Let SQL do the work — COUNT, SUM, AVG, GROUP BY, WHERE — rather than reading rows to count them.",
+                """
+                {
+                  "type": "object",
+                  "properties": { "sql": { "type": "string", "description": "One SELECT statement." } },
+                  "required": ["sql"],
                   "additionalProperties": false
                 }
                 """,
@@ -189,6 +220,68 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
         }
 
         return tools;
+    }
+
+    private static int? ResolveMaxRows(ResourceBinding binding)
+    {
+        double? configured = binding.GetDouble("max_rows");
+        return configured is null ? DefaultMaxRows : configured.Value <= 0 ? null : (int)configured.Value;
+    }
+
+    /// <summary>The arguments of a search, on the table's real columns (any column when the table is not known yet).</summary>
+    private static JsonObject BuildSelectSchema(IReadOnlyList<string> columnNames)
+    {
+        JsonObject ColumnName(string description)
+        {
+            var column = new JsonObject { ["type"] = "string", ["description"] = description };
+            if (columnNames.Count > 0)
+            {
+                column["enum"] = new JsonArray(columnNames.Select(n => (JsonNode?)JsonValue.Create(n)).ToArray());
+            }
+
+            return column;
+        }
+
+        return new JsonObject
+        {
+            ["type"] = "object",
+            ["properties"] = new JsonObject
+            {
+                ["where"] = new JsonObject
+                {
+                    ["type"] = "array",
+                    ["description"] = "Conditions a row must all meet. Texts are compared without regard to case; for a list column, 'contains' looks for an item.",
+                    ["items"] = new JsonObject
+                    {
+                        ["type"] = "object",
+                        ["properties"] = new JsonObject
+                        {
+                            ["column"] = ColumnName("The column to test."),
+                            ["op"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray(DataTableOperators.Names.Select(n => (JsonNode?)JsonValue.Create(n)).ToArray()) },
+                            ["value"] = new JsonObject { ["description"] = "The value to compare with — for 'between', [lowest, highest]; none for 'is_empty' and 'is_not_empty'." },
+                        },
+                        ["required"] = new JsonArray("column", "op"),
+                        ["additionalProperties"] = false,
+                    },
+                },
+                ["order_by"] = new JsonObject
+                {
+                    ["type"] = "array",
+                    ["description"] = "How to sort the rows (by id when omitted).",
+                    ["items"] = new JsonObject
+                    {
+                        ["type"] = "object",
+                        ["properties"] = new JsonObject { ["column"] = ColumnName("The column to sort on."), ["direction"] = new JsonObject { ["type"] = "string", ["enum"] = new JsonArray("asc", "desc") } },
+                        ["required"] = new JsonArray("column"),
+                        ["additionalProperties"] = false,
+                    },
+                },
+                ["columns"] = new JsonObject { ["type"] = "array", ["description"] = "The columns to return (every column when omitted); the id always comes.", ["items"] = ColumnName("A column to return.") },
+                ["limit"] = new JsonObject { ["type"] = "integer", ["minimum"] = 0, ["description"] = "How many rows to return at most; 0 returns only the total." },
+                ["offset"] = new JsonObject { ["type"] = "integer", ["minimum"] = 0, ["description"] = "How many rows found to skip — the 'next_offset' of the previous answer, to read the next ones." },
+            },
+            ["additionalProperties"] = false,
+        };
     }
 
     /// <summary>
@@ -272,13 +365,16 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
             throw new InvalidOperationException($"'{Name}' has no 'table_id' configured.");
         }
 
-        DataTable table = await _rowStore.GetOrLoadAsync(tableId, cancellationToken).ConfigureAwait(false);
+        // The table itself, in the workspace's database: what is written there is written at once.
+        LiveDataTable table = await _rowStore.OpenAsync(tableId, cancellationToken).ConfigureAwait(false);
 
         string prefix = ResolvePrefix(binding);
         string operation = toolName.StartsWith(prefix + "_", StringComparison.OrdinalIgnoreCase) ? toolName[(prefix.Length + 1)..] : toolName;
 
         bool Allowed(string flag) => ResolveFlag(binding, flag);
         if (operation.ToLowerInvariant() is "select" or "find" && !Allowed("allow_read"))
+            return McpToolResultJson.CreateFailedResult($"'{toolName}' is disabled on this Data Table tool.", "operation_not_allowed");
+        if (operation.Equals("query", StringComparison.OrdinalIgnoreCase) && binding.GetBool("allow_query") != true)
             return McpToolResultJson.CreateFailedResult($"'{toolName}' is disabled on this Data Table tool.", "operation_not_allowed");
         if (operation.Equals("insert", StringComparison.OrdinalIgnoreCase) && !Allowed("allow_insert"))
             return McpToolResultJson.CreateFailedResult($"'{toolName}' is disabled on this Data Table tool.", "operation_not_allowed");
@@ -289,48 +385,120 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
 
         return operation.ToLowerInvariant() switch
         {
-            "select" => ExecuteSelect(table, arguments),
-            "find" => await ExecuteFindAsync(table, arguments).ConfigureAwait(false),
-            "insert" => await ExecuteInsertAsync(table, arguments, tableId, cancellationToken).ConfigureAwait(false),
-            "update" => await ExecuteUpdateAsync(table, arguments, tableId, cancellationToken).ConfigureAwait(false),
-            "delete" => await ExecuteDeleteAsync(table, arguments, tableId, cancellationToken).ConfigureAwait(false),
+            "select" => await ExecuteSelectAsync(table, arguments, prefix, ResolveMaxRows(binding), cancellationToken).ConfigureAwait(false),
+            "query" => await ExecuteQueryAsync(table, arguments, prefix, ResolveMaxRows(binding), cancellationToken).ConfigureAwait(false),
+            "find" => await ExecuteFindAsync(table, arguments, cancellationToken).ConfigureAwait(false),
+            "insert" => await ExecuteInsertAsync(table, arguments, cancellationToken).ConfigureAwait(false),
+            "update" => await ExecuteUpdateAsync(table, arguments, cancellationToken).ConfigureAwait(false),
+            "delete" => await ExecuteDeleteAsync(table, arguments, cancellationToken).ConfigureAwait(false),
             _ => throw new InvalidOperationException($"Tool '{toolName}' is not exposed by '{Name}'."),
         };
     }
 
-    private static JsonObject ExecuteSelect(DataTable table, JsonElement arguments)
+    /// <summary>
+    /// A search, at most <paramref name="maxRows"/> rows at once. The answer always says how many rows were found, and — when that is
+    /// more than came back — how to read the next ones, narrow the search or count: an agent never takes a page for the whole table.
+    /// A search that cannot be done comes back as an error the agent can correct (the columns there are, the operators that fit).
+    /// </summary>
+    private static async Task<JsonObject> ExecuteSelectAsync(LiveDataTable table, JsonElement arguments, string prefix, int? maxRows, CancellationToken ct)
     {
-        string? whereColumn = arguments.TryGetProperty("where_column", out var wc) && wc.ValueKind == JsonValueKind.String ? wc.GetString() : null;
-        string? whereValue = arguments.TryGetProperty("where_value", out var wv) && wv.ValueKind == JsonValueKind.String ? wv.GetString() : null;
+        DataTableSearchResult found;
+        IReadOnlyList<string>? only;
+        try
+        {
+            var where = new List<DataTableFilter>(Property(arguments, "where") is { } w ? DataTableQueryJson.ParseWhere(w) : []);
+            // The single-column filter the tool had before: still understood, as one condition.
+            if (Property(arguments, "where_column") is { ValueKind: JsonValueKind.String } column && !string.IsNullOrWhiteSpace(column.GetString()))
+            {
+                where.Add(new DataTableCondition(column.GetString()!, DataTableOperator.Equals, Property(arguments, "where_value")));
+            }
 
-        IReadOnlyList<DataTableRow> rows = !string.IsNullOrWhiteSpace(whereColumn) ? table.SelectWhere(whereColumn, whereValue) : table.SelectAll();
-        return SerializeResult(new { rows = rows.Select(r => r.ToDictionary()).ToList(), count = rows.Count });
+            int? limit = Property(arguments, "limit") is { ValueKind: JsonValueKind.Number } l ? (int)l.GetDouble() : null;
+            int offset = Property(arguments, "offset") is { ValueKind: JsonValueKind.Number } o ? (int)o.GetDouble() : 0;
+            if (maxRows is { } max)
+            {
+                limit = limit is null ? max : Math.Min(limit.Value, max);
+            }
+
+            only = Property(arguments, "columns") is { ValueKind: JsonValueKind.Array } c ? c.EnumerateArray().Select(n => table.ColumnNamed(n.GetString() ?? string.Empty)).ToList() : null;
+            // Done by the database: one page at most, and the total found.
+            found = await table.SearchAsync(new DataTableQuery(where, Property(arguments, "order_by") is { } sort ? DataTableQueryJson.ParseOrderBy(sort) : null, limit, offset), ct).ConfigureAwait(false);
+        }
+        catch (DataTableQueryException ex)
+        {
+            return McpToolResultJson.CreateFailedResult(ex.Message, "invalid_query");
+        }
+
+        var rows = found.Rows.Select(r => only is null ? r.ToDictionary() : r.ToDictionary().Where(p => p.Key == "id" || only.Contains(p.Key, StringComparer.OrdinalIgnoreCase)).ToDictionary(StringComparer.OrdinalIgnoreCase)).ToList();
+        var answer = new Dictionary<string, object?> { ["rows"] = rows, ["count"] = rows.Count, ["total"] = found.Total, ["offset"] = found.Offset };
+        if (found.NextOffset is { } next)
+        {
+            answer["next_offset"] = next;
+            answer["note"] = $"Rows {found.Offset + 1} to {next} of {found.Total} found. To read the next ones, call {prefix}_select again with the same arguments and offset {next}. "
+                + $"To find fewer, add conditions in 'where'; to count without reading, call it with limit 0.";
+        }
+
+        return SerializeResult(answer);
     }
 
-    private static ValueTask<JsonObject> ExecuteFindAsync(DataTable table, JsonElement arguments)
+    /// <summary>
+    /// A read-only SQL query, done by the database on the table itself and nothing else: at most <paramref name="maxRows"/> rows, the
+    /// total when there are more, and a query that cannot be run — refused, wrong, too long — comes back as an error the agent can fix.
+    /// </summary>
+    private static async Task<JsonObject> ExecuteQueryAsync(LiveDataTable table, JsonElement arguments, string prefix, int? maxRows, CancellationToken ct)
+    {
+        if (Property(arguments, "sql") is not { ValueKind: JsonValueKind.String } sql)
+        {
+            return McpToolResultJson.CreateFailedResult("The 'sql' argument is required: one SELECT statement.", "invalid_arguments");
+        }
+
+        DataTableQueryResult result;
+        try
+        {
+            // Done by the database, on the table itself — read-only, that table only (see IDataTableStore.QueryAsync).
+            result = await table.QueryAsync(prefix, sql.GetString()!, maxRows, QueryTimeout, ct).ConfigureAwait(false);
+        }
+        catch (DataTableQueryException ex)
+        {
+            return McpToolResultJson.CreateFailedResult(ex.Message, "invalid_query");
+        }
+
+        var answer = new Dictionary<string, object?> { ["columns"] = result.Columns, ["rows"] = result.Rows, ["count"] = result.Rows.Count };
+        if (result.Total is { } total)
+        {
+            answer["total"] = total;
+            answer["note"] = $"The query gave {total} rows; only the first {result.Rows.Count} are here. Read the rest a page at a time with LIMIT and OFFSET, or let the query do more of the work (WHERE, GROUP BY, COUNT, SUM).";
+        }
+
+        return SerializeResult(answer);
+    }
+
+    private static JsonElement? Property(JsonElement arguments, string name) =>
+        arguments.ValueKind == JsonValueKind.Object && arguments.TryGetProperty(name, out var value) && value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined) ? value : null;
+
+    private static async ValueTask<JsonObject> ExecuteFindAsync(LiveDataTable table, JsonElement arguments, CancellationToken ct)
     {
         if (!TryGetRowId(arguments, out long id, out JsonObject? error))
         {
-            return ValueTask.FromResult(error!);
+            return error!;
         }
 
-        DataTableRow? row = table.FindById(id);
-        return ValueTask.FromResult(row is null ? McpToolResultJson.CreateFailedResult($"No row with id {id} was found.", "row_not_found") : SerializeResult(row.ToDictionary()));
+        DataTableRow? row = await table.FindAsync(id, ct).ConfigureAwait(false);
+        return row is null ? McpToolResultJson.CreateFailedResult($"No row with id {id} was found.", "row_not_found") : SerializeResult(row.ToDictionary());
     }
 
-    private async ValueTask<JsonObject> ExecuteInsertAsync(DataTable table, JsonElement arguments, string tableId, CancellationToken ct)
+    private static async ValueTask<JsonObject> ExecuteInsertAsync(LiveDataTable table, JsonElement arguments, CancellationToken ct)
     {
         if (!arguments.TryGetProperty("data", out JsonElement dataElement) || dataElement.ValueKind != JsonValueKind.Object)
         {
             return McpToolResultJson.CreateFailedResult("The 'data' argument must be a JSON object of column values.", "invalid_arguments");
         }
 
-        DataTableRow row = table.Insert(DataTableRowDataMapping.ConvertToDictionary(dataElement));
-        await _rowStore.SaveAsync(tableId, ct).ConfigureAwait(false);
+        DataTableRow row = await table.InsertAsync(DataTableRowDataMapping.ConvertToDictionary(dataElement), ct).ConfigureAwait(false);
         return SerializeResult(row.ToDictionary());
     }
 
-    private async ValueTask<JsonObject> ExecuteUpdateAsync(DataTable table, JsonElement arguments, string tableId, CancellationToken ct)
+    private static async ValueTask<JsonObject> ExecuteUpdateAsync(LiveDataTable table, JsonElement arguments, CancellationToken ct)
     {
         if (!TryGetRowId(arguments, out long id, out JsonObject? error))
         {
@@ -342,30 +510,28 @@ public sealed class AIAgentDataTableToolNode : ResourceNode, IAgentTool
             return McpToolResultJson.CreateFailedResult("The 'data' argument must be a JSON object of column values.", "invalid_arguments");
         }
 
-        DataTableRow? row = table.Update(id, DataTableRowDataMapping.ConvertToDictionary(dataElement));
+        DataTableRow? row = await table.UpdateAsync(id, DataTableRowDataMapping.ConvertToDictionary(dataElement), ct).ConfigureAwait(false);
         if (row is null)
         {
             return McpToolResultJson.CreateFailedResult($"No row with id {id} was found.", "row_not_found");
         }
 
-        await _rowStore.SaveAsync(tableId, ct).ConfigureAwait(false);
         return SerializeResult(row.ToDictionary());
     }
 
-    private async ValueTask<JsonObject> ExecuteDeleteAsync(DataTable table, JsonElement arguments, string tableId, CancellationToken ct)
+    private static async ValueTask<JsonObject> ExecuteDeleteAsync(LiveDataTable table, JsonElement arguments, CancellationToken ct)
     {
         if (!TryGetRowId(arguments, out long id, out JsonObject? error))
         {
             return error!;
         }
 
-        bool success = table.Delete(id);
+        bool success = await table.DeleteAsync(id, ct).ConfigureAwait(false);
         if (!success)
         {
             return McpToolResultJson.CreateFailedResult($"No row with id {id} was found.", "row_not_found");
         }
 
-        await _rowStore.SaveAsync(tableId, ct).ConfigureAwait(false);
         return SerializeResult(new { success = true });
     }
 

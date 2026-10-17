@@ -38,7 +38,7 @@ public sealed class LlmMemoryPineconeNode : ResourceNode, IEmbeddingProvider, IV
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
-        DefineMetadata("Pinecone Memory", "RAG backed by a real Pinecone index — persists embeddings once and queries a real ANN index instead of re-ranking locally on every run.", "ai.memory");
+        DefineMetadata("Pinecone Memory", "RAG backed by a real Pinecone index — persists embeddings once and queries a real ANN index instead of re-ranking locally on every run.", "ai.memory", whenToUse: "To let an AI Agent or LLM Prompt search large knowledge sources stored once in a Pinecone index and reused across runs. Needs your Pinecone connection; for a free option without any account, use Simple LLM Memory.");
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal | NodeEffects.Costs);
 
         ClearInputPorts();

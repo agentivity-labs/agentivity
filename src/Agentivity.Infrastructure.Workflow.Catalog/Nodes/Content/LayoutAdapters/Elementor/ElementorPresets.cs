@@ -67,13 +67,12 @@ public sealed class ElementorPresets : IConfigurationComponent
     }
 
     /// <summary>
-    /// Reloads presets from disk using ConfigurationService.
+    /// Reloads the presets from their configuration.
     /// </summary>
     public void Reload()
     {
         lock (_lock)
         {
-            _configService.InvalidateCache(ConfigRelativePath);
             _loadedPresets = null;
         }
     }

@@ -14,7 +14,7 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.VariablesState
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            DefineMetadata("Set Variables", "Sets workflow variables from parameters or state values.", "core.variablesstate");
+            DefineMetadata("Set Variables", "Sets workflow variables from parameters or state values.", "core.variablesstate", whenToUse: "To give names to values, typed in the step or taken from earlier steps, so later steps can use them under those names. Handy at the start of a workflow to gather its settings in one place.");
 
             // Override default output ports with loop/out
             ClearOutputPorts();

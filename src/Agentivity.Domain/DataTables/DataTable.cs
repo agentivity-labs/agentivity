@@ -26,6 +26,40 @@ public sealed class DataTable
     }
 
     /// <summary>
+    /// The table as it was kept: each row with its own id, its own dates and its values, checked against <paramref name="schema"/>.
+    /// The next row made gets the id after the highest one. Throws <see cref="InvalidOperationException"/> naming the row when
+    /// one does not fit the schema, or when two rows have the same id.
+    /// </summary>
+    public static DataTable Restore(DataTableSchema schema, IEnumerable<DataTableStoredRow> rows)
+    {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(rows);
+        var table = new DataTable(schema);
+        var seen = new HashSet<long>();
+        foreach (var row in rows)
+        {
+            if (!seen.Add(row.Id))
+                throw new InvalidOperationException($"Two rows have the id {row.Id}.");
+            var errors = schema.Validate(row.Data);
+            if (errors.Count > 0)
+                throw new InvalidOperationException($"Row {row.Id} does not fit the schema: {string.Join("; ", errors)}");
+            table._rows.Add(new DataTableRow(row.Id, row.CreatedAt, row.UpdatedAt, schema.CoerceValues(row.Data)));
+        }
+
+        table._nextId = seen.Count == 0 ? 1 : seen.Max() + 1;
+        return table;
+    }
+
+    /// <summary>The rows as they are now, to be kept: ids, dates and values.</summary>
+    public IReadOnlyList<DataTableStoredRow> Snapshot()
+    {
+        lock (_lock)
+        {
+            return _rows.Select(r => new DataTableStoredRow(r.Id, r.CreatedAt, r.UpdatedAt, new Dictionary<string, object?>(r.Data, StringComparer.OrdinalIgnoreCase))).ToList();
+        }
+    }
+
+    /// <summary>
     /// This table's rows under a new schema (a column added, retyped or made optional): same ids, same dates, same values. Throws
     /// <see cref="InvalidOperationException"/> naming the row when one does not fit the new schema — the table is then left as it was.
     /// </summary>
@@ -123,13 +157,25 @@ public sealed class DataTable
         }
     }
 
-    public IReadOnlyList<DataTableRow> SelectWhere(string column, object? value)
+    /// <summary>
+    /// The rows for which every condition of <paramref name="query"/> is true, sorted, one page of them, and how many there are in
+    /// all. Throws <see cref="DataTableQueryException"/>, saying why, when the search cannot be done (a column the table does not
+    /// have, a value that is not of the column's type, an operator that does not fit it).
+    /// </summary>
+    public DataTableSearchResult Search(DataTableQuery query)
     {
+        ArgumentNullException.ThrowIfNull(query);
         lock (_lock)
         {
-            return _rows.Where(r => Equals(r.Get(column), value)).ToList();
+            return DataTableSearch.Run(Schema, _rows, query);
         }
     }
+
+    /// <summary>The column of that name as this table spells it (its own columns and <c>id</c>, <c>createdAt</c>, <c>updatedAt</c>), or why there is none.</summary>
+    public string ColumnNamed(string name) => DataTableSearch.ColumnNamed(Schema, name);
+
+    /// <summary>Every column a search can use: <c>id</c>, <c>createdAt</c>, <c>updatedAt</c>, then the table's own.</summary>
+    public IReadOnlyList<string> SearchableColumns => [.. DataTableSearch.SystemColumns, .. Schema.Columns.Select(c => c.Name)];
 
     public void Clear()
     {

@@ -33,7 +33,7 @@ public sealed class AIAgentSessionFileNode : ResourceNode, IAgentSession, IAgent
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentSession);
 
-        DefineMetadata("AI Agent Session (File)", "Stores AI agent conversation sessions as JSON files so they survive application restarts.", "ai.sessions");
+        DefineMetadata("AI Agent Session (File)", "Stores AI agent conversation sessions as JSON files so they survive application restarts.", "ai.sessions", whenToUse: "To let an AI Agent remember the conversation from one run to the next, kept on disk so it survives a restart of the application. Plug it into the Agent Session of an AI Agent; give the same session ID to continue a conversation.");
         DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();

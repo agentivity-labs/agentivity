@@ -23,11 +23,11 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.Display;
 /// </summary>
 public abstract class DisplayNode : ToolNode
 {
-    protected DisplayNode(string name, string displayName, string description, string category) : base(name)
+    protected DisplayNode(string name, string displayName, string description, string category, string whenToUse) : base(name)
     {
         DisplayNodeRegistry.Register(name);
 
-        DefineMetadata(displayName, description, category);
+        DefineMetadata(displayName, description, category, whenToUse: whenToUse);
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
     }

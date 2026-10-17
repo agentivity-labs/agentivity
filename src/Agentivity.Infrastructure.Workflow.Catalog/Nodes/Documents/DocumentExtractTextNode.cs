@@ -34,7 +34,7 @@ public sealed class DocumentExtractTextNode : ControlFlowNode
         _uploads = uploads ?? throw new ArgumentNullException(nameof(uploads));
         _dispatcher = DefaultDocumentExtraction.CreateDispatcher();
 
-        DefineMetadata("Extract Document Text", "Reads a PDF, Word (.docx), or plain-text/Markdown file — an uploaded file (file_id) or raw bytes (file_base64) — and returns its content as Markdown, ready for an LLM prompt.", "documents");
+        DefineMetadata("Extract Document Text", "Reads a PDF, Word (.docx), or plain-text/Markdown file — an uploaded file (file_id) or raw bytes (file_base64) — and returns its content as Markdown, ready for an LLM prompt.", "documents", whenToUse: "To get the text of a PDF, Word (.docx), text or Markdown file a person uploaded, so an AI step can read it. Not for web pages: use Scrape Web Page instead.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

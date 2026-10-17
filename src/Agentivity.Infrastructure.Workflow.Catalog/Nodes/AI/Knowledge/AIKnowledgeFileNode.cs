@@ -17,7 +17,7 @@ public sealed class AIKnowledgeFileNode : ResourceNode, IKnowledgeSource
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (File)", "Loads a knowledge corpus from a file or a directory pattern and exposes normalized documents for AI consumers.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (File)", "Loads a knowledge corpus from a file or a directory pattern and exposes normalized documents for AI consumers.", "ai.knowledge", whenToUse: "To give an AI Agent reference content from text files on the server (plain text, Markdown, HTML, JSON): one file or a whole folder. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();
@@ -51,7 +51,8 @@ public sealed class AIKnowledgeFileNode : ResourceNode, IKnowledgeSource
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(binding);
 
-        string path = PathResolver.Resolve(binding.RequireString("path"));
+        // The person's own files — never those of the installation (its data, its connections, its settings), which a workflow could point at.
+        string path = InstallationFiles.Current.EnsureOutside(PathResolver.Resolve(binding.RequireString("path")));
         bool recursive = binding.GetBool("recursive") ?? false;
         string? jsonSelector = binding.GetString("json_selector");
 
@@ -74,6 +75,12 @@ public sealed class AIKnowledgeFileNode : ResourceNode, IKnowledgeSource
         foreach (string? filePath in files)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            // A folder scanned may hold the installation, or a link to it: those files are left out.
+            if (InstallationFiles.Current.Contains(filePath))
+            {
+                continue;
+            }
 
             KnowledgeDocument document = await LoadDocumentAsync(path, filePath, jsonSelector, cancellationToken).ConfigureAwait(false);
             if (!string.IsNullOrWhiteSpace(document.Text))

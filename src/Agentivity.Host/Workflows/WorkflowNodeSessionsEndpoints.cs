@@ -34,7 +34,8 @@ public static class WorkflowNodeSessionsEndpoints
                 var sessions = await admin.ListAsync(binding, ct).ConfigureAwait(false);
                 return Results.Ok(sessions);
             }
-        );
+        )
+            .WithSummary("List the agent sessions of a session node");
 
         // Inspect a specific session
         v1.MapPost(
@@ -50,7 +51,8 @@ public static class WorkflowNodeSessionsEndpoints
 
                 return Results.Ok(state);
             }
-        );
+        )
+            .WithSummary("Open one stored agent session");
 
         // Delete a specific session
         v1.MapPost(
@@ -74,7 +76,8 @@ public static class WorkflowNodeSessionsEndpoints
                     }
                 );
             }
-        );
+        )
+            .WithSummary("Delete one stored agent session");
 
         // Purge expired sessions for a configured node session resource
         v1.MapPost(
@@ -89,7 +92,8 @@ public static class WorkflowNodeSessionsEndpoints
                 var removedCount = await admin.PurgeExpiredAsync(binding, ct).ConfigureAwait(false);
                 return Results.Ok(new { removedCount });
             }
-        );
+        )
+            .WithSummary("Purge the expired sessions of a session node");
 
         return endpoints;
     }

@@ -17,7 +17,7 @@ public sealed class DslToMarkdownNode : DslAdapterNode
     public DslToMarkdownNode()
         : base("content.layoutadapters.dsl_to_markdown")
     {
-        DefineMetadata("DSL to Markdown", "Converts DSL content to Markdown format", "content.layoutadapters");
+        DefineMetadata("DSL to Markdown", "Converts DSL content to Markdown format", "content.layoutadapters", whenToUse: "To turn a page layout in DSL format into Markdown, for a documentation page, a README or any tool that takes Markdown. For a web page, use DSL to HTML instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
@@ -29,7 +29,7 @@ public sealed class DslToMarkdownNode : DslAdapterNode
         DefineInput(
             "dsl_content",
             ArgumentType.Text,
-            "PageNode JSON in DSL format",
+            "Page layout in DSL format (JSON), as Content Generator gives it",
             ui: new ArgumentUiMetadata
             {
                 Group = "Content",

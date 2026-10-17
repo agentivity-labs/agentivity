@@ -322,7 +322,8 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         {
             view["orchestrator"] = draft["orchestratorId"]?.DeepClone();
             view["goal"] = draft["goal"]?.DeepClone();
-            view["manager"] = draft["managerAgentId"]?.DeepClone();
+            // The manager of a manager-led team is the member at the top of the topology — the first one.
+            view["manager"] = string.Equals(draft["orchestratorId"]?.GetValue<string>(), "manager-led", StringComparison.OrdinalIgnoreCase) ? (draft["members"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault()?["topologyPositionId"]?.DeepClone() : null;
             view["members"] = new JsonArray([.. (draft["members"] as JsonArray ?? []).OfType<JsonObject>().Select(m => (JsonNode)new JsonObject { ["position"] = m["topologyPositionId"]?.DeepClone(), ["entity"] = m["memberEntityId"]?.DeepClone(), ["type"] = m["memberType"]?.DeepClone(), ["name"] = m["displayName"]?.DeepClone() })]);
             view["connections"] = new JsonArray([.. (draft["connections"] as JsonArray ?? []).OfType<JsonObject>().Select(c => (JsonNode)$"{c["fromTopologyPositionId"]} -> {c["toTopologyPositionId"]} ({string.Join(",", (c["types"] as JsonArray ?? []).Select(t => t?.ToString()))})")]);
             return view;

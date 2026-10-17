@@ -16,7 +16,8 @@ public static class PromptEndpoints
                 await store.SavePromptAsync(prompt, ct);
                 return Results.Created($"{PromptEngineEndpointRouteBuilderExtensions.PromptsRoutePrefix}/{prompt.Id}", prompt);
             }
-        );
+        )
+            .WithSummary("Create a prompt");
 
         group.MapGet(
             "",
@@ -25,7 +26,8 @@ public static class PromptEndpoints
                 var prompts = await store.ListPromptsAsync(category, ct);
                 return Results.Ok(prompts);
             }
-        );
+        )
+            .WithSummary("List the prompts");
 
         group.MapGet(
             "/browse",
@@ -34,7 +36,8 @@ public static class PromptEndpoints
                 var result = await store.BrowsePromptsAsync(folderId, ct);
                 return Results.Ok(result);
             }
-        );
+        )
+            .WithSummary("Browse the prompt folders and prompts");
 
         group.MapGet(
             "/{id}",
@@ -43,7 +46,8 @@ public static class PromptEndpoints
                 var PromptEntity = await store.GetPromptAsync(id, ct);
                 return PromptEntity is not null ? Results.Ok(PromptEntity) : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Get a prompt");
 
         group.MapPost(
             "/{id}/versions",
@@ -66,7 +70,8 @@ public static class PromptEndpoints
 
                 return Results.Created($"{PromptEngineEndpointRouteBuilderExtensions.PromptsRoutePrefix}/{id}/versions/{snapshot.Id}", snapshot);
             }
-        );
+        )
+            .WithSummary("Save a named version of a prompt");
 
         group.MapPut(
             "/{id}",
@@ -84,7 +89,8 @@ public static class PromptEndpoints
                 await store.SavePromptAsync(updated, ct);
                 return Results.Ok(updated);
             }
-        );
+        )
+            .WithSummary("Update a prompt");
 
         group.MapGet(
             "/{id}/versions",
@@ -97,7 +103,8 @@ public static class PromptEndpoints
                 var versions = await store.ListPromptVersionSnapshotsAsync(id, ct);
                 return Results.Ok(versions);
             }
-        );
+        )
+            .WithSummary("List the saved versions of a prompt");
 
         group.MapGet(
             "/{id}/versions/{versionId}",
@@ -110,7 +117,8 @@ public static class PromptEndpoints
                 var version = await store.GetPromptVersionSnapshotAsync(versionId, ct);
                 return version is not null && version.PromptId == id ? Results.Ok(version) : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Get one saved version of a prompt");
 
         group.MapDelete(
             "/{id}",
@@ -119,7 +127,8 @@ public static class PromptEndpoints
                 var deleted = await store.DeletePromptAsync(id, ct);
                 return deleted ? Results.NoContent() : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Delete a prompt");
     }
 
     private sealed class CreatePromptVersionRequest

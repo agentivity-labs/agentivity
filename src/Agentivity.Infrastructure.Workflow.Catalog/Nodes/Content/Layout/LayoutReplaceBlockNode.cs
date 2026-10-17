@@ -15,7 +15,7 @@ public sealed class LayoutReplaceBlockNode : ToolNode
     public LayoutReplaceBlockNode()
         : base("layout.replace_block")
     {
-        DefineMetadata("Replace Block", "Replaces a block at the specified path with one or more new blocks.", "content.layout");
+        DefineMetadata("Replace Block", "Replaces a block at the specified path with one or more new blocks.", "content.layout", whenToUse: "To swap one block of a page layout in DSL format, named by its path, for one or more new blocks given as JSON. To keep the block and add next to it, use Add Block instead.");
         DefineEffects(NodeEffects.None);
 
         DefineInput(

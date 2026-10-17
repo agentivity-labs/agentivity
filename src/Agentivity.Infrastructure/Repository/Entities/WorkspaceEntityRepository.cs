@@ -25,8 +25,6 @@ namespace Agentivity.Infrastructure.Repository.Entities;
 /// </summary>
 public sealed class WorkspaceEntityRepository<TEntity> : IEntityRepository<TEntity> where TEntity : Entity
 {
-    private static readonly JsonSerializerOptions _json = JsonDefaults.Default;
-
     private readonly IWorkspaceObjectStore _store;
     private readonly string _objectType;
     private readonly Func<TEntity, DateTimeOffset, TEntity> _touch;
@@ -179,21 +177,14 @@ public sealed class WorkspaceEntityRepository<TEntity> : IEntityRepository<TEnti
 
     private WorkspaceObjectEnvelope BuildEnvelope(TEntity entity, string? folderId, DateTimeOffset now)
     {
-        var entryJson = JsonSerializer.Serialize(entity, _json);
-        var payload = new EntityWrapperPayload { ObjectType = _objectType, Name = entity.Name, EntryJson = entryJson };
-        var payloadStr = JsonSerializer.Serialize(payload, _json);
-        return WorkspaceObjectEnvelope.CreateJson(objectType: _objectType, objectId: entity.Id, name: entity.Name, payload: payloadStr, metadata: new WorkspaceObjectMetadata(CreatedAtUtc: now, UpdatedAtUtc: now, FolderId: folderId));
+        return WorkspaceObjectEnvelope.CreateJson(objectType: _objectType, objectId: entity.Id, name: entity.Name, payload: EntityPayload.Write(entity, _objectType), metadata: new WorkspaceObjectMetadata(CreatedAtUtc: now, UpdatedAtUtc: now, FolderId: folderId));
     }
 
     private TEntity? TryDeserialize(WorkspaceObjectEnvelope envelope)
     {
         try
         {
-            var payload = JsonSerializer.Deserialize<EntityWrapperPayload>(envelope.Payload, _json);
-            if (payload is null || !string.Equals(payload.ObjectType, _objectType, StringComparison.OrdinalIgnoreCase))
-                return null;
-
-            var entity = JsonSerializer.Deserialize<TEntity>(payload.EntryJson, _json);
+            var entity = EntityPayload.Read<TEntity>(envelope.Payload, _objectType);
             if (entity is not null)
                 RegisterIdentity(entity.Id);
 
@@ -204,16 +195,5 @@ public sealed class WorkspaceEntityRepository<TEntity> : IEntityRepository<TEnti
             _logger.LogWarning(ex, "Could not deserialize {ObjectType} from envelope {Id}", _objectType, envelope.ObjectId);
             return null;
         }
-    }
-
-    private sealed class EntityWrapperPayload
-    {
-        // JsonPropertyName("kind") preserves on-disk compatibility with the pre-existing Agentic
-        // envelope shape (AgenticLibraryPayload.Kind) — agent/team data written before this
-        // generic repository existed must still deserialize correctly.
-        [System.Text.Json.Serialization.JsonPropertyName("kind")]
-        public string ObjectType { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string EntryJson { get; set; } = string.Empty;
     }
 }

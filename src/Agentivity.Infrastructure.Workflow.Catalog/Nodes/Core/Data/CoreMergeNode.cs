@@ -15,7 +15,7 @@ public sealed class CoreMergeNode : ToolNode
     public CoreMergeNode()
         : base("core.merge")
     {
-        DefineMetadata("Merge", "Merges two objects into one, with overlay properties overriding base.", "core.data");
+        DefineMetadata("Merge", "Merges two objects into one, with overlay properties overriding base.", "core.data", whenToUse: "To combine two JSON objects into one, the fields of the second replacing those of the first, for example default settings and the values of the current item. Not for lists: use Collect to build a list.");
         DefineEffects(NodeEffects.None);
 
         DefineInput(

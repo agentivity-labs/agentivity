@@ -23,7 +23,7 @@ public sealed class AIKnowledgeRssNode : ResourceNode, IKnowledgeSource
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (RSS/Atom)", "Loads a knowledge corpus from an RSS or Atom feed and maps entries to normalized documents.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (RSS/Atom)", "Loads a knowledge corpus from an RSS or Atom feed and maps entries to normalized documents.", "ai.knowledge", whenToUse: "To give an AI Agent the latest entries of a news feed or a blog (RSS or Atom). Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

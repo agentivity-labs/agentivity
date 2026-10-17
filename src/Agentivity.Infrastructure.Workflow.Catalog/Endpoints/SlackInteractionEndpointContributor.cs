@@ -41,7 +41,8 @@ public sealed class SlackInteractionEndpointContributor : IEndpointContributor
                         _ => Results.BadRequest(new { status = "failed", error = "Slack interaction could not be processed." }),
                     };
                 }
-            );
+            )
+            .WithSummary("Receive a Slack reply and resume the waiting run");
     }
 
     private static IResult ResumeSlackInteraction(SlackWebhookProcessResult result, WorkflowEngine engine)

@@ -27,6 +27,16 @@ public sealed class WorkspacePromptRepository : IPromptEngineRepository
     internal const string TestCaseType = "prompt.testcase";
     internal const string OptRunType = "prompt.optrun";
 
+    /// <summary>
+    /// The types of the prompts domain, told apart where they were kept without them: a prompt says its kind; an optimisation run
+    /// has its current iteration, a test case its expected output.
+    /// </summary>
+    internal static readonly WorkspaceDomainTypes DomainTypes = new([PromptType, TestCaseType, OptRunType], static (_, content) =>
+        content.ValueKind != System.Text.Json.JsonValueKind.Object ? null
+        : content.TryGetProperty("current_iteration", out System.Text.Json.JsonElement _) ? OptRunType
+        : content.TryGetProperty("expected_output", out System.Text.Json.JsonElement _) ? TestCaseType
+        : null);
+
     private readonly IEntityRepository<PromptEntity> _prompts;
     private readonly IWorkspaceObjectStore _store;
     private readonly IWorkspaceObjectVersionStore _versionStore;

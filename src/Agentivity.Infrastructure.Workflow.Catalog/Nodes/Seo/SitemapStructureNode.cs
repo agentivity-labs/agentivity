@@ -28,7 +28,7 @@ public sealed class SitemapStructureNode : BaseAINode
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Sitemap Structure", "Analyzes sitemap pages using LLM to create hierarchical content structure (pillars & clusters).", "seo");
+        DefineMetadata("Sitemap Structure", "Analyzes sitemap pages using LLM to create hierarchical content structure (pillars & clusters).", "seo", whenToUse: "To group a site's pages into main topics (pillars) and topic clusters with an AI, from the page list Sitemap Analyzer gives. Its result feeds Internal Link Suggester.");
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         DefineResourceInputPort("llm_model", "LLM Model", ResourcePortCategory.LlmModel, "LLM model for semantic analysis");
@@ -38,7 +38,7 @@ public sealed class SitemapStructureNode : BaseAINode
         DefineInput(
             "pages",
             ArgumentType.Text,
-            "Sitemap pages JSON array (from SitemapAnalyzerNode)",
+            "Sitemap pages (JSON array), as the Sitemap Analyzer step gives it",
             ui: new ArgumentUiMetadata
             {
                 Tab = "General",

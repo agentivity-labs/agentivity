@@ -15,7 +15,7 @@ public sealed class LayoutRemoveBlockNode : ToolNode
     public LayoutRemoveBlockNode()
         : base("layout.remove_block")
     {
-        DefineMetadata("Remove Block", "Removes a block from the layout at the specified path.", "content.layout");
+        DefineMetadata("Remove Block", "Removes a block from the layout at the specified path.", "content.layout", whenToUse: "To take one block out of a page layout in DSL format, named by its path (such as root.main.section[2]).");
         DefineEffects(NodeEffects.None);
 
         DefineInput(

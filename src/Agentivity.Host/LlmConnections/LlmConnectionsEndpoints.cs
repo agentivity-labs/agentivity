@@ -32,7 +32,8 @@ public static class LlmConnectionsEndpoints
                     return Failure(ex);
                 }
             }
-        );
+        )
+            .WithSummary("Get the default model credential");
 
         // Defaults to a dry run: nothing is modified unless the call says dryRun=false.
         v1.MapPost(
@@ -66,7 +67,8 @@ public static class LlmConnectionsEndpoints
                     return Failure(ex);
                 }
             }
-        );
+        )
+            .WithSummary("Point model connections at another credential");
 
         return routes;
     }

@@ -11,6 +11,7 @@ public sealed class AIKnowledgeSearXngNode : AIKnowledgeWebSearchNodeBase
             "ai.knowledge.search.searxng",
             "AI Knowledge - SearXNG",
             "Builds a knowledge corpus from a SearXNG search and scrapes the returned URLs.",
+            "To give an AI Agent the pages found by a search on your SearXNG instance, for a query you set, read in full. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory; to let the agent search by itself, use a web search tool instead.",
             "searxng",
             "SearXNG credentials",
             new SearXngWebSearchService(httpClientFactory, credentialsService, loggerFactory.CreateLogger<SearXngWebSearchService>()),

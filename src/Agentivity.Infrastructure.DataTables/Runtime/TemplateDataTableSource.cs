@@ -22,9 +22,13 @@ public sealed class TemplateDataTableSource(IEntityRepository<DataTableEntity> r
         var rows = new List<JsonElement>();
         if (includeRows)
         {
-            var table = await rowStore.GetOrLoadAsync(tableId, cancellationToken).ConfigureAwait(false);
-            // The row numbers and dates belong to this installation: the import numbers the rows again.
-            rows.AddRange(table.ToList().Select(row => JsonSerializer.SerializeToElement(row.Where(p => !SystemColumns.Contains(p.Key)).ToDictionary(p => p.Key, p => p.Value), JsonDefaults.Default)));
+            var table = await rowStore.OpenAsync(tableId, cancellationToken).ConfigureAwait(false);
+            // A template carries its table whole: read a page at a time. The row numbers and dates belong to this installation: the
+            // import numbers the rows again.
+            await foreach (var row in table.RowsAsync(cancellationToken).ConfigureAwait(false))
+            {
+                rows.Add(JsonSerializer.SerializeToElement(row.ToDictionary().Where(p => !SystemColumns.Contains(p.Key)).ToDictionary(p => p.Key, p => p.Value), JsonDefaults.Default));
+            }
         }
 
         return new TemplateDataTable(entity.Id, entity.Name, JsonSerializer.SerializeToElement(entity, JsonDefaults.Default), rows);

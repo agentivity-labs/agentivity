@@ -30,7 +30,7 @@ public sealed class TextToSpeechNode : ToolNode
         _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
         _service = new TextToSpeechService(credentialsService, httpClientFactory, logger ?? throw new ArgumentNullException(nameof(logger)));
 
-        DefineMetadata("Text to Speech", "Synthesizes speech audio from text using the OpenAI TTS API.", "ai.media");
+        DefineMetadata("Text to Speech", "Synthesizes speech audio from text using the OpenAI TTS API.", "ai.media", whenToUse: "To turn a text into a spoken audio file, for example to read a summary aloud or produce a voice message. Not for transcribing a recording: use Speech to Text instead.");
         DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

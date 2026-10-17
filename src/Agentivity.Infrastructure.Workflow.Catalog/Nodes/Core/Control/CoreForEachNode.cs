@@ -24,7 +24,7 @@ public sealed class CoreForEachNode : ControlFlowNode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("For Each", "Iterates over a collection, executing connected nodes for each item.", "core.control");
+        DefineMetadata("For Each", "Goes through a list one item at a time, and runs the steps connected to Loop for each of them.", "core.control", whenToUse: "To repeat the same steps for every item of a list: a JSON list, or a list given by an earlier step. To gather what each item produces into one list, add a Collect step in the loop.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
@@ -34,21 +34,22 @@ public sealed class CoreForEachNode : ControlFlowNode
     {
         // Single input port
         ClearInputPorts();
-        DefineInputPort("in", "In", "Entry point to start iteration", maxConnections: 1);
+        DefineInputPort("in", "In", "Starts going through the list", maxConnections: 1);
 
         // Output ports: loop for iteration, out for completion
         ClearOutputPorts();
-        DefineOutputPort("loop", "Loop", "Execute for each item in collection");
-        DefineOutputPort("out", "Out", "Continue after all iterations complete");
+        DefineOutputPort("loop", "Loop", "Runs once for each item of the list");
+        DefineOutputPort("out", "Out", "Goes on once every item is done");
 
         // Data inputs
         DefineInput(
             "collection",
             ArgumentType.Text,
-            "JSON array or state key to iterate over",
+            "The list to go through: a JSON list, or a list given by an earlier step",
             ui: new ArgumentUiMetadata
             {
                 Group = "Loop",
+                Placeholder = "[\"Lisbon\", \"Porto\"]",
                 Order = 10,
                 Multiline = true,
                 Rows = 6,
@@ -58,12 +59,12 @@ public sealed class CoreForEachNode : ControlFlowNode
         );
 
         // Data outputs
-        DefineOutput("current_item", ArgumentType.Text, "Current iteration item");
-        DefineOutput("current_index", ArgumentType.Number, "Current iteration index (0-based)");
-        DefineOutput("total_count", ArgumentType.Number, "Total number of items in collection");
-        DefineOutput("is_first", ArgumentType.Boolean, "True if this is the first item");
-        DefineOutput("is_last", ArgumentType.Boolean, "True if this is the last item");
-        DefineOutput("count", ArgumentType.Number, "Number of completed iterations");
+        DefineOutput("current_item", ArgumentType.Text, "The item being handled");
+        DefineOutput("current_index", ArgumentType.Number, "Its place in the list, counting from 0");
+        DefineOutput("total_count", ArgumentType.Number, "How many items the list has");
+        DefineOutput("is_first", ArgumentType.Boolean, "Whether it is the first item");
+        DefineOutput("is_last", ArgumentType.Boolean, "Whether it is the last item");
+        DefineOutput("count", ArgumentType.Number, "How many items are done");
 
         DefineIcon(NodeIcon.Embedded("loop"));
     }

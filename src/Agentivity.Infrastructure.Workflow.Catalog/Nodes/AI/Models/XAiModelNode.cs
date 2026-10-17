@@ -15,7 +15,7 @@ public sealed class XAiModelNode : BaseLlmModelNode
     public XAiModelNode(ILlmClientFactory llmClientFactory, ILogger<XAiModelNode> logger, IOptions<LlmRecoveryOptions>? recoveryOptions = null)
         : base("ai.llm.model.xai", "xai", LlmApiFlavor.OpenAI, llmClientFactory, logger, recoveryOptions)
     {
-        DefineMetadata("xAI / Grok Model", "xAI Grok models (grok-3, grok-3-mini, etc.).", "ai.models");
+        DefineMetadata("xAI / Grok Model", "xAI Grok models (grok-3, grok-3-mini, etc.).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a Grok model, with a key from your xAI account.");
         DefineEffects(NodeEffects.Costs);
     }
 

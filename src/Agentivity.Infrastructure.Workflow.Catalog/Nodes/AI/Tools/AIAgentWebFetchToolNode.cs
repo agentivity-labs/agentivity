@@ -64,7 +64,7 @@ public sealed class AIAgentWebFetchToolNode : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent Web Fetch Tool", "Fetches a web resource over HTTP(S) and returns normalized HTML, JSON, or text content for AI agents.", "ai.tools");
+        DefineMetadata("AI Agent Web Fetch Tool", "Fetches a web resource over HTTP(S) and returns normalized HTML, JSON, or text content for AI agents.", "ai.tools", whenToUse: "To let an agent open a web address it already has and read what is there: a page as plain text, or the data a JSON API returns. Not for finding pages: use a Web Search tool instead.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

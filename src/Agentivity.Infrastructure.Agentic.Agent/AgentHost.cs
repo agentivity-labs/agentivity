@@ -310,6 +310,7 @@ public sealed partial class AgentHost
             HilProxy = hilProxy.IsEnabled ? hilProxy : null,
             RunId = contextServices.RunId,
             CorrelationContext = contextServices.CorrelationContext,
+            TelemetryEmitter = contextServices.TelemetryEmitter,
             Checkpoint = contextServices.Checkpoint,
             SetState = contextServices.SetState,
             GetState = contextServices.GetState,

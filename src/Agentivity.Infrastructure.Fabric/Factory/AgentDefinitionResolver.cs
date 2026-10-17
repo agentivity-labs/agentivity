@@ -137,6 +137,7 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
         {
             RunId = runId,
             CorrelationContext = correlation,
+            TelemetryEmitter = telemetryEmitter,
             PublishStatus = publishStatus,
             // Checkpoint: blocks when the run is Paused, resumes when Unpaused.
             Checkpoint = runRepository is null

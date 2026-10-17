@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Agentivity.Domain.Credentials;
+using Agentivity.Infrastructure.Core;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
 using Microsoft.Extensions.Logging;
 
@@ -97,6 +98,8 @@ public sealed class SpeechToTextService
             return (bytes, Path.GetFileName(uri.LocalPath) is { Length: > 0 } name ? name : "audio.mp3");
         }
 
+        // The person's audio, or one the workflows made — never another file of the installation, which would go to the provider.
+        InstallationFiles.Current.EnsureOutside(audioSource);
         if (!File.Exists(audioSource))
         {
             throw new InvalidOperationException($"Audio source not found: '{audioSource}'. Provide a local file path or an http(s) URL.");

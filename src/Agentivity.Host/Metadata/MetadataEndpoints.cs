@@ -124,7 +124,8 @@ public static class MetadataEndpoints
 
                 return Results.Ok(result);
             }
-        );
+        )
+            .WithSummary("List the available node types with their ports");
 
         v1.MapGet(
                 "/metadata/nodes/{nodeType}/icon.svg",
@@ -149,7 +150,8 @@ public static class MetadataEndpoints
             )
             .WithName("GetNodeIconSvg")
             .Produces(StatusCodes.Status200OK, contentType: "image/svg+xml")
-            .Produces(StatusCodes.Status404NotFound);
+            .Produces(StatusCodes.Status404NotFound)
+            .WithSummary("Get the SVG icon of a node type");
 
         v1.MapGet(
             "/metadata/categories",
@@ -173,7 +175,8 @@ public static class MetadataEndpoints
 
                 return Results.Ok(categories);
             }
-        );
+        )
+            .WithSummary("List the node categories");
 
         return routes;
     }

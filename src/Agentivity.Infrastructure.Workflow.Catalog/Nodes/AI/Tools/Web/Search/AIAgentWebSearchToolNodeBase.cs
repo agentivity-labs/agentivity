@@ -18,7 +18,7 @@ public abstract class AIAgentWebSearchToolNodeBase : ResourceNode, IAgentTool
     private readonly string _toolName;
     private readonly string _toolDescription;
 
-    protected AIAgentWebSearchToolNodeBase(string nodeType, string displayName, string description, string toolName, string toolDescription, string credentialsTemplateId, string credentialsDescription, IWebSearchService searchService)
+    protected AIAgentWebSearchToolNodeBase(string nodeType, string displayName, string description, string whenToUse, string toolName, string toolDescription, string credentialsTemplateId, string credentialsDescription, IWebSearchService searchService)
         : base(nodeType)
     {
         _toolName = toolName ?? throw new ArgumentNullException(nameof(toolName));
@@ -27,7 +27,7 @@ public abstract class AIAgentWebSearchToolNodeBase : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata(displayName, description, "ai.tools.web.search");
+        DefineMetadata(displayName, description, "ai.tools.search", whenToUse: whenToUse);
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         ClearInputPorts();

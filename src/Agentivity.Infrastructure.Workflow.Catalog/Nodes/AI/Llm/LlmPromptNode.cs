@@ -1,7 +1,7 @@
 ﻿using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
-using Agentivity.Infrastructure.Core.Llm.Knowledge;
+using Agentivity.Infrastructure.Fabric;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Agentivity.Infrastructure.Workflows.Resources;
@@ -22,7 +22,7 @@ public sealed class LlmPromptNode : BaseAINode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("LLM Prompt", "Executes a prompt using an LLM with optional structured output, retrieval via llm_memory, and connectable knowledge sources.", "ai.llm");
+        DefineMetadata("LLM Prompt", "Executes a prompt using an LLM with optional structured output, retrieval via llm_memory, and connectable knowledge sources.", "ai.llm", whenToUse: "To get a single answer from a model for one prompt (summarize, classify, extract, write), as text, or as JSON when you give a JSON Schema. Not for work that needs tools or several steps: use AI Agent instead.");
         DefineEffects(NodeEffects.Costs);
 
         // LLM provider — same resource-port pattern as AiNode ("AI Agent"): the connected
@@ -170,7 +170,8 @@ public sealed class LlmPromptNode : BaseAINode
         if (hasRAG)
         {
             services.PublishStatus("RAG connected - retrieving relevant config...");
-            ragContext = await RetrieveRAGContextAsync(config, services, prompt, ragTopK, cancellationToken);
+            // The same retrieval as an AI agent's: a failure stops the node, it is not answered as if there were no knowledge.
+            ragContext = await new WorkflowAgentMemoryProxy(config, services).RetrieveAsync(prompt, ragTopK, cancellationToken).ConfigureAwait(false);
 
             if (!string.IsNullOrWhiteSpace(ragContext))
             {
@@ -214,44 +215,6 @@ public sealed class LlmPromptNode : BaseAINode
 
         // Return string directly with RAG config info
         return NodeResult.Create().AddText("response", result.Content ?? string.Empty).AddText("rag_context_used", ragContext ?? "");
-    }
-
-    private async Task<string> RetrieveRAGContextAsync(NodeConfig config, WorkflowRunServices services, string query, int topK, CancellationToken cancellationToken)
-    {
-        try
-        {
-            (IEmbeddingProvider Tool, ResourceBinding Binding)? resolvedMemory = ResourceResolver.TryResolveToolNode<IEmbeddingProvider>(config, "llm_memory", ResourcePortCategory.LlmMemory);
-            if (resolvedMemory is null)
-            {
-                return "";
-            }
-
-            IReadOnlyList<KnowledgeDocument> knowledge = await KnowledgeSourceResolver.ResolveDocumentsAsync(config, portName: "knowledge", resourceType: ResourcePortCategory.KnowledgeSource, cancellationToken).ConfigureAwait(false);
-            if (knowledge.Count == 0)
-            {
-                _logger.LogWarning("RAG knowledge corpus is empty");
-                return "";
-            }
-
-            services.PublishStatus($"Searching {knowledge.Count} documents in knowledge base...");
-
-            float[] queryEmbedding = await resolvedMemory.Value.Tool.CreateEmbeddingAsync(resolvedMemory.Value.Binding, query, cancellationToken).ConfigureAwait(false);
-
-            if (resolvedMemory.Value.Tool is IVectorStoreProvider vectorStore)
-            {
-                return await AgentMemoryVectorStoreRetrieval.RetrieveAsync(vectorStore, resolvedMemory.Value.Tool, resolvedMemory.Value.Binding, knowledge, queryEmbedding, topK, cancellationToken).ConfigureAwait(false);
-            }
-
-            List<float[]> knowledgeEmbeddings = await resolvedMemory.Value.Tool.CreateBatchEmbeddingsAsync(resolvedMemory.Value.Binding, knowledge.Select(item => item.Text), cancellationToken).ConfigureAwait(false);
-
-            IReadOnlyList<KnowledgeMatch> topDocs = KnowledgeRetrieval.RankTopMatches(queryEmbedding, knowledge, knowledgeEmbeddings, topK);
-            return KnowledgeRetrieval.FormatContext(topDocs, "Knowledge");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to retrieve RAG config");
-            return "";
-        }
     }
 
 }

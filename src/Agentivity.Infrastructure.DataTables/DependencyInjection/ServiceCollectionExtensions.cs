@@ -6,6 +6,7 @@ using Agentivity.Infrastructure.Repository.Entities;
 using Agentivity.Infrastructure.Storage.Workspace;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Agentivity.Infrastructure.DataTables.DependencyInjection;
@@ -20,7 +21,7 @@ public static class ServiceCollectionExtensions
         {
             var storagePath = PathResolver.Resolve(configuration.GetValue<string>("DataTables:StoragePath") ?? "_data/datatables");
             var provisioner = sp.GetRequiredService<IWorkspaceProvisioner>();
-            var store = provisioner.CreateStore(storagePath);
+            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes([DataTableEntity.ObjectType]));
             var versionStorePath = Path.Combine(Path.GetDirectoryName(storagePath) ?? storagePath, ".versions");
             var versionStore = provisioner.CreateVersionStore(versionStorePath, store);
             return new WorkspaceStoreContribution([DataTableEntity.ObjectType], store, versionStore);
@@ -33,7 +34,15 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<ILogger<WorkspaceEntityRepository<DataTableEntity>>>()
         ));
 
-        services.AddSingleton<DataTableRowStore>();
+        // Each table is a real table of the workspace's database: the workspace module gives them (IDataTableStore). The rows were
+        // kept as JSON before (the module's ITableRowsStorage, or files): taken over from there, once, when a table is first opened.
+        services.TryAddSingleton<ITableRowsStorage, FileTableRowsStorage>();
+        services.AddSingleton(sp => new DataTableRowStore(
+            sp.GetRequiredService<IEntityRepository<DataTableEntity>>(),
+            sp.GetRequiredService<IDataTableStore>(),
+            sp.GetRequiredService<ITableRowsStorage>(),
+            sp.GetRequiredService<ILogger<DataTableRowStore>>()
+        ));
 
         // Lets the Template export read the shared tables (and only when this module is installed).
         services.AddSingleton<Agentivity.Infrastructure.Templates.ITemplateDataTableSource, TemplateDataTableSource>();

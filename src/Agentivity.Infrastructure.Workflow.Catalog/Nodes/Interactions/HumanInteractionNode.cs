@@ -22,7 +22,7 @@ public sealed class HumanInteractionNode : BaseNode
         _store = store ?? throw new ArgumentNullException(nameof(store));
         ArgumentNullException.ThrowIfNull(logger);
 
-        DefineMetadata("Human Interaction", "Performs a generic human interaction through the connected channel", "interaction");
+        DefineMetadata("Human Interaction", "Performs a generic human interaction through the connected channel", "interaction", whenToUse: "To send a message to a person through the connected channel and, if needed, wait for the reply; it can also update, delete or search messages there. To collect precise answers in fields, use Form Interaction instead.");
         DefineEffects(NodeEffects.SendsMessage);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

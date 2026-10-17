@@ -28,7 +28,8 @@ public static class TestCasesEndpoints
                 await store.SaveTestCaseAsync(testCase, ct);
                 return Results.Created($"{PromptEngineEndpointRouteBuilderExtensions.PromptsRoutePrefix}/testcases/{testCase.Id}", testCase);
             }
-        );
+        )
+            .WithSummary("Add a test case to a prompt");
 
         group.MapGet(
             "/{promptId}/testcases",
@@ -37,7 +38,8 @@ public static class TestCasesEndpoints
                 var cases = await store.ListTestCasesAsync(promptId, ct);
                 return Results.Ok(cases);
             }
-        );
+        )
+            .WithSummary("List the test cases of a prompt");
 
         group.MapGet(
             "/testcases/{id}",
@@ -46,7 +48,8 @@ public static class TestCasesEndpoints
                 var testCase = await store.GetTestCaseAsync(id, ct);
                 return testCase is not null ? Results.Ok(testCase) : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Get a test case");
 
         group.MapPut(
             "/testcases/{id}",
@@ -68,7 +71,8 @@ public static class TestCasesEndpoints
                 await store.SaveTestCaseAsync(existingTestCase, ct);
                 return Results.Ok(new { ok = true });
             }
-        );
+        )
+            .WithSummary("Update a test case");
 
         group.MapDelete(
             "/testcases/{id}",
@@ -77,7 +81,8 @@ public static class TestCasesEndpoints
                 var deleted = await store.DeleteTestCaseAsync(id, ct);
                 return deleted ? Results.NoContent() : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Delete a test case");
 
         group.MapPost(
             "/testcases/{id}/execute",
@@ -120,7 +125,8 @@ public static class TestCasesEndpoints
 
                 return Results.Ok(result.Value);
             }
-        );
+        )
+            .WithSummary("Run one test case against its prompt");
 
         group.MapPost(
             "/{promptId}/testcases/execute-all",
@@ -173,7 +179,8 @@ public static class TestCasesEndpoints
 
                 return Results.Ok(executions);
             }
-        );
+        )
+            .WithSummary("Run all the test cases of a prompt");
 
         group.MapGet(
             "/{promptId}/testcases/executions",
@@ -182,7 +189,8 @@ public static class TestCasesEndpoints
                 var executions = await store.ListTestCaseExecutionsAsync(promptId, ct);
                 return Results.Ok(executions);
             }
-        );
+        )
+            .WithSummary("List the test case executions of a prompt");
 
         group.MapGet(
             "/testcases/executions/{id}",
@@ -191,6 +199,7 @@ public static class TestCasesEndpoints
                 var execution = await store.GetExecutionAsync(id, ct);
                 return execution is not null && string.Equals(execution.ExecutionKind, "test-case", StringComparison.OrdinalIgnoreCase) ? Results.Ok(execution) : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Get one test case execution");
     }
 }

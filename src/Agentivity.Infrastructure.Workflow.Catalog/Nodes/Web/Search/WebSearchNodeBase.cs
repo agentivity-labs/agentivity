@@ -12,14 +12,14 @@ public abstract class WebSearchNodeBase : ResourceNode
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
     private readonly IWebSearchService _searchService;
 
-    protected WebSearchNodeBase(string nodeType, string displayName, string description, string credentialsTemplateId, string credentialsDescription, IWebSearchService searchService)
+    protected WebSearchNodeBase(string nodeType, string displayName, string description, string whenToUse, string credentialsTemplateId, string credentialsDescription, IWebSearchService searchService)
         : base(nodeType)
     {
         _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata(displayName, description, "web.search");
+        DefineMetadata(displayName, description, "web.search", whenToUse: whenToUse);
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         ClearInputPorts();

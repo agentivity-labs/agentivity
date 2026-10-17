@@ -17,7 +17,7 @@ public sealed class AIKnowledgeInlineNode : ResourceNode, IKnowledgeSource
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (Inline)", "Provides an inline knowledge corpus as normalized documents for AI consumers.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (Inline)", "Provides an inline knowledge corpus as normalized documents for AI consumers.", "ai.knowledge", whenToUse: "To give an AI Agent a few reference texts typed directly in the step, as a JSON list such as [{\"text\": \"...\", \"metadata\": {\"source\": \"...\"}}]. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

@@ -34,7 +34,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         _interactionStore = interactionStore ?? throw new ArgumentNullException(nameof(interactionStore));
         _eventBus = eventBus;
 
-        DefineMetadata("AI Agent", "Runs a multi-step LLM agent with native tool calling, optional retrieval via llm_memory, and connectable knowledge sources.", "ai.agents");
+        DefineMetadata("AI Agent", "Runs a multi-step LLM agent with native tool calling, optional retrieval via llm_memory, and connectable knowledge sources.", "ai.agents", whenToUse: "To have an AI work through a task step by step in this workflow, with the model, tools, knowledge and people you plug into it. Not for a single question and answer: use LLM Prompt instead; to reuse an agent saved in your library, use Agent.");
         DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1, color: "#FF607D8B");
@@ -122,7 +122,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         DefineInput(
             "max_iterations",
             ArgumentType.Number,
-            "Maximum LLM/tool iterations (leave empty for no limit)",
+            "Maximum number of rounds — one call to the model, then the tools it asked for (leave empty for no limit)",
             ui: new ArgumentUiMetadata
             {
                 Tab = "Advanced",
@@ -168,7 +168,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         DefineInput(
             "allow_parallel_tool_calls",
             ArgumentType.Boolean,
-            "Allow the model to request multiple tools in one iteration",
+            "Allow the model to ask for several tools in the same round",
             false,
             ui: new ArgumentUiMetadata
             {
@@ -272,7 +272,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
 
         DefineOutput("response", ArgumentType.Text, "Final agent response");
         DefineOutput("finish_reason", ArgumentType.Text, "Final LLM finish reason");
-        DefineOutput("iterations", ArgumentType.Number, "Number of iterations executed");
+        DefineOutput("iterations", ArgumentType.Number, "Number of rounds the agent took");
         DefineOutput("tool_calls", ArgumentType.Text, "Executed tool calls as JSON");
         DefineOutput("memory_context_used", ArgumentType.Text, "config retrieved from memory (if used)");
         DefineOutput("guardrail_warnings", ArgumentType.Text, "JSON array of non-blocking guardrail matches (guardrail_id, stage, message) — branch on this with an If/Switch to decide what to do (empty array when nothing matched)");
@@ -425,6 +425,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         {
             RunId = services.RunId,
             CorrelationContext = agentCorrelation,
+            TelemetryEmitter = services.TelemetryEmitter,
             Checkpoint = innerCt => services.CheckpointAsync(innerCt),
             SetState = (key, val) => config.State[key] = val,
             GetState = key => config.State.TryGetValue(key, out var v) ? (true, v) : (false, null),

@@ -30,7 +30,7 @@ public sealed class EmbeddingsOpenAiNode : ResourceNode, IEmbeddingProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.Embeddings);
 
-        DefineMetadata("OpenAI Embeddings", "Embeddings via the OpenAI API — usable standalone or plugged into any vector store's \"embeddings\" input.", "ai.embeddings");
+        DefineMetadata("OpenAI Embeddings", "Embeddings via the OpenAI API — usable standalone or plugged into any vector store's \"embeddings\" input.", "ai.embeddings", whenToUse: "To have a memory compare texts by meaning with an OpenAI model instead of the free local one, or to share the same OpenAI settings between several memories. Plug it into the Embeddings of a memory.");
         DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();

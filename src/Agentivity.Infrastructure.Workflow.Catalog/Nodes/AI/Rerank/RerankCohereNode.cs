@@ -27,7 +27,7 @@ public sealed class RerankCohereNode : ToolNode
     {
         _service = new RerankService(credentialsService, httpClientFactory, logger ?? throw new ArgumentNullException(nameof(logger)));
 
-        DefineMetadata("Cohere Rerank", "Re-ranks documents against a query using Cohere's Rerank API — reorders a vector store's candidate results by true relevance.", "ai.rerank");
+        DefineMetadata("Cohere Rerank", "Re-ranks documents against a query using Cohere's Rerank API — reorders a vector store's candidate results by true relevance.", "ai.rerank", whenToUse: "To put a list of texts in order of relevance to a question and keep only the best, for example the results of a search. Give the texts as a JSON list of strings, such as [\"first text\", \"second text\"]; needs a Cohere account.");
         DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

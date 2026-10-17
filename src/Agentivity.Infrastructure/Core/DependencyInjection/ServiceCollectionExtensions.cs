@@ -5,6 +5,7 @@ using Agentivity.Infrastructure.Core.Llm.Recovery;
 using Agentivity.Infrastructure.Modules;
 using Agentivity.Infrastructure.Options;
 using Agentivity.Infrastructure.Registry;
+using Agentivity.Infrastructure.Storage;
 using Agentivity.Infrastructure.Stores;
 using Agentivity.Infrastructure.Workflow.Services.Configuration;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -12,6 +13,8 @@ using Agentivity.Infrastructure.Workflow.Services.Media;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Agentivity.Infrastructure.Core.DependencyInjection;
 
@@ -26,6 +29,13 @@ public static class ServiceCollectionExtensions
         services.Configure<ImageCacheOptions>(configuration.GetSection(ImageCacheOptions.SectionName));
         services.Configure<AudioCacheOptions>(configuration.GetSection(AudioCacheOptions.SectionName));
         services.Configure<UploadCacheOptions>(configuration.GetSection(UploadCacheOptions.SectionName));
+
+        // The media folders are the only files of the installation a workflow reads by their path (see InstallationFiles).
+        InstallationFiles.UseMediaFolders([
+            configuration.GetSection(ImageCacheOptions.SectionName).Get<ImageCacheOptions>()?.Directory ?? new ImageCacheOptions().Directory,
+            configuration.GetSection(AudioCacheOptions.SectionName).Get<AudioCacheOptions>()?.Directory ?? new AudioCacheOptions().Directory,
+            configuration.GetSection(UploadCacheOptions.SectionName).Get<UploadCacheOptions>()?.Directory ?? new UploadCacheOptions().Directory,
+        ]);
         services.Configure<OpenAIImageOptions>(configuration.GetSection(OpenAIImageOptions.SectionName));
         services.Configure<ConfigurationOptions>(configuration.GetSection("Configuration"));
         services.Configure<CredentialsOptions>(configuration.GetSection("Credentials"));
@@ -68,8 +78,32 @@ public static class ServiceCollectionExtensions
             }
         });
 
-        services.AddSingleton<IConfigurationRepository, FileConfigurationRepository>();
+        // The configurations are a domain of the workspace — beside the folder they were kept in before, never in it: a workspace
+        // module that keeps a domain as a folder would take the files of before for its own objects.
+        services.AddSingleton<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceStoreContribution>(sp =>
+        {
+            var before = PathResolver.Resolve(configuration["Configuration:StoragePath"] is { Length: > 0 } configured ? configured : "_data/config");
+            var domain = Path.Combine(Path.GetDirectoryName(before.TrimEnd('/', '\\')) ?? before, "configurations");
+            return new Agentivity.Infrastructure.Storage.Workspace.WorkspaceStoreContribution([ConfigurationRepository.ConfigurationType], sp.GetRequiredService<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceProvisioner>().CreateStore(domain, new Agentivity.Infrastructure.Storage.Workspace.WorkspaceDomainTypes([ConfigurationRepository.ConfigurationType])));
+        });
+        services.AddSingleton<IConfigurationRepository>(sp =>
+            new ConfigurationRepository(sp.GetRequiredService<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceObjectStore>(), sp.GetRequiredService<IOptions<ConfigurationOptions>>().Value, sp.GetRequiredService<ILogger<ConfigurationRepository>>())
+        );
         services.AddSingleton<ConfigurationService>();
+
+        // The key-value stores of the Storage nodes are a domain of the workspace (the marks of what was taken over kept apart), beside
+        // the folder they were kept in before (Storage:StoragePath, by default _data/storage), never in it.
+        string StoresBefore() => PathResolver.Resolve(configuration["Storage:StoragePath"] is { Length: > 0 } configured ? configured : "_data/storage");
+        string StoresDomain(string name) => Path.Combine(Path.GetDirectoryName(StoresBefore().TrimEnd('/', '\\')) ?? StoresBefore(), name);
+        services.AddSingleton<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceStoreContribution>(sp =>
+            new Agentivity.Infrastructure.Storage.Workspace.WorkspaceStoreContribution(KeyValueStores.EntryObjectTypes, sp.GetRequiredService<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceProvisioner>().CreateStore(StoresDomain("key-values"), new Agentivity.Infrastructure.Storage.Workspace.WorkspaceDomainTypes(KeyValueStores.EntryObjectTypes)))
+        );
+        services.AddSingleton<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceStoreContribution>(sp =>
+            new Agentivity.Infrastructure.Storage.Workspace.WorkspaceStoreContribution(KeyValueStores.TakeOverObjectTypes, sp.GetRequiredService<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceProvisioner>().CreateStore(StoresDomain("key-values-takeovers"), new Agentivity.Infrastructure.Storage.Workspace.WorkspaceDomainTypes(KeyValueStores.TakeOverObjectTypes)))
+        );
+        services.AddSingleton(sp =>
+            new KeyValueStores(sp.GetRequiredService<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceObjectStore>(), sp.GetRequiredService<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceObjectStore>(), StoresBefore(), sp.GetRequiredService<ILogger<KeyValueStores>>())
+        );
 
         // Credentials - ensure default path if not configured
         services.PostConfigure<CredentialsOptions>(options =>
@@ -97,14 +131,13 @@ public static class ServiceCollectionExtensions
             }
         });
 
-        services.AddSingleton<ICredentialsRepository, FileCredentialsRepository>();
+        // The connections and the settings are domains of the workspace (see AddWorkspaceCredentialsAndSettings).
+        services.AddWorkspaceCredentialsAndSettings(configuration);
         services.AddSingleton<CredentialsService>();
         services.AddSingleton<ILlmClientFactory, LlmClientFactory>();
         services.AddSingleton<LlmCredentialTester>();
         services.AddSingleton<IModerationService, OpenAiModerationService>();
 
-        // App Settings store
-        services.AddSingleton<IAppSettingsRepository, FileAppSettingsRepository>();
         services.AddSingleton<Agentivity.Infrastructure.Workflow.Services.AppSettingsService>();
 
         // Image cache services - no timeout for download operations

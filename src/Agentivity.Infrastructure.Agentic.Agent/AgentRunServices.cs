@@ -3,6 +3,7 @@ using Agentivity.Infrastructure.Agentic.Agent.Guardrails;
 using Agentivity.Infrastructure.Core.Diagnostics;
 using Agentivity.Infrastructure.Core.Execution;
 using Agentivity.Infrastructure.Core.Llm;
+using Agentivity.Observability.Abstractions;
 using Agentivity.Observability.Contracts.Correlation;
 
 namespace Agentivity.Infrastructure.Agentic.Agent;
@@ -24,6 +25,9 @@ public sealed class AgentRunServices : IAgentRunServices
 
     public Guid RunId { get; init; }
     public ExecutionCorrelationContext? CorrelationContext { get; init; }
+
+    /// <summary>Where the telemetry the agent's runtime emits goes (a replan, say), with <see cref="CorrelationContext"/>.</summary>
+    public IAgentTelemetryEmitter? TelemetryEmitter { get; init; }
 
     // ── Common delegates (init-settable; IRunService methods delegate to them) ─
 

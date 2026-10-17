@@ -36,7 +36,7 @@ public sealed class AIAgentCalculatorToolNode : ResourceNode, IAgentTool
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent Calculator Tool", "Evaluates arithmetic expressions for AI agent tool calling.", "ai.tools.utils");
+        DefineMetadata("AI Agent Calculator Tool", "Evaluates arithmetic expressions for AI agent tool calling.", "ai.tools.utils", whenToUse: "To let an agent get exact results for plain arithmetic (totals, percentages, prices with tax) instead of working them out itself. Not for longer logic or reshaping data: use the JavaScript Tool instead.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

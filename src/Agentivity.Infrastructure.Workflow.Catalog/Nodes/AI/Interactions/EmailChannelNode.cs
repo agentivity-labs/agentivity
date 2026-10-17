@@ -27,7 +27,7 @@ public sealed class EmailChannelNode : ResourceNode, IInteractionChannel, IHuman
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
-        DefineMetadata("Email Channel", "Email-based interaction channel for delivering requests and collecting responses.", "ai.interactions");
+        DefineMetadata("Email Channel", "Email-based interaction channel for delivering requests and collecting responses.", "ai.interactions", whenToUse: "To tell someone by e-mail that a workflow needs their answer: the e-mail only notifies, the answer is still given in the app. An AI Agent cannot ask questions through it: use the Chat, Forms or Slack channel for that.");
         DefineEffects(NodeEffects.SendsMessage);
 
         ClearInputPorts();

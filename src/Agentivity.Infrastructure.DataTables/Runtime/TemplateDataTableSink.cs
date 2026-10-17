@@ -49,23 +49,26 @@ public sealed class TemplateDataTableSink(IEntityRepository<DataTableEntity> rep
 
         try
         {
-            var live = await rowStore.GetOrLoadAsync(entity.Id, cancellationToken).ConfigureAwait(false);
+            var live = await rowStore.OpenAsync(entity.Id, cancellationToken).ConfigureAwait(false);
             foreach (var row in table.Rows)
             {
                 var data = JsonSerializer.Deserialize<Dictionary<string, object?>>(row.GetRawText(), JsonDefaults.Default) ?? [];
-                live.Insert(DataTableRowStore.NormalizeRow(data));
+                await live.InsertAsync(DataTableRowStore.NormalizeRow(data), cancellationToken).ConfigureAwait(false);
             }
-
-            await rowStore.SaveAsync(entity.Id, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is InvalidOperationException or JsonException)
         {
-            await repository.DeleteAsync(entity.Id, cancellationToken).ConfigureAwait(false);
+            await DeleteAsync(entity.Id, cancellationToken).ConfigureAwait(false);
             return $"The rows of '{table.Name}' do not fit its columns: {ex.Message}";
         }
 
         return null;
     }
 
-    public async Task DeleteAsync(string tableId, CancellationToken cancellationToken = default) => await repository.DeleteAsync(tableId, cancellationToken).ConfigureAwait(false);
+    /// <summary>The table is taken back (an import that did not go through): its rows go with it.</summary>
+    public async Task DeleteAsync(string tableId, CancellationToken cancellationToken = default)
+    {
+        await repository.DeleteAsync(tableId, cancellationToken).ConfigureAwait(false);
+        await rowStore.DeleteAsync(tableId, cancellationToken).ConfigureAwait(false);
+    }
 }

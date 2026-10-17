@@ -25,7 +25,7 @@ public sealed class WordPressPublishNode : ToolNode
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         _wordpressService = new WordPressService(httpClientFactory, credentialsService, logger);
 
-        DefineMetadata("Publish to WordPress", "Publishes content as a WordPress post with optional Elementor layout.", "app.cms.wordpress");
+        DefineMetadata("Publish to WordPress", "Publishes content as a WordPress post with optional Elementor layout.", "app.cms.wordpress", whenToUse: "To put an article on a WordPress site, as a draft unless you set another status, from HTML or from an Elementor layout made by DSL to Elementor. It needs WordPress site credentials.");
         DefineEffects(NodeEffects.WritesExternal);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

@@ -62,7 +62,8 @@ public static class TemplatesEndpoints
                 var id = result.File["id"]!.GetValue<string>();
                 return Results.File(Encoding.UTF8.GetBytes(result.File.ToJsonString()), MediaType, $"{id}.template.json");
             }
-        );
+        )
+            .WithSummary("Export an agent, team or workflow as a Template");
 
         // Draws a cover picture in the house style of the Templates, from what the author wrote. Returns the picture as a data URI,
         // ready to be sent back as the cover of the export. 409 no_image_provider when no image model is connected.
@@ -85,7 +86,8 @@ public static class TemplatesEndpoints
                     };
                 }
             }
-        );
+        )
+            .WithSummary("Generate a cover picture for a Template");
 
         // The body is the Template file itself. Defaults to a dry run: nothing is created unless the call says dryRun=false.
         // modelConnection: "default" (the first model connection of the list), "keep" (leave the author's), or the id of one of your credentials.
@@ -126,7 +128,8 @@ public static class TemplatesEndpoints
 
                 return Results.Ok(ToImportDto(result));
             }
-        );
+        )
+            .WithSummary("Import a Template file");
 
         return routes;
     }

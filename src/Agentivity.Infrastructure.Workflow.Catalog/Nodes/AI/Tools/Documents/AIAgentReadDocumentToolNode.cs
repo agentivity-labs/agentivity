@@ -52,7 +52,7 @@ public sealed class AIAgentReadDocumentToolNode : ResourceNode, IAgentTool
         _uploads = uploads ?? throw new ArgumentNullException(nameof(uploads));
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent Read Document Tool", "Lets an AI agent read a document the user uploaded in the chat (PDF, Word, plain text) as Markdown.", "ai.tools.documents");
+        DefineMetadata("AI Agent Read Document Tool", "Lets an AI agent read a document the user uploaded in the chat (PDF, Word, plain text) as Markdown.", "ai.tools.documents", whenToUse: "To let an agent read a file the user drops in the chat (PDF, Word or plain text) and work from its content: a contract to summarize, a CV to screen, an invoice to check. A scanned page with no text in it cannot be read.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

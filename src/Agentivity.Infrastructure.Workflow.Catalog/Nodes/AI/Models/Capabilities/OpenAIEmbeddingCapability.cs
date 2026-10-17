@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Agentivity.Domain.Credentials;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
 using Agentivity.Infrastructure.Workflows;
@@ -92,13 +93,16 @@ public sealed class OpenAIEmbeddingCapability : IEmbeddingCapability
         return embeddings;
     }
 
+    // As the API writes them: "data", "embedding".
     private sealed class EmbeddingResponse
     {
+        [JsonPropertyName("data")]
         public List<EmbeddingData>? Data { get; set; }
     }
 
     private sealed class EmbeddingData
     {
+        [JsonPropertyName("embedding")]
         public float[]? Embedding { get; set; }
     }
 }

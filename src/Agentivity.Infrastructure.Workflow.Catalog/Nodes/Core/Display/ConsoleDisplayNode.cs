@@ -18,7 +18,8 @@ public sealed class ConsoleDisplayNode : DisplayNode
             "core.display.console",
             "Console",
             "Displays a value — text, numbers, or JSON — directly on the node.",
-            "core.display"
+            "core.display",
+            "To see a value (text, number or JSON) right on the canvas while building or checking a workflow. It passes the value on unchanged."
         )
     {
         DefineInput(

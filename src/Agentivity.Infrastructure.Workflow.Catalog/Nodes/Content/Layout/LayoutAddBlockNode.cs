@@ -15,7 +15,7 @@ public sealed class LayoutAddBlockNode : ToolNode
     public LayoutAddBlockNode()
         : base("layout.add_block")
     {
-        DefineMetadata("Add Block", "Adds one or more blocks to the layout at a specified position. Supports single block object or array of blocks.", "content.layout");
+        DefineMetadata("Add Block", "Adds one or more blocks to the layout at a specified position. Supports single block object or array of blocks.", "content.layout", whenToUse: "To add one or more blocks, such as a call to action or an extra section, to a page layout in DSL format, at a place named by its path (such as main). Give the block as JSON, or a JSON list of blocks.");
         DefineEffects(NodeEffects.None);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

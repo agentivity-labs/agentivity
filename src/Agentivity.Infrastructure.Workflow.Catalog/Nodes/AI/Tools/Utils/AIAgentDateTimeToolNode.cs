@@ -40,7 +40,7 @@ public sealed class AIAgentDateTimeToolNode : ResourceNode, IAgentTool
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent Date & Time Tool", "Returns the current date/time in UTC or local time for AI agent tool calling.", "ai.tools.utils");
+        DefineMetadata("AI Agent Date & Time Tool", "Returns the current date/time in UTC or local time for AI agent tool calling.", "ai.tools.utils", whenToUse: "To let an agent know today's date and the current time, for example to work out a deadline, a delay or the age of a request. Give it to any agent that has to reason about dates.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

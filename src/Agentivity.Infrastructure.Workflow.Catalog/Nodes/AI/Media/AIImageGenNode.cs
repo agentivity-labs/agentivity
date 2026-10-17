@@ -27,7 +27,7 @@ public sealed class AIImageGenNode : BaseAINode
         _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("AI Image Generator", "Generates images using AI based on prompts and config.", "ai.media");
+        DefineMetadata("AI Image Generator", "Generates images using AI based on prompts and config.", "ai.media", whenToUse: "To create an illustration from a description, for an article, a thumbnail or a social media post. Plug an Image Gen Model into it to choose the image provider.");
         DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

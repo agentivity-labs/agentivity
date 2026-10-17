@@ -19,7 +19,8 @@ public sealed class ImageDisplayNode : DisplayNode
             "core.display.image",
             "Image Viewer",
             "Displays a generated or referenced image directly on the node.",
-            "core.display"
+            "core.display",
+            "To see an image made by an earlier step, such as an image generator, right on the canvas. It passes the image on unchanged."
         )
     {
         DefineInput(

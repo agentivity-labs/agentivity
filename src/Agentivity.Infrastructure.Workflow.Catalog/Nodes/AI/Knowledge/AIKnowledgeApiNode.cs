@@ -22,7 +22,7 @@ public sealed class AIKnowledgeApiNode : ResourceNode, IKnowledgeSource
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (API)", "Loads a knowledge corpus from an HTTP endpoint with explicit text or JSON mapping modes.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (API)", "Loads a knowledge corpus from an HTTP endpoint with explicit text or JSON mapping modes.", "ai.knowledge", whenToUse: "To give an AI Agent reference content read from a web address that returns text or JSON, such as one of your own services. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

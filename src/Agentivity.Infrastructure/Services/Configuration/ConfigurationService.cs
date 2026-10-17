@@ -16,11 +16,6 @@ public sealed class ConfigurationService
     }
 
     /// <summary>
-    /// Gets the base configuration path.
-    /// </summary>
-    public string BasePath => _store.BasePath;
-
-    /// <summary>
     /// Loads a JSON configuration file and deserializes it to the specified type.
     /// </summary>
     public Task<T?> LoadAsync<T>(string relativePath, CancellationToken cancellationToken = default)
@@ -66,9 +61,4 @@ public sealed class ConfigurationService
     /// Checks if a configuration file exists.
     /// </summary>
     public bool Exists(string relativePath) => _store.Exists(relativePath);
-
-    /// <summary>
-    /// Invalidates the cache for a specific file or all files.
-    /// </summary>
-    public void InvalidateCache(string? relativePath = null) => _store.InvalidateCache(relativePath);
 }

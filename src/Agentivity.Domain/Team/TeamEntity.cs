@@ -32,9 +32,6 @@ public sealed record TeamEntity : Entity, IExecutableDefinition
     /// <summary>Mission LLM transmise aux agents pendant l'exécution.</summary>
     public string? Goal { get; init; }
 
-    /// <summary>Pour manager-led : TopologyPositionId du manager. Null = premier membre.</summary>
-    public string? ManagerAgentId { get; init; }
-
     /// <summary>
     /// Maximum number of team-level dispatch steps (ManagerLed/Handoff routing decisions) before
     /// the run is failed as a safety net against a non-converging loop. Configured per team, via

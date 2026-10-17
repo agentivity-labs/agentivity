@@ -16,14 +16,14 @@ public sealed class StorageFileNode : ResourceNode
     {
         ResourceNodeRegistry.Register(Name, "storage.file");
 
-        DefineMetadata("File Storage", "Provides access to file-based key-value storage using a single JSON file.", "storage");
-        DefineEffects(NodeEffects.WritesInternal | NodeEffects.WritesExternal);
+        DefineMetadata("File Storage", "Provides a key-value store kept in the workspace, named by file_path.", "storage", whenToUse: "To keep values from one run to the next inside the workspace, with nothing to set up. Connect it to Storage Read, Storage Write or Storage Delete; for rows with columns, use a Data Table instead.");
+        DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();
         ClearOutputPorts();
         DefineResourceOutputPort("resource", "File Storage", ResourcePortCategory.FileStorage, maxConnections: -1);
 
-        DefineInput("file_path", ArgumentType.Text, "Path to storage JSON file", "_data/storage/data.json", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 }, required: false);
+        DefineInput("file_path", ArgumentType.Text, "Name of the store, kept in the workspace (a path names the store by its file name: _data/storage/data.json is the store data)", "data", ui: new ArgumentUiMetadata { Group = "Storage", Order = 10 }, required: false);
 
         DefineIcon(NodeIcon.Embedded("file"));
     }

@@ -11,6 +11,7 @@ public sealed class AIKnowledgeSerpApiNode : AIKnowledgeWebSearchNodeBase
             "ai.knowledge.search.serpapi",
             "AI Knowledge - SerpApi",
             "Builds a knowledge corpus from SerpApi search results and scrapes the returned URLs.",
+            "To give an AI Agent the pages found by a SerpApi search, for a query you set, read in full. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory; to let the agent search by itself, use a web search tool instead.",
             "serpapi",
             "SerpApi credentials",
             new SerpApiWebSearchService(httpClientFactory, credentialsService, loggerFactory.CreateLogger<SerpApiWebSearchService>()),

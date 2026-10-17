@@ -1110,8 +1110,6 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         var connections = (JsonArray)team.Draft["connections"]!;
         foreach (var c in connections.OfType<JsonObject>().Where(c => string.Equals(c["fromTopologyPositionId"]?.GetValue<string>(), position, StringComparison.OrdinalIgnoreCase) || string.Equals(c["toTopologyPositionId"]?.GetValue<string>(), position, StringComparison.OrdinalIgnoreCase)).ToList())
             connections.Remove(c);
-        if (string.Equals(team.Draft["managerAgentId"]?.GetValue<string>(), position, StringComparison.OrdinalIgnoreCase))
-            team.Draft.Remove("managerAgentId");
         return Ok(index, op, $"Removed '{position}' from '{team.Name}'.");
     }
 
@@ -1120,7 +1118,10 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         var team = await ResolveAsync(op, work, ct).ConfigureAwait(false);
         RequireTeam(team, op.Op);
         var member = MemberOrRefuse(team, Require(op, "position"));
-        team.Draft["managerAgentId"] = member["topologyPositionId"]!.GetValue<string>();
+        // The manager is the member at the top of the topology — the first one: its position makes it the manager.
+        var members = Members(team);
+        members.Remove(member);
+        members.Insert(0, member);
         return Ok(index, op, $"'{member["displayName"] ?? member["topologyPositionId"]}' manages '{team.Name}'.");
     }
 

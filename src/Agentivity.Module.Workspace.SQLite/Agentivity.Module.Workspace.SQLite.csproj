@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Agentivity.Module.Workspace.SQLite</RootNamespace>
+    <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
+    <EnableNETAnalyzers>False</EnableNETAnalyzers>
+    <ModuleOutputDirectory>$(MSBuildThisFileDirectory)..\..\_modules\</ModuleOutputDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- Same version as Agentivity.Infrastructure.Workflow.Catalog: the API already ships it, native engine included, for every platform. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
+  </ItemGroup>
+  <Target Name="CopyModuleToModulesDirectory" AfterTargets="Build">
+    <MakeDir Directories="$(ModuleOutputDirectory)" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFiles="$(ModuleOutputDirectory)$(TargetFileName)"
+          SkipUnchangedFiles="true" />
+  </Target>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets" Condition="Exists('$(MSBuildThisFileDirectory)..\..\tools\build\Agentivity.Module.targets')" />
+</Project>

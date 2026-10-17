@@ -12,7 +12,7 @@ public sealed class ImageGenModelNode : ResourceNode
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.ImageGenModel);
 
-        DefineMetadata("Image Gen Model", "Exposes an image generation provider credential and model configuration.", "ai.models");
+        DefineMetadata("Image Gen Model", "Exposes an image generation provider credential and model configuration.", "ai.models", whenToUse: "To choose the image provider, model, quality and style used by the AI Image Generator. Plug it into the AI Image Generator.");
         DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();

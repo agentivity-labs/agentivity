@@ -171,10 +171,6 @@ public sealed class ChangesetValidator(ICapabilityRegistry registry, IEntityLook
                 issues.Add(Error(entity, "member_not_found", $"The member '{position}' points to '{memberId}', which does not exist.", hint: "Add an existing agent, team or workflow."));
         }
 
-        var manager = entity.Draft["managerAgentId"]?.GetValue<string>();
-        if (!string.IsNullOrWhiteSpace(manager) && !positions.Contains(manager))
-            issues.Add(Error(entity, "manager_not_found", $"The manager '{manager}' is not a member of '{entity.Name}'."));
-
         foreach (var connection in (entity.Draft["connections"] as JsonArray)?.OfType<JsonObject>() ?? [])
         {
             var from = connection["fromTopologyPositionId"]?.GetValue<string>() ?? "";

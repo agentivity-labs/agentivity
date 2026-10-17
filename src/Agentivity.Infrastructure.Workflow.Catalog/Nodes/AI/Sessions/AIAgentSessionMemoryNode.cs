@@ -20,7 +20,7 @@ public sealed class AIAgentSessionMemoryNode : ResourceNode, IAgentSession, IAge
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentSession);
 
-        DefineMetadata("AI Agent Session (Memory)", "Stores AI agent conversation sessions in memory for the current application lifetime.", "ai.sessions");
+        DefineMetadata("AI Agent Session (Memory)", "Stores AI agent conversation sessions in memory for the current application lifetime.", "ai.sessions", whenToUse: "To let an AI Agent remember the conversation from one run to the next, until the application restarts. Plug it into the Agent Session of an AI Agent; to keep conversations after a restart, use AI Agent Session (File).");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

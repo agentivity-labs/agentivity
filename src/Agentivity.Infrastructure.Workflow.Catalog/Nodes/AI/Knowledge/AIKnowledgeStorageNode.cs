@@ -28,7 +28,7 @@ public sealed class AIKnowledgeStorageNode : ResourceNode, IKnowledgeSource
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (Storage)", "Loads a knowledge corpus from an existing storage resource and exposes normalized documents for AI consumers.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (Storage)", "Loads a knowledge corpus from an existing storage resource and exposes normalized documents for AI consumers.", "ai.knowledge", whenToUse: "To give an AI Agent documents already kept in a storage plugged into this step, chosen by a name pattern. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();
@@ -95,12 +95,8 @@ public sealed class AIKnowledgeStorageNode : ResourceNode, IKnowledgeSource
         };
     }
 
-    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding)
-    {
-        string filePath = binding.GetString("file_path") ?? "_data/storage/data.json";
-        ILogger<FileStorageProvider> logger = _serviceProvider.GetRequiredService<ILogger<FileStorageProvider>>();
-        return new FileStorageProvider(filePath, logger);
-    }
+    // The store is kept in the workspace, named by the file_path — never a place on the disk (see KeyValueStores).
+    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding) => _serviceProvider.GetRequiredService<KeyValueStores>().Open(binding.GetString("file_path"));
 
     private async Task<IStorageProvider> CreateSupabaseStorageProviderAsync(ResourceBinding binding, CancellationToken cancellationToken)
     {

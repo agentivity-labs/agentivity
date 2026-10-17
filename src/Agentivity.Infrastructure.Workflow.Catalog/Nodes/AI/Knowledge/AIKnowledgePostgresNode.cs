@@ -16,7 +16,7 @@ public sealed class AIKnowledgePostgresNode : ResourceNode, IKnowledgeSource
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (PostgreSQL)", "Loads a knowledge corpus from PostgreSQL-compatible databases by executing an explicit query and mapping rows to normalized documents.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (PostgreSQL)", "Loads a knowledge corpus from PostgreSQL-compatible databases by executing an explicit query and mapping rows to normalized documents.", "ai.knowledge", whenToUse: "To give an AI Agent reference content stored in a PostgreSQL database: an SQL query returns one row per document, with its text in one column. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

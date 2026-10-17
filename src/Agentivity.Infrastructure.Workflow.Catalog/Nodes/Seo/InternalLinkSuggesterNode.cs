@@ -109,7 +109,7 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Internal Link Suggester", "Suggests relevant internal links using structure-first selection with semantic scoring.", "seo");
+        DefineMetadata("Internal Link Suggester", "Suggests relevant internal links using structure-first selection with semantic scoring.", "seo", whenToUse: "To choose which pages of your own site a new article should link to, with link texts written by an AI, from the site structure Sitemap Structure gives. Not for links to other sites: it only suggests pages of your site.");
         DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
@@ -147,7 +147,7 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
         DefineInput(
             "site_structure",
             ArgumentType.Text,
-            "Site structure JSON (from SitemapStructureNode)",
+            "Site structure (JSON), as the Sitemap Structure step gives it",
             ui: new ArgumentUiMetadata
             {
                 Tab = "General",

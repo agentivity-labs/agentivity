@@ -56,7 +56,7 @@ public sealed class CodeToolNode : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent JavaScript Tool", "Lets an AI agent run a JavaScript snippet (real, sandboxed Node.js) and use the result.", "ai.tools");
+        DefineMetadata("AI Agent JavaScript Tool", "Lets an AI agent run a JavaScript snippet (real, sandboxed Node.js) and use the result.", "ai.tools", whenToUse: "To let an agent write and run a small piece of JavaScript for exact calculations or reshaping data (sorting, filtering, converting a list). The code cannot reach files or the internet: to read a web page, use the Web Fetch Tool instead.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

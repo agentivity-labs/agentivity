@@ -18,6 +18,7 @@ public sealed class JSNode : CodeNode
             "core.code.javascript",
             "JavaScript",
             "Runs a JavaScript script (a real, sandboxed Node.js process) and returns its result.",
+            "To compute something no other step does, such as a total, a date or a reshaped JSON, with a short JavaScript script. Each field of the object the script returns becomes an output of the step.",
             runner
         )
     {

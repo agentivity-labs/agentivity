@@ -26,7 +26,7 @@ public sealed class McpServerNode : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("MCP Server", "Connects AI agents to a remote MCP server over HTTP.", "ai.tools");
+        DefineMetadata("MCP Server", "Connects AI agents to a remote MCP server over HTTP.", "ai.tools", whenToUse: "To give an agent the tools of an outside service that offers an MCP server: every tool that server lists becomes available to the agent. You need the server's address (URL), and a token when the service asks for one.");
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal);
 
         ClearInputPorts();

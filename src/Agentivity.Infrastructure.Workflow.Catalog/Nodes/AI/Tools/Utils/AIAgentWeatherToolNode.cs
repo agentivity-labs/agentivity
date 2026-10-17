@@ -52,7 +52,7 @@ public sealed class AIAgentWeatherToolNode : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent Weather Tool", "Retrieves the current weather for a location using the free Open-Meteo API.", "ai.tools.utils");
+        DefineMetadata("AI Agent Weather Tool", "Retrieves the current weather for a location using the free Open-Meteo API.", "ai.tools.utils", whenToUse: "To let an agent check the weather right now in a city, for example to suggest activities on a trip. It gives the current weather only, not a forecast, and needs no account.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

@@ -18,7 +18,7 @@ public abstract class AIAgentWebScraperToolNodeBase : ResourceNode, IAgentTool
     private readonly string _toolName;
     private readonly string _toolDescription;
 
-    protected AIAgentWebScraperToolNodeBase(string nodeType, string displayName, string description, string toolName, string toolDescription, string? credentialsTemplateId, string? credentialsDescription, IWebScraperService scraperService)
+    protected AIAgentWebScraperToolNodeBase(string nodeType, string displayName, string description, string whenToUse, string toolName, string toolDescription, string? credentialsTemplateId, string? credentialsDescription, IWebScraperService scraperService)
         : base(nodeType)
     {
         _toolName = toolName ?? throw new ArgumentNullException(nameof(toolName));
@@ -27,7 +27,7 @@ public abstract class AIAgentWebScraperToolNodeBase : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata(displayName, description, "ai.tools.scrappers");
+        DefineMetadata(displayName, description, "ai.tools.scrappers", whenToUse: whenToUse);
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

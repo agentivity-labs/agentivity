@@ -47,10 +47,10 @@ public sealed class WorkflowAgentMemoryProxy(NodeConfig config, WorkflowRunServi
             var topMatches = KnowledgeRetrieval.RankTopMatches(queryEmbedding, knowledge, itemEmbeddings, topK);
             return KnowledgeRetrieval.FormatContext(topMatches, "Knowledge");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            services.PublishStatus($"Failed to retrieve AI agent memory config: {ex.Message}");
-            return string.Empty;
+            // Knowledge was connected to be used: answering without it, as if there were none, would hide the failure.
+            throw new InvalidOperationException($"The connected knowledge could not be searched: {ex.Message}", ex);
         }
     }
 }

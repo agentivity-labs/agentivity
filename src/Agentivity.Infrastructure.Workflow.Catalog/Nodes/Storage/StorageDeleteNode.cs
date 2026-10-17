@@ -30,7 +30,7 @@ public sealed class StorageDeleteNode : ToolNode
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Storage Delete", "Deletes a value from any storage provider", "storage");
+        DefineMetadata("Storage Delete", "Deletes a value from any storage provider", "storage", whenToUse: "To remove a value saved under a name (a key), for example so that it is made again on the next run. Connect the same File Storage or Supabase Storage step used to save it.");
         DefineEffects(NodeEffects.WritesInternal | NodeEffects.WritesExternal);
 
         DefineResourceInputPort("storage", "Storage", ResourcePortCategory.Storage, "Storage resource");
@@ -76,12 +76,8 @@ public sealed class StorageDeleteNode : ToolNode
         };
     }
 
-    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding)
-    {
-        string filePath = binding.GetString("file_path") ?? "_data/storage/data.json";
-        ILogger<FileStorageProvider> logger = _serviceProvider.GetRequiredService<ILogger<FileStorageProvider>>();
-        return new FileStorageProvider(filePath, logger);
-    }
+    // The store is kept in the workspace, named by the file_path — never a place on the disk (see KeyValueStores).
+    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding) => _serviceProvider.GetRequiredService<KeyValueStores>().Open(binding.GetString("file_path"));
 
     private async Task<IStorageProvider> CreateSupabaseStorageProviderAsync(ResourceBinding binding, CancellationToken cancellationToken)
     {

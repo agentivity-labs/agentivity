@@ -9,6 +9,7 @@ using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Execution.Executable;
 using Agentivity.Infrastructure.Execution.Runs;
 using Agentivity.Infrastructure.Workflows.Interactions;
+using Agentivity.Observability.Abstractions;
 using Agentivity.Observability.Contracts;
 using Agentivity.Observability.Contracts.Correlation;
 using Agentivity.Observability.Contracts.Events;
@@ -798,6 +799,8 @@ public sealed class AgentManifest : IAgentManifest
             .LastOrDefault(m => string.Equals(m.Role, "assistant", StringComparison.OrdinalIgnoreCase) && (m.ToolCalls is null || m.ToolCalls.Count == 0) && !string.IsNullOrWhiteSpace(m.Content))
             ?.Content;
 
+    public bool SupportsFreeTextHumanLoop => HumanLoopHelper.SupportsFreeTextHumanLoop(_config.EnableHumanLoop, _config.HumanLoopToolDefinitionsByName);
+
     /// <summary>
     /// Resolves human-loop suspension for a dedicated, standalone call that the caller itself built
     /// with <see cref="AgentSchemas.ConversationalReply"/> and no tools (e.g. a synthesis or work-task
@@ -807,7 +810,7 @@ public sealed class AgentManifest : IAgentManifest
     /// </summary>
     public async ValueTask<LlmConversationResponse> ResolveMergedHumanLoopReplyAsync(LlmConversationResponse response, int iteration, CancellationToken cancellationToken)
     {
-        if (!HumanLoopHelper.SupportsFreeTextHumanLoop(_config.EnableHumanLoop, _config.HumanLoopToolDefinitionsByName))
+        if (!SupportsFreeTextHumanLoop)
             return response;
 
         var reply = HumanLoopHelper.ParseConversationalReply(response.Content);
@@ -936,6 +939,9 @@ public sealed class AgentManifest : IAgentManifest
     {
         get
         {
+            if (_ports.TelemetryEmitter is { } emitter && _ports.CorrelationContext is { } correlation)
+                return new EmitterAgentTelemetryAdapter(emitter, correlation);
+
             if (_runContext?.Execution?.Telemetry is { } execTelemetry)
                 return new ExecutionTelemetryAgentTelemetryAdapter(execTelemetry);
 
@@ -1109,6 +1115,16 @@ public sealed class AgentManifest : IAgentManifest
     /// Adapts <see cref="IExecutionTelemetry"/> (chain-level port) to <see cref="IAgentTelemetry"/>
     /// (runtime surface). Correlation context is supplied via <see cref="AgentRunServices"/>.
     /// </summary>
+    /// <summary>
+    /// Adapts the run's <see cref="IAgentTelemetryEmitter"/> — the one the agent's start and its model calls are emitted
+    /// with — to <see cref="IAgentTelemetry"/>, each event correlated to its step.
+    /// </summary>
+    private sealed class EmitterAgentTelemetryAdapter(IAgentTelemetryEmitter emitter, ExecutionCorrelationContext correlation) : IAgentTelemetry
+    {
+        public ValueTask EmitAsync<TEvent>(TEvent payload, string stepId, CancellationToken cancellationToken = default)
+            where TEvent : class, IAgentTelemetryEvent => emitter.EmitAsync(correlation with { StepId = stepId }, payload, cancellationToken);
+    }
+
     private sealed class ExecutionTelemetryAgentTelemetryAdapter(IExecutionTelemetry telemetry) : IAgentTelemetry
     {
         public ValueTask EmitAsync<TEvent>(TEvent payload, string stepId, CancellationToken cancellationToken = default)

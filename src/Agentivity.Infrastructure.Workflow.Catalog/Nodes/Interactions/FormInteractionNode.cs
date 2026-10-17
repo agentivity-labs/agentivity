@@ -17,7 +17,7 @@ public sealed class FormInteractionNode : BaseInteractionNode
     public FormInteractionNode(InteractionStore store, ILogger<FormInteractionNode> logger)
         : base("interaction.form", store, logger)
     {
-        DefineMetadata("Form Interaction", "Collects structured form input through the connected channel", "interaction");
+        DefineMetadata("Form Interaction", "Collects structured form input through the connected channel", "interaction", whenToUse: "To ask a person to fill in a few fields, described as a JSON list of fields, and wait for the answer before going on, for example an approval with a comment. For a free-text message, use Human Interaction instead.");
         DefineEffects(NodeEffects.SendsMessage);
 
         DefineInput("title", ArgumentType.Text, "Title shown to the user", required: false);

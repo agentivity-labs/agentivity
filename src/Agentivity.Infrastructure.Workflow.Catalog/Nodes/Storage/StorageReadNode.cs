@@ -31,7 +31,7 @@ public sealed class StorageReadNode : ControlFlowNode
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Storage Read", "Reads a value from any storage provider (file, database, etc.)", "storage");
+        DefineMetadata("Storage Read", "Reads a value from any storage provider (file, database, etc.)", "storage", whenToUse: "To get back a value saved earlier under a name (a key), for example a result kept from a previous run, and take another path when nothing is saved under that name. Connect a File Storage or Supabase Storage step to say where to read.");
         DefineEffects(NodeEffects.ReadsExternal);
 
         // Input port
@@ -96,13 +96,8 @@ public sealed class StorageReadNode : ControlFlowNode
         };
     }
 
-    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding)
-    {
-        string filePath = binding.GetString("file_path") ?? "_data/storage/data.json";
-        ILogger<FileStorageProvider> logger = _serviceProvider.GetRequiredService<ILogger<FileStorageProvider>>();
-
-        return new FileStorageProvider(filePath, logger);
-    }
+    // The store is kept in the workspace, named by the file_path — never a place on the disk (see KeyValueStores).
+    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding) => _serviceProvider.GetRequiredService<KeyValueStores>().Open(binding.GetString("file_path"));
 
     private async Task<IStorageProvider> CreateSupabaseStorageProviderAsync(ResourceBinding binding, CancellationToken cancellationToken)
     {

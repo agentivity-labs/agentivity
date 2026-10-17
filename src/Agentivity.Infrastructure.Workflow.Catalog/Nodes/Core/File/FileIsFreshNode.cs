@@ -3,6 +3,7 @@ using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Microsoft.Extensions.Logging;
+using Agentivity.Infrastructure.Core;
 
 namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.File;
 
@@ -18,7 +19,7 @@ public sealed class FileIsFreshNode : ToolNode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("File Is Fresh", "Checks if a file exists and was modified within the specified time window.", "core.file");
+        DefineMetadata("File Is Fresh", "Checks if a file exists and was modified within the specified time window.", "core.file", whenToUse: "To reuse a file saved earlier on the server's disk only while it is recent enough (24 hours unless you set a maximum age in minutes), and make it again otherwise. To only check that it is there, use File Exists instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
@@ -39,8 +40,8 @@ public sealed class FileIsFreshNode : ToolNode
         DefineInput("max_age_minutes", ArgumentType.Number, "Maximum age in minutes for the file to be considered fresh", ui: new ArgumentUiMetadata { Group = "Settings", Order = 20 }, required: false);
 
         // Data outputs
-        DefineOutput("isFresh", ArgumentType.Boolean, "True if the file exists and is fresh, false otherwise");
-        DefineOutput("exists", ArgumentType.Boolean, "True if the file exists");
+        DefineOutput("isFresh", ArgumentType.Boolean, "Whether the file exists and is not older than the maximum age");
+        DefineOutput("exists", ArgumentType.Boolean, "Whether the file exists");
         DefineOutput("file_path", ArgumentType.Text, "The file path that was checked");
         DefineOutput("age_minutes", ArgumentType.Number, "Age of the file in minutes (if it exists)");
         DefineOutput("last_modified", ArgumentType.Text, "Last modification time (ISO 8601 format)");
@@ -58,6 +59,9 @@ public sealed class FileIsFreshNode : ToolNode
         {
             throw new InvalidOperationException($"File path is required for node '{config.Node.Id}'.");
         }
+
+        // Nothing is told about a file of the installation (that it is there, when it changed), whatever the workflow asks.
+        InstallationFiles.Current.EnsureOutside(filePath);
 
         bool exists = false;
         bool isFresh = false;

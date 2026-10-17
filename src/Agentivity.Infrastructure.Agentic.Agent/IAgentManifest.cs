@@ -247,6 +247,12 @@ public interface IAgentManifest
     /// </summary>
     ValueTask<LlmConversationResponse> ResolveMergedHumanLoopReplyAsync(LlmConversationResponse response, int iteration, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Whether this agent may stop and wait for a free-text reply from a person — the case where
+    /// <see cref="ResolveMergedHumanLoopReplyAsync"/> does something. Without it, a call made only to feed that step is not made.
+    /// </summary>
+    bool SupportsFreeTextHumanLoop => true;
+
     // ── Tools ─────────────────────────────────────────────────────────────────
 
     IReadOnlyList<JsonObject> ToolDefinitions { get; }

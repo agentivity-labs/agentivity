@@ -46,7 +46,8 @@ public static class CredentialsEndpoints
                 });
                 return Results.Ok(result);
             }
-        );
+        )
+            .WithSummary("List the available credential templates");
 
         v1.MapGet(
             "/credentials",
@@ -55,7 +56,8 @@ public static class CredentialsEndpoints
                 var credentials = templateId is not null ? await service.GetByTemplateAsync(templateId, ct) : await service.GetAllAsync(ct);
                 return Results.Ok(credentials.Select(ToDto));
             }
-        );
+        )
+            .WithSummary("List the saved credentials");
 
         v1.MapGet(
             "/credentials/{id}",
@@ -64,7 +66,8 @@ public static class CredentialsEndpoints
                 var credentials = await service.GetByIdAsync(id, ct);
                 return credentials is not null ? Results.Ok(ToDto(credentials)) : ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{id}' not found.", context: new { id });
             }
-        );
+        )
+            .WithSummary("Get one credential with its secrets masked");
 
         v1.MapPost(
             "/credentials",
@@ -74,7 +77,8 @@ public static class CredentialsEndpoints
                 var credentials = await service.CreateAsync(request.Name, request.TemplateId, request.Description, fields, ct);
                 return Results.Created($"/api/v1/credentials/{credentials.Id}", ToDto(credentials));
             }
-        );
+        )
+            .WithSummary("Create a credential");
 
         // Checks a language-model credential without spending a token (the provider's "list the models" call), from the server:
         // the key never reaches the browser. Always 200 with a status, unless the credential does not exist.
@@ -91,7 +95,8 @@ public static class CredentialsEndpoints
                 var result = await tester.TestAsync(credentials, ct);
                 return Results.Ok(new { status = result.Status, message = result.Message, models = result.Models, configuredModel = result.ConfiguredModel, configuredModelAvailable = result.ConfiguredModelAvailable });
             }
-        );
+        )
+            .WithSummary("Test a model credential against its provider");
 
         v1.MapPut(
             "/credentials/{id}",
@@ -101,7 +106,8 @@ public static class CredentialsEndpoints
                 var credentials = await service.UpdateAsync(id, request.Name, request.Description, fields, ct);
                 return credentials is not null ? Results.Ok(ToDto(credentials)) : ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{id}' not found.", context: new { id });
             }
-        );
+        )
+            .WithSummary("Update a credential");
 
         v1.MapDelete(
             "/credentials/{id}",
@@ -110,7 +116,8 @@ public static class CredentialsEndpoints
                 var deleted = await service.DeleteAsync(id, ct);
                 return deleted ? Results.NoContent() : ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{id}' not found.", context: new { id });
             }
-        );
+        )
+            .WithSummary("Delete a credential");
 
         return routes;
     }

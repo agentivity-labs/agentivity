@@ -134,7 +134,7 @@ public sealed class ContentGeneratorNode : BaseAINode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Content Generator", "Generates structured DSL content from diverse sources with LLM-powered content generation and deterministic layout.", "content");
+        DefineMetadata("Content Generator", "Generates structured DSL content from diverse sources with LLM-powered content generation and deterministic layout.", "content", whenToUse: "To have an AI write a structured page, such as an article or a landing page, from a description, with an optional brief, SEO data and links that must all appear in the text. It needs an LLM model connected; its page layout in DSL format then goes to DSL to HTML, DSL to Markdown or DSL to Elementor.");
         DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
@@ -254,7 +254,7 @@ public sealed class ContentGeneratorNode : BaseAINode
         );
 
         // === OUTPUT ===
-        DefineOutput("dsl_content", ArgumentType.Text, "Generated content in DSL format (PageNode JSON)");
+        DefineOutput("dsl_content", ArgumentType.Text, "Generated content, as a page layout in DSL format (JSON)");
 
         DefineOutput("metadata", ArgumentType.Text, "Content metadata: topics, keywords, estimated reading time");
 

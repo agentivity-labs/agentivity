@@ -11,6 +11,7 @@ public sealed class AIAgentFirecrawlWebScraperToolNode : AIAgentWebScraperToolNo
             "ai.tools.web.scraper.firecrawl",
             "AI Tool - Web Scraper - Firecrawl",
             "Exposes the Firecrawl web scraper to AI agents as a callable tool.",
+            "To let an agent read a web page from its address through Firecrawl, a paid service that returns the page's main content cleaned up. Needs a Firecrawl API key: try the free Direct scraper first.",
             "scrape_web_firecrawl",
             "Scrape a web page with Firecrawl and return cleaned main content, metadata, markdown, and HTML.",
             "firecrawl",

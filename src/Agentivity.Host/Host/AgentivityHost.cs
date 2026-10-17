@@ -68,6 +68,9 @@ public sealed class AgentivityHost : IAgentivityHost
 
     public IServiceProvider Services => _app.Services;
 
+    /// <summary>The routes the application answers, as mapped — to read what they say about themselves (summaries).</summary>
+    public IReadOnlyList<Microsoft.AspNetCore.Http.Endpoint> Endpoints => [.. ((Microsoft.AspNetCore.Routing.IEndpointRouteBuilder)_app).DataSources.SelectMany(source => source.Endpoints)];
+
     public AgentivityHost(IApiStub apiStub, IStoreStub storeStub, string[] args)
     {
         ApiStub = apiStub;
@@ -261,9 +264,6 @@ public sealed class AgentivityHost : IAgentivityHost
                 builder.Services.Remove(descriptor);
             }
         }
-
-        // Register credentials repository
-        builder.Services.AddSingleton<ICredentialsRepository, FileCredentialsRepository>();
 
         // Register unified run event bus (SSE streaming for workflows, agents, teams)
         builder.Services.AddRunEventBus();

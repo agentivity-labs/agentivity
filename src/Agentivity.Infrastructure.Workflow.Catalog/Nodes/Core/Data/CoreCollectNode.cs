@@ -14,7 +14,7 @@ public sealed class CoreCollectNode : ToolNode
     public CoreCollectNode()
         : base("core.collect")
     {
-        DefineMetadata("Collect", "Collects items into an array across multiple executions.", "core.data");
+        DefineMetadata("Collect", "Collects items into an array across multiple executions.", "core.data", whenToUse: "To gather into one list what the steps inside a For Each produce for each item, for example one summary per document. Each time it runs it adds one item and gives the whole list so far.");
         DefineEffects(NodeEffects.None);
 
         DefineInput(

@@ -58,7 +58,7 @@ internal static class AgenticMapper
 
         // Tags: same pattern as ToAgent above — Entity.Tags is a shared base field, plumbed
         // through identically for every entity kind rather than reinvented per type.
-        return new TeamEntity(id, req.Name, req.OrchestratorId, members, connections) { Goal = req.Goal, ManagerAgentId = req.ManagerAgentId, Role = req.Role, Annotations = req.Annotations ?? [], GroupColors = req.GroupColors ?? new Dictionary<string, string>(), Tags = req.Tags ?? [] };
+        return new TeamEntity(id, req.Name, req.OrchestratorId, members, connections) { Goal = req.Goal, Role = req.Role, Annotations = req.Annotations ?? [], GroupColors = req.GroupColors ?? new Dictionary<string, string>(), Tags = req.Tags ?? [] };
     }
 
     public static TeamSummaryDto ToSummary(TeamEntity e) => new(e.Id, e.Name, e.OrchestratorId, e.UpdatedAt);

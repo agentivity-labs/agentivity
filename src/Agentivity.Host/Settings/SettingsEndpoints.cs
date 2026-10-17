@@ -17,7 +17,8 @@ public static class SettingsEndpoints
     {
         var v1 = routes.MapV1();
 
-        v1.MapGet("/settings", async (AppSettingsService settingsService, CancellationToken ct) => Results.Ok(await settingsService.GetAsync(ct)));
+        v1.MapGet("/settings", async (AppSettingsService settingsService, CancellationToken ct) => Results.Ok(await settingsService.GetAsync(ct)))
+            .WithSummary("Read the application settings");
 
         v1.MapPut(
             "/settings",
@@ -26,7 +27,8 @@ public static class SettingsEndpoints
                 await settingsService.SaveAsync(settings, ct);
                 return Results.Ok(new { status = "saved" });
             }
-        );
+        )
+            .WithSummary("Save the application settings");
 
         return routes;
     }

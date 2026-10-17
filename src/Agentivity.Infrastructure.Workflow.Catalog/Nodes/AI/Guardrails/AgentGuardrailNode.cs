@@ -13,7 +13,7 @@ public sealed class AgentGuardrailNode : ResourceNode, IAgentGuardrailSource
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentGuardrail);
 
-        DefineMetadata("AI Agent Guardrail", "Produces a simple keyword-based guardrail that can warn, rewrite, or block selected AI-agent runtime surfaces.", "ai.guardrails");
+        DefineMetadata("AI Agent Guardrail", "Produces a simple keyword-based guardrail that can warn, rewrite, or block selected AI-agent runtime surfaces.", "ai.guardrails", whenToUse: "To catch an exact word or phrase in what an AI Agent reads or writes, then warn, replace that text, or block. Plug it into the Guardrails of an AI Agent; to judge the meaning rather than exact words, use AI Semantic Guardrail.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

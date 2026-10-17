@@ -21,6 +21,10 @@ public sealed class DataTableRow
         _data = new Dictionary<string, object?>(data, StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>A row as it is kept where the table is (its id, its dates, its values), read back.</summary>
+    public static DataTableRow Kept(long id, DateTime createdAt, DateTime updatedAt, IReadOnlyDictionary<string, object?> data) =>
+        new(id, createdAt, updatedAt, new Dictionary<string, object?>(data, StringComparer.OrdinalIgnoreCase));
+
     internal DataTableRow(long id, Dictionary<string, object?> data)
     {
         Id = id;

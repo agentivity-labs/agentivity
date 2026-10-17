@@ -88,7 +88,8 @@ public sealed class NodeReconfigureEndpointContributor : IEndpointContributor
 
                     return Results.Ok(new NodeReconfigureResponse(after, diff));
                 }
-            );
+            )
+            .WithSummary("Refresh the inputs of a workflow node");
     }
 
     private static NodeInputDiff BuildDiff(IReadOnlyDictionary<string, NodeInputDescriptor> before, IReadOnlyList<NodeInputDescriptor> after, IReadOnlyDictionary<string, object?>? currentValues = null)

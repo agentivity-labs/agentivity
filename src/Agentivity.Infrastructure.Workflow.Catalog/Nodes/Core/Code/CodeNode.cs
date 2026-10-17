@@ -35,11 +35,11 @@ public abstract class CodeNode : ToolNode
 
     private readonly ICodeRunner _runner;
 
-    protected CodeNode(string name, string displayName, string description, ICodeRunner runner) : base(name)
+    protected CodeNode(string name, string displayName, string description, string whenToUse, ICodeRunner runner) : base(name)
     {
         _runner = runner ?? throw new ArgumentNullException(nameof(runner));
 
-        DefineMetadata(displayName, description, "core.code");
+        DefineMetadata(displayName, description, "core.code", whenToUse: whenToUse);
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
 

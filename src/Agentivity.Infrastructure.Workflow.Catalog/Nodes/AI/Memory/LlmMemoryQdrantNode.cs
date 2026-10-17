@@ -43,7 +43,7 @@ public sealed class LlmMemoryQdrantNode : ResourceNode, IEmbeddingProvider, IVec
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
-        DefineMetadata("Qdrant Memory", "RAG backed by a real Qdrant vector database — persists embeddings once and queries a real ANN index instead of re-ranking locally on every run.", "ai.memory");
+        DefineMetadata("Qdrant Memory", "RAG backed by a real Qdrant vector database — persists embeddings once and queries a real ANN index instead of re-ranking locally on every run.", "ai.memory", whenToUse: "To let an AI Agent or LLM Prompt search large knowledge sources stored once in a Qdrant database and reused across runs. Needs your Qdrant connection; the collection is created on first use.");
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.WritesExternal | NodeEffects.Costs);
 
         ClearInputPorts();

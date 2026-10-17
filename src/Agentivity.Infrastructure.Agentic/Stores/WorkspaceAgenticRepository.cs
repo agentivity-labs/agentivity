@@ -103,7 +103,6 @@ public sealed class WorkspaceAgenticRepository : IAgenticRepository
         var prepared = new TeamEntity(entry.Id, entry.Name, entry.OrchestratorId, membersWithNames, entry.Connections)
         {
             Goal = entry.Goal,
-            ManagerAgentId = entry.ManagerAgentId,
             Role = entry.Role,
             Annotations = entry.Annotations,
             // Tags is a shared Entity base field — carried through by the same convention

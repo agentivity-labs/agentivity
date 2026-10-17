@@ -43,7 +43,8 @@ public static class OptimizationEndpoints
 
                 return Results.Accepted($"{PromptEngineEndpointRouteBuilderExtensions.PromptsRoutePrefix}/optimizations/{run.Id}", new { run.Id, run.Status });
             }
-        );
+        )
+            .WithSummary("Start an optimization run for a prompt");
 
         group.MapGet(
             "/optimizations/{id}",
@@ -52,7 +53,8 @@ public static class OptimizationEndpoints
                 var run = await store.GetOptimizationRunAsync(id, ct);
                 return run is not null ? Results.Ok(run) : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Get the status of a prompt optimization run");
 
         group.MapPost(
             "/optimizations/{id}/cancel",
@@ -73,7 +75,8 @@ public static class OptimizationEndpoints
 
                 return Results.Ok(new { run.Id, run.Status });
             }
-        );
+        )
+            .WithSummary("Cancel a prompt optimization run");
     }
 }
 

@@ -17,7 +17,7 @@ public sealed class DslToHtmlNode : DslAdapterNode
     public DslToHtmlNode()
         : base("content.layoutadapters.dsl_to_html")
     {
-        DefineMetadata("DSL to HTML", "Converts DSL content to semantic HTML with optional CSS framework support", "content.layoutadapters");
+        DefineMetadata("DSL to HTML", "Converts DSL content to semantic HTML with optional CSS framework support", "content.layoutadapters", whenToUse: "To turn a page layout in DSL format into HTML for a web page, plain or styled for Tailwind or Bootstrap. For an e-mail, use DSL to Email HTML instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
@@ -29,7 +29,7 @@ public sealed class DslToHtmlNode : DslAdapterNode
         DefineInput(
             "dsl_content",
             ArgumentType.Text,
-            "PageNode JSON in DSL format",
+            "Page layout in DSL format (JSON), as Content Generator gives it",
             ui: new ArgumentUiMetadata
             {
                 Tab = "Content",

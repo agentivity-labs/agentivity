@@ -35,7 +35,8 @@ public static class VoiceEndpoints
                 AppSettings appSettings = await appSettingsService.GetAsync(ct);
                 return Results.Ok(new { available = IsConfigured(appSettings.SpeechToText) });
             }
-        );
+        )
+            .WithSummary("Check whether voice dictation is available");
 
         v1.MapPost(
             "/voice/transcribe",
@@ -77,7 +78,8 @@ public static class VoiceEndpoints
                     return ApiError(StatusCodes.Status503ServiceUnavailable, code: "stt_transcription_failed", userMessage: "Voice transcription failed.", detail: ex.Message);
                 }
             }
-        );
+        )
+            .WithSummary("Transcribe a recorded audio clip to text");
 
         return routes;
     }

@@ -6,11 +6,6 @@ namespace Agentivity.Infrastructure.Stores;
 public interface IConfigurationRepository
 {
     /// <summary>
-    /// Gets the base configuration path.
-    /// </summary>
-    string BasePath { get; }
-
-    /// <summary>
     /// Loads a JSON file and deserializes it to the specified type.
     /// </summary>
     Task<T?> LoadAsync<T>(string relativePath, CancellationToken cancellationToken = default)
@@ -42,9 +37,4 @@ public interface IConfigurationRepository
     /// Checks if a configuration file exists.
     /// </summary>
     bool Exists(string relativePath);
-
-    /// <summary>
-    /// Invalidates the cache for a specific file or all files.
-    /// </summary>
-    void InvalidateCache(string? relativePath = null);
 }

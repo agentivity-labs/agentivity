@@ -26,7 +26,7 @@ public sealed class AIKnowledgeWebNode : ResourceNode, IKnowledgeSource
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (Web)", "Loads a knowledge corpus from one or more URLs and exposes normalized documents for AI consumers.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (Web)", "Loads a knowledge corpus from one or more URLs and exposes normalized documents for AI consumers.", "ai.knowledge", whenToUse: "To give an AI Agent the content of a few web pages you list, one address per line. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory; for a whole website, use AI Knowledge (Sitemap).");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

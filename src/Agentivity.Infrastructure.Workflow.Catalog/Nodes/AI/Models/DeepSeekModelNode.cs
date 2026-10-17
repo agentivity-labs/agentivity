@@ -15,7 +15,7 @@ public sealed class DeepSeekModelNode : BaseLlmModelNode
     public DeepSeekModelNode(ILlmClientFactory llmClientFactory, ILogger<DeepSeekModelNode> logger, IOptions<LlmRecoveryOptions>? recoveryOptions = null)
         : base("ai.llm.model.deepseek", "deepseek", LlmApiFlavor.OpenAI, llmClientFactory, logger, recoveryOptions)
     {
-        DefineMetadata("DeepSeek Model", "DeepSeek AI models (deepseek-chat, deepseek-reasoner, etc.).", "ai.models");
+        DefineMetadata("DeepSeek Model", "DeepSeek AI models (deepseek-chat, deepseek-reasoner, etc.).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a DeepSeek model, with a key from your DeepSeek account.");
         DefineEffects(NodeEffects.Costs);
     }
 

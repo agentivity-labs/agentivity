@@ -39,7 +39,8 @@ public static class ResourcesEndpoints
                 var contentType = ContentTypeFromExtension(Path.GetExtension(path));
                 return Results.File(path, contentType, enableRangeProcessing: true);
             }
-        );
+        )
+            .WithSummary("Download a generated image or audio file");
 
         return routes;
     }

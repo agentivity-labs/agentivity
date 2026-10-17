@@ -50,7 +50,8 @@ public static class PlaygroundEndpoints
                     return PromptEngineEndpointErrors.FromInvalidOperation(ex);
                 }
             }
-        );
+        )
+            .WithSummary("Try a prompt in the playground");
 
         group.MapGet(
             "/{promptId}/playground/executions",
@@ -59,7 +60,8 @@ public static class PlaygroundEndpoints
                 var executions = await store.ListPlaygroundExecutionsAsync(promptId, ct);
                 return Results.Ok(executions);
             }
-        );
+        )
+            .WithSummary("List the playground executions of a prompt");
 
         group.MapGet(
             "/playground/executions/{id}",
@@ -68,6 +70,7 @@ public static class PlaygroundEndpoints
                 var execution = await store.GetExecutionAsync(id, ct);
                 return execution is not null && string.Equals(execution.ExecutionKind, "playground", StringComparison.OrdinalIgnoreCase) ? Results.Ok(execution) : Results.NotFound();
             }
-        );
+        )
+            .WithSummary("Get one playground execution");
     }
 }

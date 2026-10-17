@@ -29,7 +29,7 @@ public sealed class EmbeddingsLocalNode : ResourceNode, IEmbeddingProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.Embeddings);
 
-        DefineMetadata("Local Embeddings", "Free, offline embeddings (all-MiniLM-L6-v2) — no credentials, no external API calls.", "ai.embeddings");
+        DefineMetadata("Local Embeddings", "Free, offline embeddings (all-MiniLM-L6-v2) — no credentials, no external API calls.", "ai.embeddings", whenToUse: "To make visible, or share between several memories, the free offline model that compares texts by meaning. Plug it into the Embeddings of a memory; memories already use this model when nothing else is set.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

@@ -44,7 +44,7 @@ public sealed class BedrockModelNode : ResourceNode, ILlmProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmModel);
 
-        DefineMetadata("AWS Bedrock Model", "Anthropic Claude models via AWS Bedrock — SigV4-signed requests through the official AWS SDK, no bearer token.", "ai.models");
+        DefineMetadata("AWS Bedrock Model", "Anthropic Claude models via AWS Bedrock — SigV4-signed requests through the official AWS SDK, no bearer token.", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a Claude model through your company's AWS account, with AWS access keys. With a key from an Anthropic account, use Anthropic Model instead.");
         DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();

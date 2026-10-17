@@ -11,6 +11,7 @@ public sealed class AIAgentTavilyWebSearchToolNode : AIAgentWebSearchToolNodeBas
             "ai.tools.web.search.tavily",
             "AI Tool - Web Search - Tavily",
             "Exposes Tavily web search to AI agents as a callable tool.",
+            "To let an agent search the web and get a list of results (title, address, short extract) through Tavily, a paid service that needs a Tavily API key. To read the pages found, also give the agent a Web Scraper tool.",
             "search_web_tavily",
             "Search the web with Tavily and return normalized results with titles, URLs, and snippets.",
             "tavily",

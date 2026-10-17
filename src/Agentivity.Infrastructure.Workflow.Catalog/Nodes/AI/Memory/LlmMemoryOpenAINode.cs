@@ -32,7 +32,7 @@ public sealed class LlmMemoryOpenAINode : ResourceNode, IEmbeddingProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
-        DefineMetadata("OpenAI Memory", "RAG with dedicated OpenAI credentials for embeddings and vector storage.", "ai.memory");
+        DefineMetadata("OpenAI Memory", "RAG with dedicated OpenAI credentials for embeddings and vector storage.", "ai.memory", whenToUse: "To let an AI Agent or LLM Prompt find the relevant passages of its knowledge sources, with an OpenAI model comparing texts by meaning. The documents are compared again at each run: for large or lasting collections, use Qdrant, Pinecone or pgvector Memory.");
         DefineEffects(NodeEffects.WritesInternal | NodeEffects.Costs);
 
         ClearInputPorts();

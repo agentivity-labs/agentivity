@@ -23,7 +23,7 @@ public sealed class ModerationGuardrailNode : ResourceNode, IAgentGuardrailSourc
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentGuardrail);
 
-        DefineMetadata("AI Semantic Guardrail", "Moderation (OpenAI, free) or LLM-judge (reuses the agent's own model) content check — makes a real call per evaluation, unlike the keyword guardrail.", "ai.guardrails");
+        DefineMetadata("AI Semantic Guardrail", "Moderation (OpenAI, free) or LLM-judge (reuses the agent's own model) content check — makes a real call per evaluation, unlike the keyword guardrail.", "ai.guardrails", whenToUse: "To check what an AI Agent reads or writes for its meaning (harmful content, or a rule you describe in your own words), then warn or block. Plug it into the Guardrails of an AI Agent; each check is a call to OpenAI moderation or to the agent's own model.");
         DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();

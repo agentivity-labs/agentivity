@@ -21,7 +21,7 @@ public sealed class CoreSwitchNode : ControlFlowNode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Switch", "Evaluates a value and routes execution to different branches based on matching cases.", "core.control");
+        DefineMetadata("Switch", "Evaluates a value and routes execution to different branches based on matching cases.", "core.control", whenToUse: "To send the flow down one of several paths depending on a value, for example a category chosen by an AI step, with a default path when nothing matches. For a simple yes or no, use If instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();

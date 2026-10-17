@@ -11,9 +11,9 @@ public abstract class WebScraperNodeBase : ResourceNode
     protected WebScraperNodeBase(string nodeType)
         : base(nodeType) { }
 
-    protected void DefineCommonMetadata(string displayName, string description)
+    protected void DefineCommonMetadata(string displayName, string description, string whenToUse)
     {
-        DefineMetadata(displayName, description, "web.scrappers");
+        DefineMetadata(displayName, description, "web.scrappers", whenToUse: whenToUse);
         DefineEffects(NodeEffects.ReadsExternal);
     }
 }

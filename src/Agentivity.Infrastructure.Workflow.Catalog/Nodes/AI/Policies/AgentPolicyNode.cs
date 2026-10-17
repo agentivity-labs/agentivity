@@ -41,6 +41,7 @@ public sealed class AgentPolicyNode : ResourceNode, IAgentPolicySource, IWorkflo
     {
         _engines = engines ?? throw new ArgumentNullException(nameof(engines));
 
+        DefineMetadata("AI Agent Policy", "A layer of rules and preferences an AI agent follows, with its scope and its priority. Plug it into the Policies of an AI Agent.", "ai.policies", whenToUse: "To give an AI Agent rules and preferences to follow, kept apart from its instructions so they can be reused. Plug it into the Policies of an AI Agent; when several layers apply, their scope and priority decide which comes first.");
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentPolicy);
         ClearInputPorts();
         ClearOutputPorts();

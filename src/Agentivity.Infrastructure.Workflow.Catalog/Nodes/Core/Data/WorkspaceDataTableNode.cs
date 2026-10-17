@@ -23,7 +23,7 @@ public sealed class WorkspaceDataTableNode : ResourceNode, IDataTableResource
         _rowStore = rowStore ?? throw new ArgumentNullException(nameof(rowStore));
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.DataTable);
 
-        DefineMetadata("Data Table", "References a shared Data Table asset (schema and rows managed under Resources).", "core.data");
+        DefineMetadata("Data Table", "References a shared Data Table asset (schema and rows managed under Resources).", "core.data", whenToUse: "To choose which Data Table, created under Resources, a DataTable step works on. It does nothing by itself: connect it to a DataTable step.");
         DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();
@@ -34,15 +34,9 @@ public sealed class WorkspaceDataTableNode : ResourceNode, IDataTableResource
         DefineIcon(NodeIcon.Embedded("datatable"));
     }
 
-    public ValueTask<DataTable> ResolveAsync(ResourceBinding binding, CancellationToken cancellationToken = default)
+    public ValueTask<LiveDataTable> ResolveAsync(ResourceBinding binding, CancellationToken cancellationToken = default)
     {
         var tableId = binding.RequireString("table_id");
-        return _rowStore.GetOrLoadAsync(tableId, cancellationToken);
-    }
-
-    public ValueTask SaveAsync(ResourceBinding binding, CancellationToken cancellationToken = default)
-    {
-        var tableId = binding.RequireString("table_id");
-        return _rowStore.SaveAsync(tableId, cancellationToken);
+        return _rowStore.OpenAsync(tableId, cancellationToken);
     }
 }

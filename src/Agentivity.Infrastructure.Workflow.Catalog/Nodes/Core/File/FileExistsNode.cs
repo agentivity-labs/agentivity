@@ -3,6 +3,7 @@ using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Workflows;
 using Agentivity.Infrastructure.Workflows.Nodes;
 using Microsoft.Extensions.Logging;
+using Agentivity.Infrastructure.Core;
 
 namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Core.File;
 
@@ -18,7 +19,7 @@ public sealed class FileExistsNode : ToolNode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("File Exists", "Checks if a file exists at the specified path.", "core.file");
+        DefineMetadata("File Exists", "Checks if a file exists at the specified path.", "core.file", whenToUse: "To check whether a file is on the server's disk at a given path, for example to skip work already done. For a file that must also be recent, use File Is Fresh instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();
@@ -38,7 +39,7 @@ public sealed class FileExistsNode : ToolNode
         DefineInput("file_path", ArgumentType.Text, "Path to the file to check", ui: new ArgumentUiMetadata { Group = "File", Order = 10 }, required: true);
 
         // Data outputs
-        DefineOutput("exists", ArgumentType.Boolean, "True if the file exists, false otherwise");
+        DefineOutput("exists", ArgumentType.Boolean, "Whether the file exists");
         DefineOutput("file_path", ArgumentType.Text, "The file path that was checked");
 
         DefineIcon(NodeIcon.Embedded("core_file_exists"));
@@ -53,6 +54,9 @@ public sealed class FileExistsNode : ToolNode
         {
             throw new InvalidOperationException($"File path is required for node '{config.Node.Id}'.");
         }
+
+        // Nothing is told about a file of the installation (that it is there, when it changed), whatever the workflow asks.
+        InstallationFiles.Current.EnsureOutside(filePath);
 
         bool exists;
         try

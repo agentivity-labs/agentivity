@@ -57,7 +57,8 @@ public static class CapabilitiesEndpoints
                 var snapshot = registry.Current;
                 return Results.Ok(new { version = snapshot.Version, total = snapshot.Items.Count, kinds = snapshot.Overview(), problems = snapshot.Problems, semantic = registry.Semantic });
             }
-        );
+        )
+            .WithSummary("Get an overview of the platform capabilities");
 
         v1.MapGet(
             "/capabilities/search",
@@ -89,7 +90,8 @@ public static class CapabilitiesEndpoints
                     }
                 );
             }
-        );
+        )
+            .WithSummary("Search the platform capabilities");
 
         v1.MapGet(
             "/capabilities/{kind}",
@@ -112,7 +114,8 @@ public static class CapabilitiesEndpoints
                     }
                 );
             }
-        );
+        )
+            .WithSummary("List the capabilities of one kind");
 
         v1.MapGet(
             "/capabilities/{kind}/{id}",
@@ -138,7 +141,8 @@ public static class CapabilitiesEndpoints
                     }
                 );
             }
-        );
+        )
+            .WithSummary("Get the details of one capability");
 
         return routes;
     }

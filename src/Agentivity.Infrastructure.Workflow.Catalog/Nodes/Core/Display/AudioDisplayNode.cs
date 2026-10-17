@@ -19,7 +19,8 @@ public sealed class AudioDisplayNode : DisplayNode
             "core.display.audio",
             "Audio Player",
             "Displays a generated or referenced audio file directly on the node.",
-            "core.display"
+            "core.display",
+            "To listen to audio made by an earlier step, such as text-to-speech, right on the canvas. It passes the audio on unchanged."
         )
     {
         DefineInput(

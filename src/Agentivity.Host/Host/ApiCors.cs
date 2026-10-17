@@ -25,6 +25,9 @@ public static class ApiCors
     /// <summary>The setting that lists the addresses whose pages may call the API.</summary>
     public const string AllowedOriginsKey = "Cors:AllowedOrigins";
 
+    /// <summary>The header that says how many rows a search found, when its answer is one page of them.</summary>
+    public const string TotalCountHeader = "X-Total-Count";
+
     public static IServiceCollection AddApiCors(this IServiceCollection services, IConfiguration configuration)
     {
         var origins = (configuration.GetSection(AllowedOriginsKey).Get<string[]>() ?? []).Select(o => o.Trim().TrimEnd('/')).Where(o => o.Length > 0).ToArray();
@@ -34,7 +37,8 @@ public static class ApiCors
                 PolicyName,
                 policy =>
                 {
-                    policy.AllowAnyHeader().AllowAnyMethod();
+                    // A page reads only the headers named here: the total a search of a Data Table found is one of them.
+                    policy.AllowAnyHeader().AllowAnyMethod().WithExposedHeaders(TotalCountHeader);
                     if (origins.Length == 0 || origins.Contains("*"))
                         policy.AllowAnyOrigin();
                     else

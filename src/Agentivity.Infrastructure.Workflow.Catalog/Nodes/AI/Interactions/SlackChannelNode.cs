@@ -30,7 +30,7 @@ public sealed class SlackChannelNode : ResourceNode, IInteractionChannel, IHuman
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.InteractionChannel);
 
-        DefineMetadata("Slack Channel", "Slack workspace channel for delivering interaction requests and collecting responses.", "ai.interactions");
+        DefineMetadata("Slack Channel", "Slack workspace channel for delivering interaction requests and collecting responses.", "ai.interactions", whenToUse: "To ask people in Slack and take their reply from there, for an AI Agent or an interaction step. Needs a Slack bot token and the ID of the Slack channel, copied from Slack.");
         DefineEffects(NodeEffects.SendsMessage);
 
         ClearInputPorts();

@@ -52,7 +52,8 @@ public static class WorkflowsEndpoints
                 var result = await repo.BrowseAsync(folderId, ct).ConfigureAwait(false);
                 return Results.Ok(result);
             }
-        );
+        )
+            .WithSummary("Browse the workflow folders and workflows");
 
         v1.MapGet(
             "/workflows/folders",
@@ -61,7 +62,8 @@ public static class WorkflowsEndpoints
                 var folders = await repo.ListFoldersAsync(parentFolderId, ct).ConfigureAwait(false);
                 return Results.Ok(folders);
             }
-        );
+        )
+            .WithSummary("List the workflow folders");
 
         v1.MapPost(
             "/workflows/folders",
@@ -70,7 +72,8 @@ public static class WorkflowsEndpoints
                 var result = await repo.CreateFolderAsync(body.Name, body.ParentFolderId, ct).ConfigureAwait(false);
                 return result.Success && result.Value is not null ? Results.Ok(result.Value) : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Create a workflow folder");
 
         v1.MapPut(
             "/workflows/folders/{folderId}",
@@ -79,7 +82,8 @@ public static class WorkflowsEndpoints
                 var result = await repo.RenameFolderAsync(folderId, body.Name, ct).ConfigureAwait(false);
                 return result.Success ? Results.Ok() : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Rename a workflow folder");
 
         v1.MapDelete(
             "/workflows/folders/{folderId}",
@@ -88,7 +92,8 @@ public static class WorkflowsEndpoints
                 var result = await repo.DeleteFolderAsync(folderId, ct).ConfigureAwait(false);
                 return result.Success ? Results.Ok() : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Delete a workflow folder");
 
         v1.MapPost(
             "/workflows/folders/{folderId}/move",
@@ -97,7 +102,8 @@ public static class WorkflowsEndpoints
                 var result = await repo.MoveFolderAsync(folderId, body.TargetParentFolderId, ct).ConfigureAwait(false);
                 return result.Success ? Results.Ok() : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Move a workflow folder");
 
         v1.MapPost(
             "/workflows/{workflowId}/move",
@@ -106,7 +112,8 @@ public static class WorkflowsEndpoints
                 var result = await repo.MoveAsync(workflowId, body.TargetFolderId, ct).ConfigureAwait(false);
                 return result.Success ? Results.Ok() : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Move a workflow to another folder");
     }
 
     // ── Versioning (requires workspace.versioning module) ────────────────────
@@ -125,7 +132,8 @@ public static class WorkflowsEndpoints
                 var versions = await versionStore.ListVersionsAsync(WorkflowObjectType, workflowId, ct).ConfigureAwait(false);
                 return Results.Ok(versions);
             }
-        );
+        )
+            .WithSummary("List the saved versions of a workflow");
 
         v1.MapPost(
             "/workflows/{workflowId}/versions",
@@ -137,7 +145,8 @@ public static class WorkflowsEndpoints
                 var result = await versionStore.CreateVersionAsync(WorkflowObjectType, workflowId, new WorkspaceObjectVersionCreateRequest(body.Label, body.CreatedBy), ct).ConfigureAwait(false);
                 return result.Success && result.Value is not null ? Results.Ok(result.Value) : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Save a new version of a workflow");
 
         v1.MapGet(
             "/workflows/{workflowId}/versions/{versionId}",
@@ -149,7 +158,8 @@ public static class WorkflowsEndpoints
                 var result = await versionStore.GetVersionAsync(WorkflowObjectType, workflowId, versionId, ct).ConfigureAwait(false);
                 return result.Success && result.Value is not null ? Results.Ok(result.Value) : Results.NotFound(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Get one saved version of a workflow");
 
         v1.MapPost(
             "/workflows/{workflowId}/versions/{versionId}/restore",
@@ -161,7 +171,8 @@ public static class WorkflowsEndpoints
                 var result = await versionStore.RestoreVersionAsync(WorkflowObjectType, workflowId, versionId, new WorkspaceObjectVersionRestoreRequest(body.Label, body.RestoredBy), ct).ConfigureAwait(false);
                 return result.Success && result.Value is not null ? Results.Ok(result.Value) : Results.BadRequest(new { error = result.Error });
             }
-        );
+        )
+            .WithSummary("Restore an earlier version of a workflow");
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────────────
@@ -203,7 +214,8 @@ public static class WorkflowsEndpoints
 
                 return Results.Ok(items);
             }
-        );
+        )
+            .WithSummary("List all workflows");
 
         // Get a workflow definition by id
         v1.MapGet(
@@ -218,7 +230,8 @@ public static class WorkflowsEndpoints
 
                 return Results.Ok(workflow);
             }
-        );
+        )
+            .WithSummary("Get a workflow definition");
 
         // Returns stale input keys per node (editor uses this on workflow load)
         v1.MapGet(
@@ -252,7 +265,8 @@ public static class WorkflowsEndpoints
 
                 return Results.Ok(result);
             }
-        );
+        )
+            .WithSummary("List the obsolete inputs of each workflow node");
 
         // Get workflow version info
         v1.MapGet(
@@ -273,7 +287,8 @@ public static class WorkflowsEndpoints
                     }
                 );
             }
-        );
+        )
+            .WithSummary("Get when a workflow was last updated");
 
         // Create or update a workflow definition
         v1.MapPut(
@@ -315,7 +330,8 @@ public static class WorkflowsEndpoints
 
                 return Results.Ok(new { status = "saved" });
             }
-        );
+        )
+            .WithSummary("Create or update a workflow");
 
         // Delete a workflow definition
         v1.MapDelete(
@@ -330,7 +346,8 @@ public static class WorkflowsEndpoints
 
                 return Results.Ok(new { status = "deleted" });
             }
-        );
+        )
+            .WithSummary("Delete a workflow");
 
         // Validate a workflow without saving it
         v1.MapPost(
@@ -356,7 +373,8 @@ public static class WorkflowsEndpoints
                     }
                 );
             }
-        );
+        )
+            .WithSummary("Validate a workflow without saving it");
     }
 
     // ── Helpers (internal so RunsEndpointMappings can reuse them) ────────────

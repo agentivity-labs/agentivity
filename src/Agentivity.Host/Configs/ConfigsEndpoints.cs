@@ -1,4 +1,5 @@
 using Agentivity.Infrastructure.Http;
+using Agentivity.Infrastructure.Stores;
 using Agentivity.Infrastructure.Workflow.Services.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +18,8 @@ public static class ConfigsEndpoints
     {
         var v1 = routes.MapV1();
 
-        v1.MapGet("/configs", (ConfigurationService configService) => Results.Ok(configService.ListFiles()));
+        v1.MapGet("/configs", (ConfigurationService configService) => Results.Ok(configService.ListFiles()))
+            .WithSummary("List the configuration files");
 
         v1.MapGet(
             "/configs/{*path}",
@@ -26,13 +28,16 @@ public static class ConfigsEndpoints
                 if (string.IsNullOrWhiteSpace(path))
                     return ApiValidationError(code: "configuration_path_required", userMessage: "A configuration path is required.", detail: "Configuration path is required.");
 
+                // A configuration is asked for by its name, never by a place on the disk (refused as configuration_path_invalid).
+                ConfigurationRepository.NameOf(path);
                 if (!configService.Exists(path))
                     return ApiNotFound(code: "configuration_not_found", userMessage: "This configuration file could not be found.", detail: "Configuration file not found.", context: new { path });
 
                 var content = await configService.LoadAsync<object>(path, ct);
                 return content is not null ? Results.Ok(content) : ApiNotFound(code: "configuration_not_found", userMessage: "This configuration file could not be loaded.", detail: "Failed to load configuration.", context: new { path });
             }
-        );
+        )
+            .WithSummary("Read a configuration file");
 
         v1.MapPut(
             "/configs/{*path}",
@@ -45,7 +50,8 @@ public static class ConfigsEndpoints
                 await configService.SaveRawAsync(path, json, ct);
                 return Results.Ok(new { status = "saved", path });
             }
-        );
+        )
+            .WithSummary("Save a configuration file");
 
         return routes;
     }

@@ -20,7 +20,7 @@ public sealed class CoreFirstOfNode : ToolNode, IPartialExecutionNode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("First Of", "Selects the first available value from multiple inputs. Does not wait for all connections.", "core.control");
+        DefineMetadata("First Of", "Selects the first available value from multiple inputs. Does not wait for all connections.", "core.control", whenToUse: "To go on with whichever branch has run, when only one of several branches runs, for example a value read from storage or else computed. Not for choosing a path: use If or Switch instead.");
         DefineEffects(NodeEffects.None);
 
         ConfigureMetadata();

@@ -30,7 +30,7 @@ public sealed class StorageWriteNode : ToolNode
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("Storage Write", "Writes a value to any storage provider (file, database, etc.)", "storage");
+        DefineMetadata("Storage Write", "Writes a value to any storage provider (file, database, etc.)", "storage", whenToUse: "To save a value under a name (a key) so a later step or a later run can read it back with Storage Read, for good or for a number of minutes. Connect a File Storage or Supabase Storage step to say where to save it.");
         DefineEffects(NodeEffects.WritesInternal | NodeEffects.WritesExternal);
 
         DefineResourceInputPort("storage", "Storage", ResourcePortCategory.Storage, "Storage resource to write to");
@@ -143,13 +143,8 @@ public sealed class StorageWriteNode : ToolNode
         };
     }
 
-    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding)
-    {
-        string filePath = binding.GetString("file_path") ?? "_data/storage/data.json";
-        ILogger<FileStorageProvider> logger = _serviceProvider.GetRequiredService<ILogger<FileStorageProvider>>();
-
-        return new FileStorageProvider(filePath, logger);
-    }
+    // The store is kept in the workspace, named by the file_path — never a place on the disk (see KeyValueStores).
+    private IStorageProvider CreateFileStorageProvider(ResourceBinding binding) => _serviceProvider.GetRequiredService<KeyValueStores>().Open(binding.GetString("file_path"));
 
     private async Task<IStorageProvider> CreateSupabaseStorageProviderAsync(ResourceBinding binding, CancellationToken cancellationToken)
     {

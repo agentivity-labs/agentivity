@@ -84,6 +84,19 @@ public static class PathResolver
     }
 
     /// <summary>
+    /// Makes <paramref name="root"/> the root every relative path resolves from, whatever folder the application runs in — for
+    /// a host that must keep its files to itself (a test host, whose binaries sit inside a repository).
+    /// </summary>
+    public static void UseRoot(string root)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(root);
+        lock (Lock)
+        {
+            _cachedSolutionRoot = Path.GetFullPath(root);
+        }
+    }
+
+    /// <summary>
     /// Clears the cached solution root (useful for testing).
     /// </summary>
     public static void ClearCache()

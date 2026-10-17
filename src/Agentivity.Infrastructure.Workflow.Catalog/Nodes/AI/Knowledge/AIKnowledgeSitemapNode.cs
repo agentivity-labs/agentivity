@@ -30,7 +30,7 @@ public sealed class AIKnowledgeSitemapNode : ResourceNode, IKnowledgeSource
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("AI Knowledge (Sitemap)", "Loads a knowledge corpus from a sitemap and scrapes the listed pages into normalized documents.", "ai.knowledge");
+        DefineMetadata("AI Knowledge (Sitemap)", "Loads a knowledge corpus from a sitemap and scrapes the listed pages into normalized documents.", "ai.knowledge", whenToUse: "To give an AI Agent the content of a whole website, page by page, from the address of its sitemap. Plug it into the Knowledge Sources of an AI Agent or LLM Prompt that also has a memory; for a few pages only, use AI Knowledge (Web).");
         DefineEffects(NodeEffects.ReadsExternal);
 
         ClearInputPorts();

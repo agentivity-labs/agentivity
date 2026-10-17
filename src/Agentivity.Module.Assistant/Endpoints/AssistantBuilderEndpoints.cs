@@ -21,7 +21,8 @@ public static class AssistantBuilderEndpoints
     {
         var group = routes.MapGroup(RoutePrefix).WithTags("Assistant");
 
-        group.MapGet("/operations", () => Results.Ok(new { operations = OperationEngine.Operations }));
+        group.MapGet("/operations", () => Results.Ok(new { operations = OperationEngine.Operations }))
+            .WithSummary("List the operations the assistant builder accepts");
 
         // A piece of work started from something already saved (the "improve with the assistant" of the editors).
         group.MapPost(
@@ -33,7 +34,8 @@ public static class AssistantBuilderEndpoints
                 var changeset = await api.OpenEntityAsync(request.EntityId.Trim(), ct);
                 return changeset is null ? Results.NotFound(new { error = $"There is no agent, team or workflow '{request.EntityId}' in the workspace." }) : Results.Created($"{RoutePrefix}/changesets/{changeset.Id}", BuilderApi.Summarize(changeset));
             }
-        );
+        )
+            .WithSummary("Open a saved agent, team or workflow in a changeset");
 
         group.MapPost(
             "/changesets",
@@ -42,17 +44,20 @@ public static class AssistantBuilderEndpoints
                 var changeset = await api.CreateChangesetAsync(request?.Name, request?.FolderId, ct);
                 return Results.Created($"{RoutePrefix}/changesets/{changeset.Id}", BuilderApi.Summarize(changeset));
             }
-        );
+        )
+            .WithSummary("Start a new assistant changeset");
 
         group.MapGet(
             "/changesets",
             async (IBuilderApi api, CancellationToken ct) => Results.Ok((await api.ListChangesetsAsync(ct)).Select(BuilderApi.Summarize))
-        );
+        )
+            .WithSummary("List the assistant changesets");
 
         group.MapGet(
             "/changesets/{id}",
             async (IBuilderApi api, string id, CancellationToken ct) => await api.GetChangesetAsync(id, ct) is { } changeset ? Results.Ok(BuilderApi.Summarize(changeset)) : NotFound(id)
-        );
+        )
+            .WithSummary("Get the summary of a changeset");
 
         group.MapGet(
             "/changesets/{id}/entities/{entityId}",
@@ -64,7 +69,8 @@ public static class AssistantBuilderEndpoints
                 var entity = changeset.Find(entityId);
                 return entity is null ? Results.NotFound(new { error = $"No entity '{entityId}' in this changeset." }) : Results.Ok(new { entity.Id, entity.Kind, entity.Name, entity.State, entity.BaseFingerprint, draft = entity.Draft });
             }
-        );
+        )
+            .WithSummary("Get the draft of one entity in a changeset");
 
         group.MapPost(
             "/changesets/{id}/operations",
@@ -81,7 +87,8 @@ public static class AssistantBuilderEndpoints
                 var changeset = await api.GetChangesetAsync(id, ct);
                 return Results.Ok(new { applied = result.Applied, atomic = result.Atomic, revision = result.Revision, results = result.Results, changeset = changeset is null ? null : BuilderApi.Summarize(changeset) });
             }
-        );
+        )
+            .WithSummary("Apply edit operations to a changeset");
 
         // The same light description the assistant builds from: steps, resources and connections in the catalog's identifiers.
         group.MapPost(
@@ -95,7 +102,8 @@ public static class AssistantBuilderEndpoints
                 var body = new { built = result.Built, problems = result.Problems, notes = result.Notes, created = result.Created, issues = result.Issues, changeset = changeset is null ? null : BuilderApi.Summarize(changeset) };
                 return result.Built ? Results.Ok(body) : Results.UnprocessableEntity(body);
             }
-        );
+        )
+            .WithSummary("Build a changeset from a light description");
 
         // The catalog as the assistant reads it (and its size), to see exactly what the model is given.
         group.MapGet(
@@ -105,7 +113,8 @@ public static class AssistantBuilderEndpoints
                 var text = CatalogText.Build(registry.Current, maxDetailed ?? new AssistantLoopOptions().CatalogMaxDetailed);
                 return Results.Ok(new { characters = text.Length, approxTokens = text.Length / 4, text });
             }
-        );
+        )
+            .WithSummary("Read the catalog text the assistant is given");
 
         group.MapPost(
             "/changesets/{id}/validate",
@@ -116,7 +125,8 @@ public static class AssistantBuilderEndpoints
                     ? NotFound(id)
                     : Results.Ok(new { valid = issues.All(i => i.Severity != "error"), errors = issues.Count(i => i.Severity == "error"), warnings = issues.Count(i => i.Severity == "warning"), issues });
             }
-        );
+        )
+            .WithSummary("Validate the drafts of a changeset");
 
         group.MapPost(
             "/changesets/{id}/revert",
@@ -125,7 +135,8 @@ public static class AssistantBuilderEndpoints
                 var changeset = await api.RevertAsync(id, request.Revision, ct);
                 return changeset is null ? Results.NotFound(new { error = "No such changeset or revision." }) : Results.Ok(BuilderApi.Summarize(changeset));
             }
-        );
+        )
+            .WithSummary("Revert a changeset to an earlier revision");
 
         // The one route that changes the workspace. It is for a person to call: the assistant has no tool that reaches it.
         group.MapPost(
@@ -141,7 +152,8 @@ public static class AssistantBuilderEndpoints
                     return NotFound(id);
                 return outcome.Saved ? Results.Ok(outcome) : Results.Json(outcome, statusCode: StatusCodes.Status409Conflict);
             }
-        );
+        )
+            .WithSummary("Save a changeset to the workspace");
 
         // The model connections a person can choose for the agents that get built. This is separate from the model the assistant
         // itself talks to. A connection is listed when the platform has a model step that speaks to its provider.
@@ -156,7 +168,8 @@ public static class AssistantBuilderEndpoints
                     .Select(c => new { id = c.Id, name = c.Name, kind = c.Kind, description = c.Description, modelNode = kinds[c.Kind] });
                 return Results.Ok(new { connections = items });
             }
-        );
+        )
+            .WithSummary("List the model connections for built agents");
 
         group.MapPut(
             "/changesets/{id}/agent-model",
@@ -172,9 +185,11 @@ public static class AssistantBuilderEndpoints
                     return Results.BadRequest(new { error = ex.Message });
                 }
             }
-        );
+        )
+            .WithSummary("Set the model connection of the built agents");
 
-        group.MapDelete("/changesets/{id}", async (IBuilderApi api, string id, CancellationToken ct) => await api.DiscardAsync(id, ct) ? Results.NoContent() : NotFound(id));
+        group.MapDelete("/changesets/{id}", async (IBuilderApi api, string id, CancellationToken ct) => await api.DiscardAsync(id, ct) ? Results.NoContent() : NotFound(id))
+            .WithSummary("Discard a changeset");
 
         return routes;
     }

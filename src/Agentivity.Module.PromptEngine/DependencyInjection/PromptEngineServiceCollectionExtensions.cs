@@ -39,7 +39,7 @@ public static class PromptEngineServiceCollectionExtensions
         {
             var storagePath = PathResolver.Resolve(configuration.GetValue<string>("PromptEngine:StoragePath") ?? "_data/prompts");
             var provisioner = sp.GetRequiredService<IWorkspaceProvisioner>();
-            var store = provisioner.CreateStore(storagePath);
+            var store = provisioner.CreateStore(storagePath, WorkspacePromptRepository.DomainTypes);
             var versionStorePath = Path.Combine(Path.GetDirectoryName(storagePath) ?? storagePath, ".versions");
             var versionStore = provisioner.CreateVersionStore(versionStorePath, store);
             return new WorkspaceStoreContribution([WorkspacePromptRepository.PromptType, WorkspacePromptRepository.TestCaseType, WorkspacePromptRepository.OptRunType], store, versionStore);
@@ -93,7 +93,7 @@ public static class PromptEngineServiceCollectionExtensions
                 },
             ]);
         });
-        services.TryAddSingleton<ICredentialsRepository, FileCredentialsRepository>();
+        services.AddWorkspaceCredentialsAndSettings(configuration);
         services.TryAddSingleton<CredentialsService>();
         services.AddSingleton<PromptEngineLlmClientResolver>();
         services.AddSingleton<PromptRenderer>();

@@ -15,7 +15,7 @@ public sealed class LayoutMoveBlockNode : ToolNode
     public LayoutMoveBlockNode()
         : base("layout.move_block")
     {
-        DefineMetadata("Move Block", "Moves a block from source to target position in the layout.", "content.layout");
+        DefineMetadata("Move Block", "Moves a block from source to target position in the layout.", "content.layout", whenToUse: "To move one block of a page layout in DSL format to another place, both named by their path (such as main.block[1] and main).");
         DefineEffects(NodeEffects.None);
 
         DefineInput(

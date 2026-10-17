@@ -15,15 +15,15 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Agents;
 
 /// <summary>Calls an agent of the library and gives its answer.</summary>
 public sealed class AgentCallNode(IServiceProvider services, IRunEventBus? eventBus = null)
-    : LibraryCallNode(LibraryCallSteps.Agent, ExecutableKind.Agent, "Agent", "Calls an agent of your library with a message, and gives its answer.", "ai.agents", "aillm", services, eventBus);
+    : LibraryCallNode(LibraryCallSteps.Agent, ExecutableKind.Agent, "Agent", "Calls an agent of your library with a message, and gives its answer.", "To reuse an agent saved in your library: send it a message and get its answer back. Not for an agent built only for this workflow: use AI Agent instead.", "ai.agents", "aillm", services, eventBus);
 
 /// <summary>Calls a team of the library and gives its answer.</summary>
 public sealed class TeamNode(IServiceProvider services, IRunEventBus? eventBus = null)
-    : LibraryCallNode(LibraryCallSteps.Team, ExecutableKind.Team, "Team", "Calls a team of your library with a message, and gives its answer.", "ai.agents", "aillm", services, eventBus);
+    : LibraryCallNode(LibraryCallSteps.Team, ExecutableKind.Team, "Team", "Calls a team of your library with a message, and gives its answer.", "To hand a task to a team of agents saved in your library and get its answer back. For a single agent, use Agent instead.", "ai.agents", "aillm", services, eventBus);
 
 /// <summary>Calls another workflow of the library and gives what it produced.</summary>
 public sealed class WorkflowCallNode(IServiceProvider services, IRunEventBus? eventBus = null)
-    : LibraryCallNode(LibraryCallSteps.Workflow, ExecutableKind.Workflow, "Workflow", "Calls another workflow of your library with a message, and gives what it produced.", "core.workflow", "workflow", services, eventBus);
+    : LibraryCallNode(LibraryCallSteps.Workflow, ExecutableKind.Workflow, "Workflow", "Calls another workflow of your library with a message, and gives what it produced.", "To run another workflow of your library as one step of this one, and use what it produced. If that workflow waits for a person, this one waits with it.", "core.workflow", "workflow", services, eventBus);
 
 /// <summary>
 /// What the three steps that call something of the library have in common (see <see cref="LibraryCallSteps"/>): the id of what
@@ -39,7 +39,7 @@ public abstract class LibraryCallNode : BaseNode
     // the step -> IExecutableResolver -> DefaultExecutableResolver -> WorkflowEngine -> IEnumerable<Node> -> the step
     private IExecutableResolver Resolver => _services.GetRequiredService<IExecutableResolver>();
 
-    protected LibraryCallNode(string nodeTypeId, ExecutableKind kind, string displayName, string description, string category, string icon, IServiceProvider services, IRunEventBus? eventBus)
+    protected LibraryCallNode(string nodeTypeId, ExecutableKind kind, string displayName, string description, string whenToUse, string category, string icon, IServiceProvider services, IRunEventBus? eventBus)
         : base(nodeTypeId)
     {
         _services = services ?? throw new ArgumentNullException(nameof(services));
@@ -47,7 +47,7 @@ public abstract class LibraryCallNode : BaseNode
         _kind = kind;
         var what = kind.ToString().ToLowerInvariant();
 
-        DefineMetadata(displayName, description, category);
+        DefineMetadata(displayName, description, category, whenToUse: whenToUse);
         DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1, color: "#FF607D8B");

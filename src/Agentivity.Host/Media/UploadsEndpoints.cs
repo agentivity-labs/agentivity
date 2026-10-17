@@ -62,7 +62,8 @@ public static class UploadsEndpoints
                 UploadRef saved = await uploads.SaveAsync(stream, file.FileName, file.ContentType, ct);
                 return Results.Ok(new { fileId = saved.Id, name = saved.Name, mimeType = saved.MimeType, size = saved.SizeBytes });
             }
-        );
+        )
+            .WithSummary("Upload a file for a run to read");
 
         return routes;
     }

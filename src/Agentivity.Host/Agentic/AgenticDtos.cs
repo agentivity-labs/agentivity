@@ -12,7 +12,7 @@ public sealed record AgentSummaryDto(string Id, string Name, DateTimeOffset? Upd
 // ── Team DTOs ─────────────────────────────────────────────────────────────────
 
 /// <summary>Body for POST/PUT /api/v1/agentic/teams.</summary>
-public sealed record SaveTeamRequest(string? Id, string Name, string OrchestratorId, IReadOnlyList<TeamMemberTopologyPosition>? Members = null, IReadOnlyList<TeamConnection>? Connections = null, string? Goal = null, string? ManagerAgentId = null, string? FolderId = null, string? Role = null, IReadOnlyList<TeamAnnotation>? Annotations = null, IReadOnlyDictionary<string, string>? GroupColors = null, IReadOnlyList<string>? Tags = null);
+public sealed record SaveTeamRequest(string? Id, string Name, string OrchestratorId, IReadOnlyList<TeamMemberTopologyPosition>? Members = null, IReadOnlyList<TeamConnection>? Connections = null, string? Goal = null, string? FolderId = null, string? Role = null, IReadOnlyList<TeamAnnotation>? Annotations = null, IReadOnlyDictionary<string, string>? GroupColors = null, IReadOnlyList<string>? Tags = null);
 
 public sealed record TeamSummaryDto(string Id, string Name, string OrchestratorId, DateTimeOffset? UpdatedAt);
 

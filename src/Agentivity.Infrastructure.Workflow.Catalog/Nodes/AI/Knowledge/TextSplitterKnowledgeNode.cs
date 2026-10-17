@@ -24,7 +24,7 @@ public sealed class TextSplitterKnowledgeNode : ResourceNode, IKnowledgeSource
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.KnowledgeSource);
 
-        DefineMetadata("Text Splitter", "Splits an upstream knowledge source's documents into smaller chunks, sized for embedding/vector-store use.", "ai.knowledge");
+        DefineMetadata("Text Splitter", "Splits an upstream knowledge source's documents into smaller chunks, sized for embedding/vector-store use.", "ai.knowledge", whenToUse: "To cut the long documents of a knowledge source into smaller passages, so that a memory finds the precise part that answers. Put it between the knowledge source and the AI Agent or LLM Prompt.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

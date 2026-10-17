@@ -13,7 +13,7 @@ public sealed class DirectScraperNode : WebScraperNodeBase
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.WebScraper);
 
-        DefineCommonMetadata("Direct Scraper", "Scrape web pages using direct HTTP requests (free, simple, limited features).");
+        DefineCommonMetadata("Direct Scraper", "Scrape web pages using direct HTTP requests (free, simple, limited features).", "To read web pages for free, with no account, from a step that reads pages such as Scrape Web Page. For pages that only show their content once scripts run in the browser, use Firecrawl Scraper instead.");
 
         ClearInputPorts();
         ClearOutputPorts();

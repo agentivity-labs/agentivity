@@ -20,6 +20,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The read-only guard of the SQL that agents and workflows write on SQLite (Storage/Sqlite/SqliteReadOnly). -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
     <PackageReference Include="AWSSDK.BedrockRuntime" Version="3.7.416" />

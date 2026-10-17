@@ -38,7 +38,8 @@ public static class AssistantConversationEndpoints
                     return Results.Json(new { code = ex.Code, error = ex.Message }, statusCode: StatusCodes.Status503ServiceUnavailable);
                 }
             }
-        );
+        )
+            .WithSummary("Get the model connection the assistant uses");
 
         // What the saved workspace holds, in numbers and as a fingerprint: enough to show that a turn did not change it.
         group.MapGet(
@@ -50,11 +51,14 @@ public static class AssistantConversationEndpoints
                 var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join(';', lines)))).ToLowerInvariant()[..16];
                 return Results.Ok(new { total = all.Count, agents = all.Count(e => e.Kind == EntityKinds.Agent), teams = all.Count(e => e.Kind == EntityKinds.Team), workflows = all.Count(e => e.Kind == EntityKinds.Workflow), fingerprint });
             }
-        );
+        )
+            .WithSummary("Count and fingerprint the saved workspace");
 
-        group.MapPost("/messages", (HttpContext context, AssistantLoop loop, SendMessageRequest request, CancellationToken ct) => StreamAsync(context, loop, request, null, ct));
+        group.MapPost("/messages", (HttpContext context, AssistantLoop loop, SendMessageRequest request, CancellationToken ct) => StreamAsync(context, loop, request, null, ct))
+            .WithSummary("Start a conversation with the assistant");
 
-        group.MapPost("/changesets/{id}/messages", (HttpContext context, AssistantLoop loop, string id, SendMessageRequest request, CancellationToken ct) => StreamAsync(context, loop, request, id, ct));
+        group.MapPost("/changesets/{id}/messages", (HttpContext context, AssistantLoop loop, string id, SendMessageRequest request, CancellationToken ct) => StreamAsync(context, loop, request, id, ct))
+            .WithSummary("Continue the assistant conversation of a changeset");
 
         group.MapGet(
             "/changesets/{id}/conversation",
@@ -63,7 +67,8 @@ public static class AssistantConversationEndpoints
                 var changeset = await api.GetChangesetAsync(id, ct);
                 return changeset is null ? Results.NotFound(new { error = $"No changeset '{id}'." }) : Results.Ok(new { changesetId = changeset.Id, name = changeset.Name, plan = changeset.Plan, messages = changeset.Conversation });
             }
-        );
+        )
+            .WithSummary("Read back the conversation of a changeset");
 
         return routes;
     }

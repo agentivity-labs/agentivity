@@ -24,7 +24,7 @@ public sealed class SpeechToTextNode : ToolNode
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         _service = new SpeechToTextService(credentialsService, httpClientFactory, logger ?? throw new ArgumentNullException(nameof(logger)));
 
-        DefineMetadata("Speech to Text", "Transcribes an audio file to text using OpenAI Whisper.", "ai.media");
+        DefineMetadata("Speech to Text", "Transcribes an audio file to text using OpenAI Whisper.", "ai.media", whenToUse: "To turn a recording (a voice message, a meeting, a call) into text that the next steps can read. Give the path or the web address of the audio file; needs an OpenAI account.");
         DefineEffects(NodeEffects.Costs);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);

@@ -13,7 +13,7 @@ public sealed class FirecrawlScraperNode : WebScraperNodeBase
     {
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.WebScraper);
 
-        DefineCommonMetadata("Firecrawl Scraper", "Scrape web pages using Firecrawl API (premium, JS rendering, clean markdown).");
+        DefineCommonMetadata("Firecrawl Scraper", "Scrape web pages using Firecrawl API (premium, JS rendering, clean markdown).", "To read pages the free scrapers cannot, such as pages built by scripts in the browser, with your own Firecrawl account (an API key). Connect it to a step that reads pages, such as Scrape Web Page.");
 
         ClearInputPorts();
         ClearOutputPorts();

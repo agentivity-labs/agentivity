@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Agentivity.Domain.Common;
 using Agentivity.Infrastructure.Arguments;
+using Agentivity.Infrastructure.Core;
 using Agentivity.Infrastructure.Workflow.Catalog.Domain.WordPress;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.App.CMS.Wordpress;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -27,7 +28,7 @@ public sealed class WordPressPublishMediaNode : ToolNode
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         _wordpressService = new WordPressService(httpClientFactory, credentialsService, logger);
 
-        DefineMetadata("Publish Media to WordPress", "Uploads media files to WordPress media library.", "app.cms.wordpress");
+        DefineMetadata("Publish Media to WordPress", "Uploads media files to WordPress media library.", "app.cms.wordpress", whenToUse: "To upload an image made or received by the workflow to the media library of a WordPress site, for example before Publish to WordPress uses it as the featured image. It needs WordPress site credentials.");
         DefineEffects(NodeEffects.WritesExternal);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
@@ -335,6 +336,8 @@ public sealed class WordPressPublishMediaNode : ToolNode
         {
             if (File.Exists(imageRef.LocalPath))
             {
+                // The person's image, or one the workflows made — never another file of the installation, which would go to the site.
+                InstallationFiles.Current.EnsureOutside(imageRef.LocalPath);
                 return imageRef;
             }
 

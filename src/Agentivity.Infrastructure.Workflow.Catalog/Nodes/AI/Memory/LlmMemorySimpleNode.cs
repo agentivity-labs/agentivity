@@ -22,7 +22,7 @@ public sealed class LlmMemorySimpleNode : ResourceNode, IEmbeddingProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.LlmMemory);
 
-        DefineMetadata("Simple LLM Memory", "Enables RAG and vector clustering using a local ONNX model (no credentials needed).", "ai.memory");
+        DefineMetadata("Simple LLM Memory", "Enables RAG and vector clustering using a local ONNX model (no credentials needed).", "ai.memory", whenToUse: "To let an AI Agent or LLM Prompt find, in its knowledge sources, the passages relevant to each request, for free and without any account. The documents are compared again at each run: for large or lasting collections, use Qdrant, Pinecone or pgvector Memory.");
         DefineEffects(NodeEffects.WritesInternal);
 
         ClearInputPorts();

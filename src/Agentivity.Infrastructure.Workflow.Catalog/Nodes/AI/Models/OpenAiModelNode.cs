@@ -15,7 +15,7 @@ public sealed class OpenAiModelNode : BaseLlmModelNode
     public OpenAiModelNode(ILlmClientFactory llmClientFactory, ILogger<OpenAiModelNode> logger, IOptions<LlmRecoveryOptions>? recoveryOptions = null)
         : base("ai.llm.model.openai", "openai", LlmApiFlavor.OpenAI, llmClientFactory, logger, recoveryOptions)
     {
-        DefineMetadata("OpenAI Model", "OpenAI GPT models (and compatible: LM Studio, Ollama, Groq, Azure OpenAI…).", "ai.models");
+        DefineMetadata("OpenAI Model", "OpenAI GPT models (and compatible: LM Studio, Ollama, Groq, Azure OpenAI…).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a GPT model to work with. Also for services that follow the OpenAI API, such as Azure OpenAI, Groq, or a model on your own machine with LM Studio or Ollama.");
         DefineEffects(NodeEffects.Costs);
     }
 

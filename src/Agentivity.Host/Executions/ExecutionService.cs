@@ -59,6 +59,10 @@ public sealed class ExecutionService
             return Results.NotFound(new { error = $"Entity '{body.EntityId}' not found." });
         }
 
+        // A team that cannot be launched is refused before anything starts: no execution, no run left "Running" in the history.
+        if (executable.Definition.Kind == ExecutableKind.Team && teamEngine is not null && await RefuseTeamAsync(executable.Definition.Id, teamEngine, catalogue, ct).ConfigureAwait(false) is { } refusal)
+            return refusal;
+
         // Resolve the execution's one live, durable identity FIRST — a continuation
         // (body.ExecutionId set) reuses it exactly as-is (StreamId/HilChannel/Telemetry/Trace
         // included); only a genuinely new execution gets a fresh one. RunContext.GetOrCreate then
@@ -199,20 +203,23 @@ public sealed class ExecutionService
 
     private static async Task<IResult> StartTeamAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, ITeamEngine teamEngine, IAgenticRepository catalogue, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct)
     {
-        var teamId = executable.Definition.Id;
+        // The team was checked before the execution was created (RefuseTeamAsync).
+        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["input"] = body.Input };
+        return await RunExecutableAsync(executable, body, runCtx, args, "team", eventBus, executionRepository, loggerFactory, ct).ConfigureAwait(false);
+    }
 
-        // Team-specific pre-flight: TeamExecutable.ExecuteAsync doesn't validate internally, so
-        // this stays an explicit early return here rather than folding into the generic path.
+    /// <summary>
+    /// Why the team cannot be launched, or null when it can. TeamExecutable.ExecuteAsync does not check it, so it is checked here —
+    /// before the execution and its run are created, so that a refusal leaves nothing behind.
+    /// </summary>
+    private static async Task<IResult?> RefuseTeamAsync(string teamId, ITeamEngine teamEngine, IAgenticRepository catalogue, CancellationToken ct)
+    {
         var teamResult = await catalogue.GetTeamAsync(teamId, ct).ConfigureAwait(false);
         if (!teamResult.IsSuccess)
             return Results.NotFound(new { error = $"Team '{teamId}' not found.", detail = teamResult.Error });
 
         var validation = await teamEngine.ValidateAsync(teamResult.Value!, ct).ConfigureAwait(false);
-        if (!validation.IsValid)
-            return Results.Problem(string.Join("; ", validation.Errors), statusCode: 422, title: "Team configuration is invalid");
-
-        var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["input"] = body.Input };
-        return await RunExecutableAsync(executable, body, runCtx, args, "team", eventBus, executionRepository, loggerFactory, ct).ConfigureAwait(false);
+        return validation.IsValid ? null : Results.Problem(string.Join("; ", validation.Errors), statusCode: 422, title: "Team configuration is invalid");
     }
 
     private static async Task<IResult> StartWorkflowAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct)

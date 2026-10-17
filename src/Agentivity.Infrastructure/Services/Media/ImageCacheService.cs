@@ -116,6 +116,9 @@ public sealed class ImageCacheService
     {
         _logger.LogDebug("Caching image from file: {SourcePath}", sourcePath);
 
+        // A file of the installation copied here would be among the media the workflows read.
+        InstallationFiles.Current.EnsureOutside(sourcePath);
+
         if (!File.Exists(sourcePath))
         {
             throw new FileNotFoundException("Source image file not found.", sourcePath);
