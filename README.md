@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://www.agentivity.io/?utm_source=github&utm_medium=readme&utm_campaign=repo">
-    <img src="docs/images/hero-film.gif" alt="The opening of the Agentivity film: Your next hire is an AI team, Start with one helper, Grow to an AI company, and the four steps from one helper to an AI company lighting up one after another" width="900">
+    <img src="docs/images/hero.png" alt="Your next hire is an AI team. Start with one helper, grow to an AI company. Around a person who decides, six departments each run their own AI teams: Finance as a workflow, HR led by a manager, Marketing as a group chat, Sales passing the case on, Operations working in parallel, Support one after another. Along the bottom: one helper, one team, a team in every department, an AI company." width="900">
   </a>
 </p>
 
