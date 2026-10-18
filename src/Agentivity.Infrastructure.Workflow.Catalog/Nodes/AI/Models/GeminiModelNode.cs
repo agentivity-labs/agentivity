@@ -18,6 +18,4 @@ public sealed class GeminiModelNode : BaseLlmModelNode
         DefineMetadata("Google Gemini Model", "Google Gemini models via AI Studio (gemini-2.0-flash, gemini-2.5-pro, etc.).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a Google Gemini model, with an API key from Google AI Studio.");
         DefineEffects(NodeEffects.Costs);
     }
-
-    protected override string DefaultBaseUrl => "https://generativelanguage.googleapis.com/v1beta";
 }

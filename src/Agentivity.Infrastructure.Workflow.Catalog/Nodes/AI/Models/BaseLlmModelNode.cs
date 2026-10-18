@@ -82,9 +82,6 @@ public abstract class BaseLlmModelNode : ResourceNode, ILlmProvider
     {
         string credentialsId = binding.RequireString("credentials");
         string? modelOverride = binding.GetString("model");
-        return _llmClientFactory.CreateAsync(credentialsId, modelOverride, _flavor, DefaultBaseUrl, cancellationToken);
+        return _llmClientFactory.CreateAsync(credentialsId, modelOverride, _flavor, cancellationToken);
     }
-
-    /// <summary>Fallback base URL when the credential does not supply one.</summary>
-    protected abstract string DefaultBaseUrl { get; }
 }

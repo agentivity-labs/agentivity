@@ -19,13 +19,6 @@ public sealed class LlmClientFactory(CredentialsService credentialsService, IHtt
         };
 
     /// <summary>
-    /// Where a provider's API lives when its credential names no address: the address the kind of connection proposes, written
-    /// once, in its definition (and changed there if the provider moves). Null for a kind that proposes none.
-    /// </summary>
-    public static string? DefaultBaseUrlOf(string? templateId) =>
-        string.IsNullOrWhiteSpace(templateId) ? null : CredentialsTemplateRegistry.Get(templateId)?.Fields.FirstOrDefault(f => string.Equals(f.Key, "base_url", StringComparison.OrdinalIgnoreCase))?.DefaultValue;
-
-    /// <summary>
     /// A client for a connection, whatever its provider: it speaks the provider's own format (Claude, Gemini, AWS Bedrock) or
     /// OpenAI's, which most others (DeepSeek, xAI, Groq, Ollama, LM Studio) share, at the connection's own address or else
     /// the provider's.
@@ -45,21 +38,23 @@ public sealed class LlmClientFactory(CredentialsService credentialsService, IHtt
             return new BedrockLlmClient(accessKey, secret, region, model, loggerFactory.CreateLogger<BedrockLlmClient>());
         }
 
-        return await CreateAsync(credentialId, modelOverride: null, FlavorOf(template), DefaultBaseUrlOf(template), cancellationToken).ConfigureAwait(false);
+        return await CreateAsync(credentialId, modelOverride: null, FlavorOf(template), cancellationToken).ConfigureAwait(false);
     }
 
-    public async ValueTask<ILlmClient> CreateAsync(string credentialId, string? modelOverride, LlmApiFlavor flavor = LlmApiFlavor.OpenAI, string? defaultBaseUrl = null, CancellationToken cancellationToken = default)
+    public async ValueTask<ILlmClient> CreateAsync(string credentialId, string? modelOverride, LlmApiFlavor flavor = LlmApiFlavor.OpenAI, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(credentialId);
 
         var credential = await credentialsService.GetByIdAsync(credentialId, cancellationToken).ConfigureAwait(false) ?? throw new InvalidOperationException($"LLM credential '{credentialId}' was not found. Ensure the credential id points to a valid llm credential.");
 
-        // An empty field is no address of its own.
-        var baseUrl = (string.IsNullOrWhiteSpace(credential.GetField("base_url")) ? null : credential.GetField("base_url")) ?? defaultBaseUrl ?? throw new InvalidOperationException($"LLM credential '{credentialId}' is missing field 'base_url' and no default base URL was provided.");
+        // The address is the connection's, as it was made (see CredentialsService.CheckFields): it is used as it is, never replaced.
+        var baseUrl = credential.GetField("base_url")?.Trim();
+        if (string.IsNullOrEmpty(baseUrl))
+            throw new InvalidOperationException($"The model connection '{credential.Name}' names no address for its API: fill in its Base URL under Credentials.");
 
         var credentialModel = credential.GetField("model");
         var effectiveModel = modelOverride ?? credentialModel;
 
-        return new GenericLlmClient(httpClientFactory, baseUrl, credential.GetField("api_key") ?? string.Empty, effectiveModel, loggerFactory.CreateLogger<GenericLlmClient>(), flavor);
+        return LlmClient.Create(httpClientFactory, baseUrl, credential.GetField("api_key") ?? string.Empty, effectiveModel, loggerFactory.CreateLogger<LlmClient>(), flavor);
     }
 }

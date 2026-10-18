@@ -1,3 +1,4 @@
+using System.Globalization;
 using Agentivity.Domain.Credentials;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Stores;
@@ -56,29 +57,51 @@ public sealed class CredentialsService
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => _store.DeleteAsync(id, cancellationToken);
 
     /// <summary>
-    /// Why these fields cannot be saved for this kind of connection — the fields its kind requires that are left empty — or null when
-    /// they can. A secret sent back as the mask counts as given when <paramref name="stored"/> holds one.
+    /// Why these fields cannot be saved for this kind of connection, or null when they can: a field its kind requires is left empty
+    /// (<c>credentials_field_required</c>), or a value is not what its field expects — a web address, a number
+    /// (<c>credentials_field_invalid</c>). A field left out is the one the kind proposes (it is saved with it); a secret sent
+    /// back as the mask is the one <paramref name="stored"/> holds.
     /// </summary>
-    public static string? MissingRequired(string templateId, IReadOnlyList<CredentialsField> fields, Credentials? stored = null)
+    public static CredentialsFieldProblem? CheckFields(string templateId, IReadOnlyList<CredentialsField> fields, Credentials? stored = null)
     {
         var template = CredentialsTemplateRegistry.Get(templateId);
         if (template is null)
             return null;
 
-        var missing = template.Fields
-            .Where(required => required.Required)
-            .Where(required =>
-            {
-                var value = fields.FirstOrDefault(f => string.Equals(f.Key, required.Key, StringComparison.OrdinalIgnoreCase))?.Value;
-                if (value == CredentialsMasking.MaskedValue)
-                    value = stored?.GetField(required.Key);
-                return string.IsNullOrWhiteSpace(value);
-            })
-            .Select(required => required.Label ?? required.Key)
-            .ToList();
+        var values = template.Fields.Select(field =>
+        {
+            var given = fields.FirstOrDefault(f => string.Equals(f.Key, field.Key, StringComparison.OrdinalIgnoreCase));
+            var value = given is null ? field.DefaultValue : given.Value == CredentialsMasking.MaskedValue ? stored?.GetField(field.Key) : given.Value;
+            return (Field: field, Value: value?.Trim());
+        }).ToList();
 
-        return missing.Count == 0 ? null : $"Fill in {string.Join(", ", missing.Select(name => $"'{name}'"))}: a {template.DisplayName} connection needs it.";
+        var missing = values.Where(v => v.Field.Required && string.IsNullOrEmpty(v.Value)).Select(v => $"'{NameOf(v.Field)}'").ToList();
+        if (missing.Count > 0)
+            return new CredentialsFieldProblem("credentials_field_required", $"Fill in {string.Join(", ", missing)}: a {template.DisplayName} connection needs it.");
+
+        foreach (var (field, value) in values)
+        {
+            if (!string.IsNullOrEmpty(value) && WhatIsExpected(field, value) is { } expected)
+                return new CredentialsFieldProblem("credentials_field_invalid", $"'{NameOf(field)}' must be {expected}.");
+        }
+
+        return null;
     }
+
+    private static string NameOf(CredentialsFieldRequirement field) => field.Label ?? field.Key;
+
+    /// <summary>What the field expects, when <paramref name="value"/> is not that; null when it is.</summary>
+    private static string? WhatIsExpected(CredentialsFieldRequirement field, string value) =>
+        field.Type switch
+        {
+            CredentialsFieldType.Url when !IsWebAddress(value) => $"a web address, starting with https:// or http:// (for example {(IsWebAddress(field.DefaultValue) ? field.DefaultValue : "https://api.example.com")})",
+            CredentialsFieldType.Number when !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out _) => "a number",
+            CredentialsFieldType.Boolean when !bool.TryParse(value, out _) => "true or false",
+            _ => null,
+        };
+
+    private static bool IsWebAddress(string? value) =>
+        Uri.TryCreate(value?.Trim(), UriKind.Absolute, out var address) && (address.Scheme == Uri.UriSchemeHttps || address.Scheme == Uri.UriSchemeHttp) && !string.IsNullOrEmpty(address.Host);
 
     /// <summary>
     /// The connection as it would be with these fields, saved nowhere: the stored one (when <paramref name="id"/> is given) with what
@@ -95,7 +118,16 @@ public sealed class CredentialsService
         }
 
         var typed = fields.Select(f => f.Value == CredentialsMasking.MaskedValue && stored?.GetField(f.Key) is { } kept ? f with { Value = kept } : f).ToList();
-        var untouched = stored?.Fields.Where(s => !typed.Any(t => string.Equals(t.Key, s.Key, StringComparison.OrdinalIgnoreCase))) ?? [];
-        return new Credentials { Id = stored?.Id ?? string.Empty, Name = stored?.Name ?? string.Empty, TemplateId = stored?.TemplateId ?? templateId, Fields = [.. untouched, .. typed] };
+        var untouched = stored?.Fields.Where(s => !typed.Any(t => string.Equals(t.Key, s.Key, StringComparison.OrdinalIgnoreCase))).ToList() ?? [];
+        var kind = stored?.TemplateId ?? templateId;
+
+        // A field neither typed nor stored is the one its kind proposes, as it would be saved (the address of the API, for one).
+        var known = typed.Concat(untouched).Select(f => f.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var proposed = CredentialsTemplateRegistry.Get(kind)?.Fields.Where(f => !known.Contains(f.Key) && f.DefaultValue is not null).Select(f => new CredentialsField { Key = f.Key, Value = f.DefaultValue! }) ?? [];
+
+        return new Credentials { Id = stored?.Id ?? string.Empty, Name = stored?.Name ?? string.Empty, TemplateId = kind, Fields = [.. untouched, .. typed, .. proposed] };
     }
 }
+
+/// <summary>Why a connection cannot be saved: a code (<c>credentials_field_required</c>, <c>credentials_field_invalid</c>) and what to do, in words.</summary>
+public sealed record CredentialsFieldProblem(string Code, string Message);

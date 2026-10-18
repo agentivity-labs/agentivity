@@ -18,6 +18,4 @@ public sealed class DeepSeekModelNode : BaseLlmModelNode
         DefineMetadata("DeepSeek Model", "DeepSeek AI models (deepseek-chat, deepseek-reasoner, etc.).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a DeepSeek model, with a key from your DeepSeek account.");
         DefineEffects(NodeEffects.Costs);
     }
-
-    protected override string DefaultBaseUrl => "https://api.deepseek.com/v1";
 }

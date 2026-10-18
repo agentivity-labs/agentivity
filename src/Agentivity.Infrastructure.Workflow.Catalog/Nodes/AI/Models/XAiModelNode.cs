@@ -18,6 +18,4 @@ public sealed class XAiModelNode : BaseLlmModelNode
         DefineMetadata("xAI / Grok Model", "xAI Grok models (grok-3, grok-3-mini, etc.).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a Grok model, with a key from your xAI account.");
         DefineEffects(NodeEffects.Costs);
     }
-
-    protected override string DefaultBaseUrl => "https://api.x.ai/v1";
 }

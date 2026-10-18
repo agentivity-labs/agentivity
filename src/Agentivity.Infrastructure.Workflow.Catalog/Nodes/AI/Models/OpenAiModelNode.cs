@@ -18,6 +18,4 @@ public sealed class OpenAiModelNode : BaseLlmModelNode
         DefineMetadata("OpenAI Model", "OpenAI GPT models (and compatible: LM Studio, Ollama, Groq, Azure OpenAI…).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a GPT model to work with. Also for services that follow the OpenAI API, such as Azure OpenAI, Groq, or a model on your own machine with LM Studio or Ollama.");
         DefineEffects(NodeEffects.Costs);
     }
-
-    protected override string DefaultBaseUrl => "https://api.openai.com/v1";
 }

@@ -74,8 +74,8 @@ public static class CredentialsEndpoints
             async (CreateCredentialsRequest request, CredentialsService service, CancellationToken ct) =>
             {
                 var fields = request.Fields.Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
-                if (CredentialsService.MissingRequired(request.TemplateId, fields) is { } missing)
-                    return ApiValidationError(code: "credentials_field_required", userMessage: missing, detail: missing, context: new { templateId = request.TemplateId });
+                if (CredentialsService.CheckFields(request.TemplateId, fields) is { } problem)
+                    return ApiValidationError(code: problem.Code, userMessage: problem.Message, detail: problem.Message, context: new { templateId = request.TemplateId });
 
                 var credentials = await service.CreateAsync(request.Name, request.TemplateId, request.Description, fields, ct);
                 return Results.Created($"/api/v1/credentials/{credentials.Id}", ToDto(credentials));
@@ -125,8 +125,8 @@ public static class CredentialsEndpoints
             async (string id, UpdateCredentialsRequest request, CredentialsService service, CancellationToken ct) =>
             {
                 var fields = request.Fields.Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
-                if (await service.GetByIdAsync(id, ct) is { } stored && CredentialsService.MissingRequired(stored.TemplateId, fields, stored) is { } missing)
-                    return ApiValidationError(code: "credentials_field_required", userMessage: missing, detail: missing, context: new { id });
+                if (await service.GetByIdAsync(id, ct) is { } stored && CredentialsService.CheckFields(stored.TemplateId, fields, stored) is { } problem)
+                    return ApiValidationError(code: problem.Code, userMessage: problem.Message, detail: problem.Message, context: new { id });
 
                 var credentials = await service.UpdateAsync(id, request.Name, request.Description, fields, ct);
                 return credentials is not null ? Results.Ok(ToDto(credentials)) : ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{id}' not found.", context: new { id });

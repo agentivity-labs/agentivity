@@ -58,7 +58,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = false,
                         Label = "Base URL",
                         Placeholder = "https://api.cohere.com/v2",
@@ -170,7 +170,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = true,
                         Label = "Base URL",
                         Placeholder = "http://localhost:6333",
@@ -239,7 +239,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = false,
                         Label = "Base URL",
                         DefaultValue = "https://api.tavily.com/search",
@@ -272,7 +272,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = false,
                         Label = "Base URL",
                         DefaultValue = "https://serpapi.com/search.json",
@@ -298,7 +298,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = true,
                         Label = "Base URL",
                         Placeholder = "https://searx.example.com",
@@ -481,7 +481,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = false,
                         Label = "Base URL",
                         DefaultValue = "https://slack.com/api/",
@@ -517,8 +517,8 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
-                        Required = false,
+                        Type = CredentialsFieldType.Url,
+                        Required = true,
                         Label = "Base URL",
                         DefaultValue = "https://api.openai.com/v1",
                         HelpText = "API endpoint URL. Change for Azure OpenAI or local servers.",
@@ -561,8 +561,8 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
-                        Required = false,
+                        Type = CredentialsFieldType.Url,
+                        Required = true,
                         Label = "Base URL",
                         DefaultValue = "https://api.anthropic.com",
                         HelpText = "The address of the Anthropic API. Keep it unless you go through a proxy, or Anthropic moves it.",
@@ -605,8 +605,8 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
-                        Required = false,
+                        Type = CredentialsFieldType.Url,
+                        Required = true,
                         Label = "Base URL",
                         DefaultValue = "https://api.deepseek.com/v1",
                         HelpText = "DeepSeek API endpoint. Leave as default unless using a proxy.",
@@ -649,8 +649,8 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
-                        Required = false,
+                        Type = CredentialsFieldType.Url,
+                        Required = true,
                         Label = "Base URL",
                         DefaultValue = "https://api.x.ai/v1",
                         HelpText = "xAI API endpoint. Leave as default unless using a proxy.",
@@ -693,8 +693,8 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
-                        Required = false,
+                        Type = CredentialsFieldType.Url,
+                        Required = true,
                         Label = "Base URL",
                         DefaultValue = "https://generativelanguage.googleapis.com/v1beta",
                         HelpText = "Gemini API endpoint. Leave as default for Google AI Studio.",
@@ -728,7 +728,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = true,
                         Label = "Site URL",
                         Placeholder = "https://example.com/wp-json/wp/v2/",
@@ -780,7 +780,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "base_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = false,
                         Label = "Base URL",
                         DefaultValue = "https://api.openai.com/v1",
@@ -807,7 +807,7 @@ public static class OrchestrationCredentialsTemplates
                     new()
                     {
                         Key = "supabase_url",
-                        Type = CredentialsFieldType.Text,
+                        Type = CredentialsFieldType.Url,
                         Required = true,
                         Label = "Supabase URL",
                         Placeholder = "https://xxxxx.supabase.co",

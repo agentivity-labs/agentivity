@@ -78,8 +78,8 @@ public sealed class LlmCredentialTester(IHttpClientFactory httpClientFactory)
             return Result(LlmCredentialTestStatus.InvalidKey, "There is no API key in these credentials.", [], configuredModel);
         }
 
-        // The address of the connection, as the model calls use it — or else the one its kind proposes.
-        var address = ((string.IsNullOrWhiteSpace(credential.GetField("base_url")) ? null : credential.GetField("base_url")) ?? LlmClientFactory.DefaultBaseUrlOf(template))?.Trim().TrimEnd('/');
+        // The address of the connection, as the model calls use it.
+        var address = credential.GetField("base_url")?.Trim().TrimEnd('/');
         if (string.IsNullOrEmpty(address))
         {
             return Result(LlmCredentialTestStatus.Error, "These credentials name no address for the API: fill in the Base URL.", [], configuredModel);

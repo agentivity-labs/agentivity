@@ -18,6 +18,4 @@ public sealed class AnthropicModelNode : BaseLlmModelNode
         DefineMetadata("Anthropic Model", "Anthropic Claude models (claude-opus-4, claude-sonnet-4, etc.).", "ai.models", whenToUse: "To give an AI Agent, an LLM Prompt or another AI step a Claude model, with a key from your Anthropic account. If your company reaches Claude through AWS, use AWS Bedrock Model instead.");
         DefineEffects(NodeEffects.Costs);
     }
-
-    protected override string DefaultBaseUrl => "https://api.anthropic.com/v1/messages";
 }

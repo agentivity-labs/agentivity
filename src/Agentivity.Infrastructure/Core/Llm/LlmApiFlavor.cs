@@ -2,7 +2,7 @@ namespace Agentivity.Infrastructure.Core.Llm;
 
 /// <summary>
 /// Identifies the wire format used by an LLM provider.
-/// Passed explicitly to <see cref="GenericLlmClient"/> — no URL auto-detection.
+/// Chooses the provider's client (<see cref="LlmClient.Create"/>) — no URL auto-detection.
 /// </summary>
 public enum LlmApiFlavor
 {
