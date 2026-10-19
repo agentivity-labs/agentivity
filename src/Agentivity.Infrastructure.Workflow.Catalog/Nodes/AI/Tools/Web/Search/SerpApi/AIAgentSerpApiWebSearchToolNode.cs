@@ -9,9 +9,9 @@ public sealed class AIAgentSerpApiWebSearchToolNode : AIAgentWebSearchToolNodeBa
     public AIAgentSerpApiWebSearchToolNode(CredentialsService credentialsService, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         : base(
             "ai.tools.web.search.serpapi",
-            "AI Tool - Web Search - SerpApi",
+            "AI Agent Web Search Tool (SerpApi)",
             "Exposes SerpApi web search to AI agents as a callable tool.",
-            "To let an agent search the web and get a list of results (title, address, short extract) through SerpApi, a paid service that needs a SerpApi API key. To read the pages found, also give the agent a Web Scraper tool.",
+            "To let an agent search the web and get a list of results (title, address, short extract) through SerpApi, a paid service that needs a SerpApi API key. To read the pages found, also give the agent an AI Agent Web Scraper Tool.",
             "search_web_serpapi",
             "Search the web with SerpApi and return normalized results with titles, URLs, and snippets.",
             "serpapi",

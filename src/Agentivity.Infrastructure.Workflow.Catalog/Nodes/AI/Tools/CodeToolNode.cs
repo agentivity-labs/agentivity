@@ -18,8 +18,7 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Tools;
 /// category (<see cref="ResourcePortCategory.AIAgentTool"/> vs a plain executable node) and the
 /// error-handling contract (<see cref="IAgentTool"/>'s recoverable-vs-unrecoverable split vs a
 /// thrown exception failing the whole workflow node) are different enough to want their own thin
-/// wrapper, matching <c>AIAgentWebFetchToolNode</c>'s relationship to a hypothetical plain fetch
-/// node. <see cref="ICodeRunner"/> is resolved via DI like any other dependency — if
+/// wrapper. <see cref="ICodeRunner"/> is resolved via DI like any other dependency — if
 /// <c>Agentivity.Module.CodeExecution</c> isn't loaded/enabled, constructing this node fails with
 /// a standard DI error, not a silent no-op.
 /// </summary>
@@ -56,7 +55,7 @@ public sealed class CodeToolNode : ResourceNode, IAgentTool
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.AIAgentTool);
 
-        DefineMetadata("AI Agent JavaScript Tool", "Lets an AI agent run a JavaScript snippet (real, sandboxed Node.js) and use the result.", "ai.tools", whenToUse: "To let an agent write and run a small piece of JavaScript for exact calculations or reshaping data (sorting, filtering, converting a list). The code cannot reach files or the internet: to read a web page, use the Web Fetch Tool instead.");
+        DefineMetadata("AI Agent JavaScript Tool", "Lets an AI agent run a JavaScript snippet (real, sandboxed Node.js) and use the result.", "ai.tools", whenToUse: "To let an agent write and run a small piece of JavaScript for exact calculations or reshaping data (sorting, filtering, converting a list). The code cannot reach files or the internet: to read a web page, use AI Agent Web Scraper Tool (Direct) instead.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

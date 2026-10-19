@@ -57,7 +57,7 @@ public sealed class StandaloneAgentResumableEngine(
                 try
                 {
                     var result = await standaloneAgent.RunAsync(agentResult.Value, args, run, CancellationToken.None).ConfigureAwait(false);
-                    await ReportTurnOutcomeAsync(run.RunId, agentId, entryNodeId, executionId, streamId, result, CancellationToken.None).ConfigureAwait(false);
+                    await ReportTurnOutcomeAsync(run.RunId, agentId, entryNodeId, executionId, streamId, progress.Input, result, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -129,7 +129,7 @@ public sealed class StandaloneAgentResumableEngine(
     /// (confirmed in production: input box stayed disabled, no RUN_FINISHED frame ever arrived).
     /// </para>
     /// </summary>
-    private async ValueTask ReportTurnOutcomeAsync(string runId, string agentId, string? entryNodeId, string executionId, string? streamId, AgentRunResult result, CancellationToken ct)
+    private async ValueTask ReportTurnOutcomeAsync(string runId, string agentId, string? entryNodeId, string executionId, string? streamId, string input, AgentRunResult result, CancellationToken ct)
     {
         // Node/step status must be committed BEFORE the top-level run status flips to Completed —
         // see the identical fix (and its reasoning) in RunsService.StartAgentRunAsync /
@@ -143,6 +143,8 @@ public sealed class StandaloneAgentResumableEngine(
             completedCtx?.UpsertStep(agentId, step => { step.Status = RunStatus.Completed; step.Outputs = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["output"] = result.Response }; });
             if (entryNodeId is not null)
                 completedCtx?.UpsertStep(entryNodeId, step => step.Status = RunStatus.Completed);
+            // The run's final content, as when the run completes without a pause.
+            await AgentProgressWriter.SetPayloadAsync(runRepository, runId, input, result.Response, ct).ConfigureAwait(false);
             if (entryNodeId is not null)
                 eventBus?.Publish(new RunEvent(RunId: runId, DefinitionId: agentId, RunKind: RunKind.Agent, Kind: RunEventKind.node_updated, EventName: "node_updated", OccurredAtUtc: DateTimeOffset.UtcNow, ExecutionId: executionId, StreamId: streamId));
         }

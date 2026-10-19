@@ -15,5 +15,5 @@ namespace Agentivity.Infrastructure.Fabric;
 /// </summary>
 public sealed class WorkflowToolsProxy(NodeConfig config, WorkflowRunServices services) : IAgentToolsProxy
 {
-    public async ValueTask<IReadOnlyList<JsonObject>> ListConnectedToolsAsync(CancellationToken ct) => await McpToolRouter.ListToolsAsync(config, services, "tools", ResourcePortCategory.AIAgentTool, ct).ConfigureAwait(false);
+    public async ValueTask<IReadOnlyList<JsonObject>> ListConnectedToolsAsync(CancellationToken ct) => await McpToolRouter.ListToolsAsync(config, services, AgentToolPorts.All, ct).ConfigureAwait(false);
 }

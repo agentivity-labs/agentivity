@@ -31,7 +31,7 @@ public interface IAgentSessionProxy
     /// or when the implementation is configured not to persist.
     /// </summary>
     /// <returns>Number of messages persisted (0 when session is disabled or persistSession = false).</returns>
-    ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, string memoryContext, CancellationToken ct);
+    ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, CancellationToken ct);
 
     /// <summary>
     /// A no-op proxy for contexts where session persistence is not supported
@@ -43,6 +43,6 @@ public interface IAgentSessionProxy
     {
         public ValueTask<SessionContext> LoadAsync(CancellationToken ct) => ValueTask.FromResult(SessionContext.Disabled);
 
-        public ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, string memoryContext, CancellationToken ct) => ValueTask.FromResult(0);
+        public ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, CancellationToken ct) => ValueTask.FromResult(0);
     }
 }

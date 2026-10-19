@@ -20,8 +20,6 @@ namespace Agentivity.Infrastructure.Fabric;
 /// </summary>
 internal sealed class StandaloneAgentToolProxy
 {
-    private const string ToolsPortName = "tools";
-
     private readonly IReadOnlyList<(InProcessMcpToolBridge Bridge, ResourceBinding Binding)> _bridges;
 
     private StandaloneAgentToolProxy(IReadOnlyList<(InProcessMcpToolBridge, ResourceBinding)> bridges)
@@ -31,14 +29,18 @@ internal sealed class StandaloneAgentToolProxy
 
     /// <summary>
     /// Resolves all <see cref="IAgentTool"/> nodes connected to <paramref name="aiNodeId"/> via
-    /// the <c>tools</c> port. Returns null when none are connected/recognized — callers should
+    /// the ports that give an agent its tools (<see cref="AgentToolPorts"/>). Returns null when none are connected/recognized — callers should
     /// treat that the same as "no tools" (mirrors <c>McpToolRouter.ListToolsAsync</c> returning
     /// an empty list when <c>ResourceResolver.ResolveAll</c> finds nothing).
+    /// <para><paramref name="runState"/> is the run's state (<c>RunContext.ToolState</c>), shared by its tools: what one keeps
+    /// for the run (an In-Memory Vector Store), the others find — and it is saved with the run, so a resume finds it too. A
+    /// workflow gives its own run state the same way.</para>
     /// </summary>
-    public static StandaloneAgentToolProxy? TryCreate(AgentEntity agent, string aiNodeId)
+    public static StandaloneAgentToolProxy? TryCreate(AgentEntity agent, string aiNodeId, IDictionary<string, object?> runState)
     {
-        var connections = agent.Graph.Connections.Where(c => string.Equals(c.To, aiNodeId, StringComparison.OrdinalIgnoreCase) && string.Equals(c.ToPort, ToolsPortName, StringComparison.OrdinalIgnoreCase));
+        var connections = agent.Graph.Connections.Where(c => string.Equals(c.To, aiNodeId, StringComparison.OrdinalIgnoreCase) && AgentToolPorts.All.Any(p => string.Equals(c.ToPort, p.Port, StringComparison.OrdinalIgnoreCase)));
 
+        ArgumentNullException.ThrowIfNull(runState);
         var bridges = new List<(InProcessMcpToolBridge, ResourceBinding)>();
         foreach (var conn in connections)
         {
@@ -55,7 +57,7 @@ internal sealed class StandaloneAgentToolProxy
             // AI Agent Data Table Tool's "data_table" port) can resolve it via
             // ResourceResolver.TryResolveNestedToolNode — that helper requires
             // ResourceBinding.Definition, which is otherwise null on the standalone-agent path.
-            var binding = new ResourceBinding(conn.From, conn.FromPort, node, resourceType, definition: agent.Graph);
+            var binding = new ResourceBinding(conn.From, conn.FromPort, node, resourceType, runState, agent.Graph);
             bridges.Add((new InProcessMcpToolBridge(tool, binding), binding));
         }
 

@@ -206,8 +206,7 @@ public sealed class AgentManifest : IAgentManifest
                 var blocked = new AgentToolExecution(toolCall.Id, toolCall.Name, toolCall.ArgumentsJson, $"Duplicate tool call '{toolCall.Name}' with identical arguments blocked to prevent infinite loop.", true, false);
                 executions.Add(blocked);
                 messages.Add(new LlmChatMessage("tool", SanitizeObservation(blocked.ResultContent), ToolCallId: toolCall.Id));
-                if (_capabilities.EmitsReActStepTrace)
-                    AppendTrace(new AgentTraceEvent(iteration, "react_observation", blocked.ResultContent, []));
+                TraceToolExecution(iteration, blocked);
                 continue;
             }
 
@@ -229,8 +228,7 @@ public sealed class AgentManifest : IAgentManifest
                     var invalidExecution = new AgentToolExecution(toolCall.Id, toolCall.Name, toolCall.ArgumentsJson, invalidResult, true, false);
                     executions.Add(invalidExecution);
                     messages.Add(new LlmChatMessage("tool", SanitizeObservation(invalidExecution.ResultContent), ToolCallId: toolCall.Id));
-                    if (_capabilities.EmitsReActStepTrace)
-                        AppendTrace(new AgentTraceEvent(iteration, "react_observation", invalidExecution.ResultContent, []));
+                    TraceToolExecution(iteration, invalidExecution);
                     continue;
                 }
 
@@ -282,8 +280,7 @@ public sealed class AgentManifest : IAgentManifest
                         var sendExecution = new AgentToolExecution(toolCall.Id, toolCall.Name, toolCall.ArgumentsJson, sendResult, false, false);
                         executions.Add(sendExecution);
                         messages.Add(new LlmChatMessage("tool", SanitizeObservation(sendExecution.ResultContent), ToolCallId: toolCall.Id));
-                        if (_capabilities.EmitsReActStepTrace)
-                            AppendTrace(new AgentTraceEvent(iteration, "react_observation", sendExecution.ResultContent, []));
+                        TraceToolExecution(iteration, sendExecution);
                         // Note: a "send" only ever surfaces to the user through this tool call, never
                         // through the run's own final Response. If this turn later hands off with only
                         // a short transition note, this send's content isn't separately folded into
@@ -307,8 +304,7 @@ public sealed class AgentManifest : IAgentManifest
                 {
                     executions.Add(blockedExecution);
                     messages.Add(new LlmChatMessage("tool", SanitizeObservation(blockedExecution.ResultContent), ToolCallId: toolCall.Id));
-                    if (_capabilities.EmitsReActStepTrace)
-                        AppendTrace(new AgentTraceEvent(iteration, "react_observation", blockedExecution.ResultContent, []));
+                    TraceToolExecution(iteration, blockedExecution);
                     continue;
                 }
 
@@ -338,8 +334,7 @@ public sealed class AgentManifest : IAgentManifest
 
                 executions.Add(execution);
                 messages.Add(new LlmChatMessage("tool", SanitizeObservation(execution.ResultContent), ToolCallId: toolCall.Id));
-                if (_capabilities.EmitsReActStepTrace)
-                    AppendTrace(new AgentTraceEvent(iteration, "react_observation", execution.ResultContent, []));
+                TraceToolExecution(iteration, execution);
             }
             catch (OperationCanceledException)
             {
@@ -413,8 +408,7 @@ public sealed class AgentManifest : IAgentManifest
         var routingExecution = new AgentToolExecution(toolCall.Id, toolCall.Name, toolCall.ArgumentsJson, outcome.ToolResult, false, false);
         executions.Add(routingExecution);
         messages.Add(new LlmChatMessage("tool", SanitizeObservation(routingExecution.ResultContent), ToolCallId: toolCall.Id));
-        if (_capabilities.EmitsReActStepTrace)
-            AppendTrace(new AgentTraceEvent(iteration, "react_observation", routingExecution.ResultContent, []));
+        TraceToolExecution(iteration, routingExecution);
 
         switch (outcome.Kind)
         {
@@ -912,6 +906,19 @@ public sealed class AgentManifest : IAgentManifest
     public HumanReviewResumeState ResumeState => _state.ResumeState;
 
     // ── Tracing ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Traces one tool call the agent made — whatever came of it (done, refused, sent to a person). ReAct traces it as the
+    /// observation of its action; otherwise it is the call itself, with what it asked and what it got back, as a call that waits
+    /// for a person is.
+    /// </summary>
+    private void TraceToolExecution(int iteration, AgentToolExecution execution)
+    {
+        if (_capabilities.EmitsReActStepTrace)
+            AppendTrace(new AgentTraceEvent(iteration, "react_observation", execution.ResultContent, []));
+        else
+            AppendTrace(new AgentTraceEvent(iteration, execution.ToolName, null, [execution]));
+    }
 
     public void AppendTrace(TraceEvent traceEvent)
     {

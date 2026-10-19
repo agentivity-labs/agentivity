@@ -30,5 +30,8 @@ internal static class LibraryReferences
     }
 
     /// <summary>The shared data table a node is bound to (the data table nodes name it in <c>table_id</c>), if any.</summary>
+    /// <summary>The Knowledge Base a step searches (the Knowledge Base step), or null.</summary>
+    public static string? KnowledgeBaseId(WorkflowNodeDefinition node) => node.GetParameter("knowledge_base_id") is { ValueKind: JsonValueKind.String } element && !string.IsNullOrWhiteSpace(element.GetString()) ? element.GetString()!.Trim() : null;
+
     public static string? DataTableId(WorkflowNodeDefinition node) => node.GetParameter("table_id") is { ValueKind: JsonValueKind.String } element && !string.IsNullOrWhiteSpace(element.GetString()) ? element.GetString()!.Trim() : null;
 }

@@ -28,8 +28,6 @@ public sealed record ResolvedAgentDefinition(
     ResolvedAgentPolicies ResolvedPolicies,
     /// <summary>Resolved guardrail definitions (connected guardrail resources).</summary>
     IReadOnlyList<AgentGuardrailDefinition> ResolvedGuardrails,
-    /// <summary>Memory/RAG context retrieved for the resolved prompt, or <see cref="string.Empty"/> when no memory source is connected.</summary>
-    string MemoryContext,
     /// <summary>The fully-resolved user prompt (template-substituted, or the raw "input" argument).</summary>
     string ResolvedPrompt,
     /// <summary>The system prompt, or <see cref="string.Empty"/> when none is configured.</summary>

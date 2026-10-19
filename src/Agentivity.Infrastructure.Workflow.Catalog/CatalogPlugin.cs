@@ -9,7 +9,7 @@ using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Interactions;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Knowledge;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Llm;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Media;
-using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Memory;
+using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.VectorStores;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Models;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Policies;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Rerank;
@@ -73,6 +73,16 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
         // Connections and clients that are expensive to open and meant to be reused — owned by the application, not by a node.
         services.TryAddSingleton<Services.AI.BedrockClientCache>();
         _ = services.AddSingleton<Services.AI.LocalEmbeddingService>();
+        // The Knowledge Bases: their vectors (the same local model) and the types of data source they read.
+        _ = services.AddSingleton<Agentivity.Infrastructure.Core.Llm.Knowledge.ITextEmbedder>(sp => sp.GetRequiredService<Services.AI.LocalEmbeddingService>());
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.FilesKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.WebPagesKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.SitemapKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.RssKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.ApiKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.PostgresKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.SqliteKnowledgeSource>();
+        _ = services.AddSingleton<Agentivity.Infrastructure.KnowledgeBases.Sources.IKnowledgeSourceType, KnowledgeSources.TextKnowledgeSource>();
         _ = services.AddSingleton(sp =>
         {
             IEnumerable<Node> nodes = sp.GetServices<Node>();
@@ -95,11 +105,11 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
             typeof(DeepSeekModelNode),
             typeof(XAiModelNode),
             typeof(BedrockModelNode),
-            typeof(LlmMemorySimpleNode),
-            typeof(LlmMemoryOpenAINode),
-            typeof(LlmMemoryQdrantNode),
-            typeof(LlmMemoryPineconeNode),
-            typeof(LlmMemoryPgVectorNode),
+            typeof(InMemoryVectorStoreNode),
+            typeof(QdrantVectorStoreNode),
+            typeof(PineconeVectorStoreNode),
+            typeof(PgVectorStoreNode),
+            typeof(VectorStoreStepNode),
             typeof(EmbeddingsLocalNode),
             typeof(EmbeddingsOpenAiNode),
             typeof(ImageGenModelNode),
@@ -135,25 +145,14 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
             typeof(AgentCallNode),
             typeof(TeamNode),
             typeof(LlmPromptNode),
-            typeof(AIKnowledgeInlineNode),
-            typeof(TextSplitterKnowledgeNode),
             typeof(RerankCohereNode),
-            typeof(AIKnowledgeApiNode),
-            typeof(AIKnowledgeFileNode),
-            typeof(AIKnowledgePostgresNode),
-            typeof(AIKnowledgeRssNode),
-            typeof(AIKnowledgeTavilyNode),
-            typeof(AIKnowledgeSerpApiNode),
-            typeof(AIKnowledgeSearXngNode),
-            typeof(AIKnowledgeSitemapNode),
-            typeof(AIKnowledgeSqliteNode),
-            typeof(AIKnowledgeStorageNode),
-            typeof(AIKnowledgeWebNode),
+            typeof(KnowledgeBaseNode),
             typeof(AIAgentDateTimeToolNode),
             typeof(AIAgentCalculatorToolNode),
             typeof(AIAgentDataTableToolNode),
+            typeof(AIAgentVectorStoreToolNode),
             typeof(AIAgentReadDocumentToolNode),
-            typeof(AIAgentWebFetchToolNode),
+            typeof(AIAgentHttpRequestToolNode),
             typeof(CodeToolNode),
             typeof(AIAgentWeatherToolNode),
             typeof(AIAgentDirectWebScraperToolNode),
@@ -162,7 +161,7 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
             typeof(AIAgentTavilyWebSearchToolNode),
             typeof(AIAgentSerpApiWebSearchToolNode),
             typeof(AIAgentSearXngWebSearchToolNode),
-            typeof(AIAgentSessionMemoryNode),
+            typeof(AIAgentSessionInMemoryNode),
             typeof(AIAgentSessionFileNode),
             typeof(AgentGuardrailNode),
             typeof(ModerationGuardrailNode),
@@ -181,6 +180,7 @@ public sealed class CatalogPlugin : IWorkflowPlugin, IEndpointContributorProvide
             typeof(DslToElementorNode),
             typeof(DirectScraperNode),
             typeof(WebScrapeNode),
+            typeof(Agentivity.Infrastructure.Workflow.Catalog.Nodes.Web.Http.HttpRequestNode),
             typeof(FirecrawlScraperNode),
             typeof(JinaScraperNode),
             typeof(TavilyWebSearchNode),

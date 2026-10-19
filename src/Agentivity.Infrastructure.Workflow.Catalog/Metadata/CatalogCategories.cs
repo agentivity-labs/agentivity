@@ -37,12 +37,12 @@ public static class CatalogCategories
 
         // AI children
         Register("ai.agents", "Agents", "Agent orchestration and execution", NodeIconDef.Material(0xea35, "#5b55e8"), "ai");
-        Register("ai.knowledge", "Knowledge", "Connectable knowledge corpus resources", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai");
+        Register("ai.knowledge", "Knowledge", "The Knowledge Bases an agent or an LLM Prompt searches", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai");
         Register("ai.llm", "LLM", "Text generation and prompting nodes", NodeIconDef.Material(0xea35, "#5b55e8"), "ai");
         Register("ai.media", "Media", "Image and media generation nodes", NodeIconDef.Material(0xe3f4, "#5b55e8"), "ai");
         Register("ai.models", "Models", "LLM and image generation model resources", NodeIconDef.Material(0xe1b0, "#5b55e8"), "ai");
-        Register("ai.memory", "Memory", "Embedding and retrieval resources", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai");
-        Register("ai.embeddings", "Embeddings", "Standalone text-to-vector providers — plug into any memory node's optional Embeddings port", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai");
+        Register("ai.vectorstore", "Vector Stores", "Texts kept with their vectors, found again by meaning", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai");
+        Register("ai.embeddings", "Embeddings", "Text-to-vector models — plug into the Embeddings port of a vector store or of a step that compares texts by meaning", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai");
         Register("ai.rerank", "Rerank", "Re-order retrieved documents by true relevance after a vector store's initial retrieval", NodeIconDef.Material(0xe164, "#C0724D"), "ai");
         Register("ai.guardrails", "Guardrails", "Composable AI agent guardrail resources", NodeIconDef.Material(0xe14c, "#5b55e8"), "ai");
         Register("ai.policies", "Policies", "Composable AI agent policy resources", NodeIconDef.Material(0xe8b8, "#5b55e8"), "ai");
@@ -52,7 +52,7 @@ public static class CatalogCategories
         Register("ai.tools.search", "Search", "AI tools for provider-based web search", NodeIconDef.Material(0xe8b6, "#5b55e8"), "ai.tools");
         Register("ai.tools.utils", "Utils", "Small AI utility tools", NodeIconDef.Material(0xe8d5, "#5b55e8"), "ai.tools");
         Register("ai.tools.communication", "Communication", "AI tools that read and send messages (e-mail)", NodeIconDef.Material(0xe0be, "#5b55e8"), "ai.tools");
-        Register("ai.tools.data", "Data", "AI tools that read and write Data Tables", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai.tools");
+        Register("ai.tools.data", "Data", "AI tools that read and write Data Tables and Vector Stores", NodeIconDef.Material(0xe1db, "#5b55e8"), "ai.tools");
         Register("ai.tools.documents", "Documents", "AI tools that read documents (PDF, Word, text)", NodeIconDef.Material(0xe873, "#5b55e8"), "ai.tools");
         Register("ai.interactions", "Interactions", "Human-in-the-loop channels and interaction resources", NodeIconDef.Material(0xe7f4, "#5b55e8"), "ai");
 

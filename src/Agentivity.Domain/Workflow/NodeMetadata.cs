@@ -9,4 +9,8 @@ namespace Agentivity.Domain.Workflow;
 /// <param name="WhenToUse">When to pick this node rather than a neighbour, and when not to. Optional.</param>
 /// <param name="Example">A short example of a typical use, in plain words. Optional.</param>
 /// <param name="Effects">What the node does beyond computing; <c>null</c> while the node is not classified.</param>
-public sealed record NodeMetadata(string DisplayName, string Description, string CategoryId, string? WhenToUse = null, string? Example = null, NodeEffects? Effects = null);
+/// <param name="ReplacedBy">
+/// The node type that replaces it, when it is kept only so that the workflows that use it still open and run: it is no longer
+/// offered (neither in the Studio's palette nor to the assistant). Optional.
+/// </param>
+public sealed record NodeMetadata(string DisplayName, string Description, string CategoryId, string? WhenToUse = null, string? Example = null, NodeEffects? Effects = null, string? ReplacedBy = null);

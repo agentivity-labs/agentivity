@@ -104,6 +104,24 @@ internal static class ExecutableEntitiesEndpoints
             .WithSummary("List all executable entities (agents, teams, workflows) from the library, optionally filtered by tag")
             .WithTags("Entities");
 
+        // GET /api/v1/entities/using?asset=<id>&asset=<id> — for each asset, the agents and workflows that use it.
+        endpoints
+            .MapV1()
+            .MapGet(
+                "/entities/using",
+                async ([FromQuery(Name = "asset")] string[]? assets, [FromServices] IEntityRepository<AgentEntity> agents, [FromServices] IEntityRepository<WorkflowEntity> workflows, CancellationToken ct) =>
+                {
+                    var ids = (assets ?? []).Where(a => !string.IsNullOrWhiteSpace(a)).Select(a => a.Trim()).ToList();
+                    if (ids.Count == 0)
+                        return Results.Ok(new Dictionary<string, IReadOnlyList<AssetUser>>());
+                    var usages = AssetUsages.Of(ids, await agents.ListAsync(null, ct).ConfigureAwait(false), await workflows.ListAsync(null, ct).ConfigureAwait(false));
+                    return Results.Ok(usages);
+                }
+            )
+            .WithName("ListAssetUsers")
+            .WithSummary("For each asset (a Knowledge Base, a Data Table…), the agents and workflows that use it")
+            .WithTags("Entities");
+
         return endpoints;
     }
 

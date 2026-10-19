@@ -245,6 +245,9 @@ public sealed class PlannedEntity
     public string Kind { get; set; } = "";
 
     public string Name { get; set; } = "";
+
+    /// <summary>For an agent: each tool it gets and why, in a few words ("Date & Time: to count the 30 days of the returns policy").</summary>
+    public List<string> Tools { get; set; } = [];
 }
 
 public sealed class JournalEntry

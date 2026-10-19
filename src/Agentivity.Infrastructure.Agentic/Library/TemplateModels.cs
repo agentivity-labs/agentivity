@@ -37,7 +37,13 @@ public sealed record TemplateProblem(string Field, string Code, string Message);
 /// <summary>Values the creation dialog starts from: the root's own text and tags. All of it can be changed by the author.</summary>
 public sealed record TemplateSuggestion(string Id, string Name, string Description, IReadOnlyList<string> Tags);
 
-public sealed record TemplateCounts(int Agents, int Teams, int Workflows, int DataTables);
+public sealed record TemplateCounts(int Agents, int Teams, int Workflows, int DataTables, int KnowledgeBases = 0);
+
+/// <summary>
+/// Something the Template carries without what belongs to the author's own installation (a path on the server, a connection
+/// string): the person who imports it fills in <paramref name="Settings"/> before using it.
+/// </summary>
+public sealed record TemplateToConfigure(string Kind, string Id, string Name, IReadOnlyList<string> Settings);
 
 /// <param name="File">The Template file, or null while there is something to fix (<paramref name="Problems"/>) or the call only asked for a preview.</param>
 public sealed record TemplateExportResult(
@@ -48,10 +54,14 @@ public sealed record TemplateExportResult(
     IReadOnlyList<string> RequiresCredentials,
     IReadOnlyList<TemplateProblem> Problems,
     long SizeBytes,
-    JsonObject? File
+    JsonObject? File,
+    IReadOnlyList<TemplateToConfigure>? ToConfigure = null
 )
 {
     public bool IsValid => Problems.Count == 0;
+
+    /// <summary>What travels without the author's own settings, to be filled in after the import.</summary>
+    public IReadOnlyList<TemplateToConfigure> ToConfigure { get; init; } = ToConfigure ?? [];
 }
 
 /// <summary>Why an export could not even start (the root does not exist).</summary>

@@ -26,7 +26,7 @@ public sealed class JinaWebScraperService : IWebScraperService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var scraper = new JinaWebScraper(_httpClientFactory.CreateClient(), _loggerFactory.CreateLogger(typeof(JinaWebScraper)));
+        var scraper = new JinaWebScraper(_httpClientFactory.CreateClient(PublicNetwork.FollowingRedirectsHttpClientName), _loggerFactory.CreateLogger(typeof(JinaWebScraper)));
 
         return scraper.ScrapeAsync(request.Url, request.Options, cancellationToken);
     }

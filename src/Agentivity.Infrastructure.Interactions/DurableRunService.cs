@@ -220,9 +220,47 @@ public sealed class DurableRunService(
             : null;
         entry.PrepareForResume(executionCtx);
 
+        // The top run goes on: its execution is active again until it settles.
+        var isTop = entry.ParentRunId is null && executionCtx is not null;
+        if (isTop)
+        {
+            executionCtx!.SetState(ExecutionContext.StateOf(RunStatus.Running));
+            await executionRepository!.AddAsync(executionCtx, ct).ConfigureAwait(false);
+        }
+
         var settled = await engine.ReenterAsync(entry, response, ct).ConfigureAwait(false);
+        if (isTop)
+            _ = SetItsExecutionWhenSettledAsync(entry, executionCtx!, settled);
         if (thenItsParent)
             _ = TakeUpItsParentWhenDoneAsync(entry, settled);
         return new RunResumeOutcome(true, RootRunId: entry.RunId);
+    }
+
+    /// <summary>
+    /// The top run of an execution was taken up again: once it has settled (finished, waiting again, or failed), its execution
+    /// says so (<see cref="ExecutionContext.StateOf"/>), whatever the kind of the run.
+    /// </summary>
+    private async Task SetItsExecutionWhenSettledAsync(RunContext run, ExecutionContext execution, Task settled)
+    {
+        try
+        {
+            await settled.ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            // The engine reports its own failures on the run; the state of the run is what is read below.
+            logger?.LogDebug(ex, "Run {RunId} ended with an exception after being taken up again.", run.RunId);
+        }
+
+        try
+        {
+            var now = await runRepository.FindAsync(run.RunId, CancellationToken.None).ConfigureAwait(false) ?? run;
+            execution.SetState(ExecutionContext.StateOf(now.Status));
+            await executionRepository!.AddAsync(execution, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "The execution of run {RunId} could not be updated after it was taken up again.", run.RunId);
+        }
     }
 }

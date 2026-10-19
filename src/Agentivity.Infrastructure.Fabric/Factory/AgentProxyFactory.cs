@@ -61,7 +61,7 @@ public static class AgentProxyFactory
         // turn-conclusion tool's own needs_input action entirely.
         var effectiveAllowsHumanQuestions = member?.AllowHumanQuestions ?? allowsHumanQuestions;
 
-        var toolPort = aiNodeId is not null ? StandaloneAgentToolProxy.TryCreate(agentDefinition, aiNodeId) : null;
+        var toolPort = aiNodeId is not null ? StandaloneAgentToolProxy.TryCreate(agentDefinition, aiNodeId, context.ToolState) : null;
         IAgentToolsProxy toolsProxy = new StandaloneToolsProxy(toolPort, allowNeedsInput: allowsHumanQuestions);
         if (member?.DecorateTools is { } decorate)
             toolsProxy = decorate(toolsProxy, effectiveAllowsHumanQuestions);

@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Agentivity.Infrastructure.Fabric\Agentivity.Infrastructure.Fabric.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.Interactions\Agentivity.Infrastructure.Interactions.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.DataTables\Agentivity.Infrastructure.DataTables.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.KnowledgeBases\Agentivity.Infrastructure.KnowledgeBases.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />

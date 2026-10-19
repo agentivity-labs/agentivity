@@ -9,9 +9,9 @@ public sealed class AIAgentTavilyWebSearchToolNode : AIAgentWebSearchToolNodeBas
     public AIAgentTavilyWebSearchToolNode(CredentialsService credentialsService, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         : base(
             "ai.tools.web.search.tavily",
-            "AI Tool - Web Search - Tavily",
+            "AI Agent Web Search Tool (Tavily)",
             "Exposes Tavily web search to AI agents as a callable tool.",
-            "To let an agent search the web and get a list of results (title, address, short extract) through Tavily, a paid service that needs a Tavily API key. To read the pages found, also give the agent a Web Scraper tool.",
+            "To let an agent search the web and get a list of results (title, address, short extract) through Tavily, a paid service that needs a Tavily API key. To read the pages found, also give the agent an AI Agent Web Scraper Tool.",
             "search_web_tavily",
             "Search the web with Tavily and return normalized results with titles, URLs, and snippets.",
             "tavily",

@@ -43,6 +43,8 @@ public static class MetadataEndpoints
                             categoryId = meta?.CategoryId,
                             whenToUse = meta?.WhenToUse,
                             example = meta?.Example,
+                            // Kept for the workflows that use it; the Studio offers the node that replaces it instead.
+                            replacedBy = meta?.ReplacedBy,
                             // null while the node is not classified; otherwise the names of the flags that are set (empty = none).
                             effects = meta?.Effects?.ToNames(),
                             inputs = inputsWithMeta.Select(p => new

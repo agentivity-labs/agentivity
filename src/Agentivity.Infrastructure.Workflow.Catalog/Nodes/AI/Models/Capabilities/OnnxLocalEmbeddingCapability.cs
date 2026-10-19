@@ -130,11 +130,11 @@ public sealed class OnnxLocalEmbeddingCapability : IEmbeddingCapability, IDispos
     /// </summary>
     private sealed class SimpleTokenizer
     {
-        private const int MaxLength = 128;
+        // The model reads up to 256 word pieces: a passage of a Knowledge Base (about 900 characters) is read whole.
+        private const int MaxLength = 256;
         private readonly Dictionary<string, int> _vocab;
         private readonly int _clsTokenId;
         private readonly int _sepTokenId;
-        private readonly int _padTokenId;
         private readonly int _unkTokenId;
         private readonly ILogger? _logger;
 
@@ -162,50 +162,102 @@ public sealed class OnnxLocalEmbeddingCapability : IEmbeddingCapability, IDispos
             // Get special token IDs
             _clsTokenId = _vocab.TryGetValue("[CLS]", out int cls) ? cls : 101;
             _sepTokenId = _vocab.TryGetValue("[SEP]", out int sep) ? sep : 102;
-            _padTokenId = _vocab.TryGetValue("[PAD]", out int pad) ? pad : 0;
             _unkTokenId = _vocab.TryGetValue("[UNK]", out int unk) ? unk : 100;
 
             _logger?.LogInformation("Loaded BERT vocabulary with {Count} tokens", _vocab.Count);
         }
 
+        /// <summary>
+        /// The word pieces of a text as the model reads them (WordPiece, lower case, accents removed): a word missing from the
+        /// vocabulary is cut into the longest pieces it has ("laptops" is "laptop" + "##s"), only an impossible word is [UNK].
+        /// No padding: the mean of the vectors is taken over the text itself, up to <see cref="MaxLength"/> pieces.
+        /// </summary>
         public long[] Tokenize(string text)
         {
-            // Simple word-level tokenization (not full WordPiece, but much better than hashing)
-            var words = text.ToLower()
-                .Split(new[] { ' ', '\t', '\n', '\r', '.', ',', '!', '?', ';', ':', '-', '(', ')', '[', ']', '{', '}' }, StringSplitOptions.RemoveEmptyEntries)
-                .Take(MaxLength - 2) // Reserve space for CLS and SEP
-                .ToList();
-
-            var tokens = new List<long> { _clsTokenId };
-
-            foreach (string? word in words)
+            var tokens = new List<long>(MaxLength) { _clsTokenId };
+            foreach (var word in Words(text))
             {
-                // Try to find exact match in vocabulary
-                if (_vocab.TryGetValue(word, out int tokenId))
+                foreach (var piece in Pieces(word))
                 {
-                    tokens.Add(tokenId);
+                    if (tokens.Count == MaxLength - 1)
+                        break;
+                    tokens.Add(piece);
                 }
-                else if (_vocab.TryGetValue("##" + word, out int subwordId))
-                {
-                    // Try with ## prefix (subword)
-                    tokens.Add(subwordId);
-                }
-                else
-                {
-                    // Use [UNK] token for unknown words
-                    tokens.Add(_unkTokenId);
-                }
+
+                if (tokens.Count == MaxLength - 1)
+                    break;
             }
 
             tokens.Add(_sepTokenId);
+            return [.. tokens];
+        }
 
-            // Pad to MaxLength
-            while (tokens.Count < MaxLength)
+        // Words and punctuation apart, lower case, without accents: what the uncased model was trained on.
+        private static IEnumerable<string> Words(string text)
+        {
+            var plain = new System.Text.StringBuilder(text.Length);
+            foreach (var c in text.Normalize(System.Text.NormalizationForm.FormD))
             {
-                tokens.Add(_padTokenId);
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                    plain.Append(char.ToLowerInvariant(c));
             }
 
-            return tokens.Take(MaxLength).ToArray();
+            var word = new System.Text.StringBuilder();
+            foreach (var c in plain.ToString())
+            {
+                if (char.IsWhiteSpace(c) || char.IsControl(c))
+                {
+                    if (word.Length > 0)
+                        yield return word.ToString();
+                    word.Clear();
+                }
+                else if (char.IsPunctuation(c) || char.IsSymbol(c))
+                {
+                    if (word.Length > 0)
+                        yield return word.ToString();
+                    word.Clear();
+                    yield return c.ToString();
+                }
+                else
+                {
+                    word.Append(c);
+                }
+            }
+
+            if (word.Length > 0)
+                yield return word.ToString();
+        }
+
+        // Greedy longest-match-first, as WordPiece does.
+        private IEnumerable<long> Pieces(string word)
+        {
+            if (word.Length > 100)
+                return [_unkTokenId];
+            var pieces = new List<long>();
+            var start = 0;
+            while (start < word.Length)
+            {
+                var end = word.Length;
+                var found = -1;
+                while (start < end)
+                {
+                    var candidate = (start > 0 ? "##" : "") + word[start..end];
+                    if (_vocab.TryGetValue(candidate, out var id))
+                    {
+                        found = id;
+                        break;
+                    }
+
+                    end--;
+                }
+
+                if (found < 0)
+                    return [_unkTokenId];
+                pieces.Add(found);
+                start = end;
+            }
+
+            return pieces;
         }
     }
 }

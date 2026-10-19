@@ -123,13 +123,16 @@ public static class McpToolRouter
 {
     private const string BridgeCacheStateKey = "__mcp_tool_bridges";
 
-    public static async ValueTask<IReadOnlyList<JsonObject>> ListToolsAsync(NodeConfig context, WorkflowRunServices? services, string portName, string resourceType, CancellationToken cancellationToken = default)
+    public static ValueTask<IReadOnlyList<JsonObject>> ListToolsAsync(NodeConfig context, WorkflowRunServices? services, string portName, string resourceType, CancellationToken cancellationToken = default) =>
+        ListToolsAsync(context, services, [(portName, resourceType)], cancellationToken);
+
+    /// <summary>The tools of every resource on <paramref name="ports"/> (an agent's: <see cref="AgentToolPorts.All"/>); a name given twice is refused.</summary>
+    public static async ValueTask<IReadOnlyList<JsonObject>> ListToolsAsync(NodeConfig context, WorkflowRunServices? services, IReadOnlyList<(string Port, string ResourceType)> ports, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentException.ThrowIfNullOrWhiteSpace(portName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(resourceType);
+        ArgumentNullException.ThrowIfNull(ports);
 
-        var bridges = ResolveBridges(context, services, portName, resourceType, cancellationToken);
+        var bridges = ports.SelectMany(p => ResolveBridges(context, services, p.Port, p.ResourceType, cancellationToken)).ToList();
         var result = new List<JsonObject>();
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -151,14 +154,17 @@ public static class McpToolRouter
         return result;
     }
 
-    public static async ValueTask<JsonObject> CallToolAsync(NodeConfig context, string portName, string resourceType, string toolName, JsonElement arguments, CancellationToken cancellationToken = default)
+    public static ValueTask<JsonObject> CallToolAsync(NodeConfig context, string portName, string resourceType, string toolName, JsonElement arguments, CancellationToken cancellationToken = default) =>
+        CallToolAsync(context, [(portName, resourceType)], toolName, arguments, cancellationToken);
+
+    /// <summary>Calls the tool of that name among the resources on <paramref name="ports"/>.</summary>
+    public static async ValueTask<JsonObject> CallToolAsync(NodeConfig context, IReadOnlyList<(string Port, string ResourceType)> ports, string toolName, JsonElement arguments, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentException.ThrowIfNullOrWhiteSpace(portName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(resourceType);
+        ArgumentNullException.ThrowIfNull(ports);
         ArgumentException.ThrowIfNullOrWhiteSpace(toolName);
 
-        var bridges = ResolveBridges(context, null, portName, resourceType, cancellationToken);
+        var bridges = ports.SelectMany(p => ResolveBridges(context, null, p.Port, p.ResourceType, cancellationToken)).ToList();
 
         foreach (var bridge in bridges)
         {
@@ -189,6 +195,10 @@ public static class McpToolRouter
         foreach (var binding in bindings)
         {
             cancellationToken.ThrowIfCancellationRequested();
+
+            // On a port that is not only for tools (knowledge), what gives no tools is left to its own use.
+            if (resourceType != ResourcePortCategory.AIAgentTool && NodeInstanceRegistry.GetPrototype(binding.SourceNode.NodeType) is not IAgentTool)
+                continue;
 
             bridges.Add(GetOrCreateBridge(context, services, binding, portName));
         }

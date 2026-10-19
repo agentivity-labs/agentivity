@@ -45,6 +45,12 @@ public sealed record CapabilityDescriptor
     /// <summary>A grouping for browsing, for example a node category.</summary>
     public string? Category { get; init; }
 
+    /// <summary>
+    /// The id of what replaces it, when it is kept only so that what already uses it still opens and runs: it is found by its
+    /// id, but no longer offered (not listed, not found by a search).
+    /// </summary>
+    public string? ReplacedBy { get; init; }
+
     /// <summary>Extra words a person might use to look for it, beyond its name and description.</summary>
     public IReadOnlyList<string> Keywords { get; init; } = [];
 

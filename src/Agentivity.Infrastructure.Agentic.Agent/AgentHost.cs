@@ -104,7 +104,6 @@ public sealed partial class AgentHost
     /// <param name="systemPrompt">Base system instructions.</param>
     /// <param name="prompt">Resolved user prompt for this run.</param>
     /// <param name="responseSchema">JSON Schema for structured response finalization (empty = disabled).</param>
-    /// <param name="memoryContext">Retrieved memory/RAG context (empty = none).</param>
     /// <param name="modeRuntime">The resolved agentic mode runtime to execute.</param>
     /// <param name="runtimeArguments">Mode-specific runtime parameter values (empty dict for standalone).</param>
     /// <param name="runtimeParameters">Resolved LLM knobs (temperature, maxTokens, toolChoice, etc.).</param>
@@ -122,7 +121,6 @@ public sealed partial class AgentHost
         string systemPrompt,
         string prompt,
         string responseSchema,
-        string memoryContext,
         IAgenticModeRuntime modeRuntime,
         IReadOnlyDictionary<string, ArgumentDefinition> runtimeArguments,
         AgentRuntimeParameters runtimeParameters,
@@ -199,7 +197,7 @@ public sealed partial class AgentHost
         // own private TranscriptScope for a standalone/workflow agent, or the team's shared scope
         // for a team member (so a member automatically sees what every other member has done, and
         // its own turns compact into the same scope everyone else reads from).
-        var messages = AgentConversationBuilder.BuildInitialMessages(systemPrompt, prompt, memoryContext, executionPolicySystemPrompt, agentWorkspacePrompt, humanLoopSystemPrompt, (context.LastTranscriptSummary ?? string.Empty), sessionContext.RestoredMessages, appendPrompt: pendingHumanReview is null, teamContextPrompt: context.TeamContextPrompt, images: images);
+        var messages = AgentConversationBuilder.BuildInitialMessages(systemPrompt, prompt, executionPolicySystemPrompt, agentWorkspacePrompt, humanLoopSystemPrompt, (context.LastTranscriptSummary ?? string.Empty), sessionContext.RestoredMessages, appendPrompt: pendingHumanReview is null, teamContextPrompt: context.TeamContextPrompt, images: images);
 
         var requiresStructuredResponseFinalization = allToolDefs.Count > 0 && !string.IsNullOrWhiteSpace(responseSchema);
 
@@ -236,7 +234,6 @@ public sealed partial class AgentHost
             0,
             BuildContextLayersSnapshot(
                 systemPrompt,
-                memoryContext,
                 executionPolicySystemPrompt,
                 agentWorkspacePrompt,
                 humanLoopSystemPrompt,
@@ -264,7 +261,6 @@ public sealed partial class AgentHost
             0,
             BuildContextLayersSnapshot(
                 systemPrompt,
-                memoryContext,
                 executionPolicySystemPrompt,
                 agentWorkspacePrompt,
                 humanLoopSystemPrompt,
@@ -367,7 +363,6 @@ public sealed partial class AgentHost
         string systemPrompt,
         string prompt,
         string responseSchema,
-        string memoryContext,
         IAgenticModeRuntime modeRuntime,
         IReadOnlyDictionary<string, ArgumentDefinition> runtimeArguments,
         AgentRuntimeParameters runtimeParameters,
@@ -389,10 +384,10 @@ public sealed partial class AgentHost
         ArgumentNullException.ThrowIfNull(sessionProxy);
         ArgumentNullException.ThrowIfNull(context);
 
-        var agentResult = await RunAsync(systemPrompt, prompt, responseSchema, memoryContext, modeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, persistSession, sessionContext, toolsProxy, hilProxy, traceProxy, runtimePort, contextServices, context, ct, images)
+        var agentResult = await RunAsync(systemPrompt, prompt, responseSchema, modeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, persistSession, sessionContext, toolsProxy, hilProxy, traceProxy, runtimePort, contextServices, context, ct, images)
             .ConfigureAwait(false);
 
-        var persistedMessageCount = await sessionProxy.SaveAsync(sessionContext, agentResult.FinalMessages ?? [], prompt, agentResult.Response, agentResult.FinishReason, agentResult.ExecutedIterations, memoryContext, ct).ConfigureAwait(false);
+        var persistedMessageCount = await sessionProxy.SaveAsync(sessionContext, agentResult.FinalMessages ?? [], prompt, agentResult.Response, agentResult.FinishReason, agentResult.ExecutedIterations, ct).ConfigureAwait(false);
 
         // Dispatch deferred HIL notifications (e.g. HilWaitProxy) now that the session
         // marker is durably saved — ensures the run can be resumed before the client replies.
@@ -416,7 +411,6 @@ public sealed partial class AgentHost
     /// </summary>
     internal static string BuildContextLayersSnapshot(
         string systemPrompt,
-        string memoryContext,
         string executionPolicySystemPrompt,
         string knowledgeBasePrompt,
         string humanLoopSystemPrompt,
@@ -431,9 +425,6 @@ public sealed partial class AgentHost
 
         if (!string.IsNullOrWhiteSpace(systemPrompt))
             layers.Add("1. system_prompt — base agent instructions and strongest runtime control layer.");
-
-        if (!string.IsNullOrWhiteSpace(memoryContext))
-            layers.Add($"{layers.Count + 1}. memory_context — external retrieved memory, support-only unless materially useful.");
 
         layers.Add($"{layers.Count + 1}. shared_execution_system_prompt — shared execution rules for the current runtime.");
 

@@ -11,7 +11,6 @@ public static class AgentConversationBuilder
     public static List<LlmChatMessage> BuildInitialMessages(
         string systemPrompt,
         string prompt,
-        string memoryContext,
         string executionPolicyPrompt,
         string agentWorkspacePrompt,
         string humanLoopSystemPrompt,
@@ -33,11 +32,6 @@ public static class AgentConversationBuilder
         if (!string.IsNullOrWhiteSpace(systemPrompt))
         {
             systemSections.Add(systemPrompt);
-        }
-
-        if (!string.IsNullOrWhiteSpace(memoryContext))
-        {
-            systemSections.Add($"Relevant memory context:\n{memoryContext}\n\nUse this context only when it materially helps the answer or the tool selection.");
         }
 
         systemSections.Add(AgentPrompting.SharedExecutionSystemPrompt);

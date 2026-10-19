@@ -66,6 +66,10 @@ public static class ServiceCollectionExtensions
                 client.Timeout = Timeout.InfiniteTimeSpan;
             });
 
+        // The HTTP client for the calls a step or an agent makes on the web: public addresses only (see PublicNetwork).
+        services.AddHttpClient(Agentivity.Infrastructure.Web.PublicNetwork.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => Agentivity.Infrastructure.Web.PublicNetwork.CreateHandler());
+        services.AddHttpClient(Agentivity.Infrastructure.Web.PublicNetwork.FollowingRedirectsHttpClientName).ConfigurePrimaryHttpMessageHandler(() => Agentivity.Infrastructure.Web.PublicNetwork.CreateHandler(followRedirects: true));
+
         // Ensure HttpClientFactory is available
         services.AddHttpClient();
 

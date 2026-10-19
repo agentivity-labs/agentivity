@@ -83,6 +83,12 @@ public sealed class DirectWebScraper : IWebScraper
             _logger.LogError(ex, "Scraping {Url} did not finish within {Seconds}s", url, options.TimeoutSeconds);
             return ScrapeResult.Fail($"The page did not answer within {options.TimeoutSeconds} seconds — the site may be slow, or may be refusing the request (answering \"too many requests\" and asking us to wait).");
         }
+        catch (Exception ex) when (PublicNetwork.RefusalOf(ex) is { } refusal)
+        {
+            // The page, or a redirect from it, leads inside the network: said as it is.
+            _logger.LogWarning("Refused to scrape {Url}: {Refusal}", url, refusal);
+            return ScrapeResult.Fail(refusal);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to scrape URL: {Url}", url);

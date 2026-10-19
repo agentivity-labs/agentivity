@@ -1,16 +1,21 @@
 using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Agentivity.Module.Workspace.SQLite;
 
 /// <summary>
-/// The workspace's SQLite file: how it is opened, and its tables, made the first time the file is opened by this process.
+/// The workspace's SQLite file: how it is opened, and its tables, made and kept up to date by its migrations
+/// (<see cref="SqliteWorkspaceMigrations"/>) the first time the file is opened by this process.
 /// <list type="bullet">
 /// <item><c>workspace_folders</c>, <c>workspace_objects</c>: the objects of each domain and their folders.</item>
 /// <item><c>datatable_tables</c>: the Data Tables whose rows are kept (a table kept without rows is still one).</item>
 /// <item><c>datatable_rows</c>: their rows — id, dates, and the values as JSON, so that a change of columns needs no change here.</item>
 /// <item><c>datatable_schemas</c>: each Data Table made a real table of the database — its plain name, and its columns and what each holds (see <see cref="Agentivity.Infrastructure.Storage.Workspace.DatabaseDataTableStore"/>).</item>
+/// <item><c>knowledge_documents</c>, <c>knowledge_passages</c>, <c>knowledge_states</c>: the documents, passages (with their vectors) and last synchronisation of each Knowledge Base (see <see cref="Agentivity.Infrastructure.Storage.Workspace.DatabaseKnowledgeBaseStore"/>).</item>
 /// <item><c>workspace_takeovers</c>: what was taken over from where it was kept before (see <see cref="SqliteTakeOver"/>).</item>
+/// <item><c>schema_migrations</c>: the migrations the file went through.</item>
 /// </list>
 /// </summary>
 internal static class SqliteWorkspaceDatabase
@@ -25,7 +30,7 @@ internal static class SqliteWorkspaceDatabase
 
     public static async Task<SqliteConnection> OpenAsync(string databasePath, CancellationToken cancellationToken)
     {
-        await Prepared.GetOrAdd(databasePath, path => new Lazy<Task>(() => PrepareAsync(path))).Value.ConfigureAwait(false);
+        await PrepareAsync(databasePath).ConfigureAwait(false);
         var connection = new SqliteConnection(ConnectionString(databasePath));
         await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
         // Names are listed in the order the other workspace modules list them (SQLite's NOCASE folds to lower case, and only ASCII).
@@ -36,70 +41,10 @@ internal static class SqliteWorkspaceDatabase
         return connection;
     }
 
-    private static async Task PrepareAsync(string databasePath)
-    {
-        var directory = Path.GetDirectoryName(databasePath);
-        if (!string.IsNullOrEmpty(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        await using var connection = new SqliteConnection(ConnectionString(databasePath));
-        await connection.OpenAsync().ConfigureAwait(false);
-        await using var command = connection.CreateCommand();
-        // WAL: readers do not wait for the writer, and the writer does not wait for readers.
-        command.CommandText = """
-            PRAGMA journal_mode = WAL;
-            CREATE TABLE IF NOT EXISTS workspace_folders (
-                domain TEXT NOT NULL,
-                folder_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                parent_id TEXT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                PRIMARY KEY (domain, folder_id)
-            );
-            CREATE TABLE IF NOT EXISTS workspace_objects (
-                domain TEXT NOT NULL,
-                object_type TEXT NOT NULL COLLATE NOCASE,
-                object_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                payload TEXT NOT NULL,
-                content_type TEXT NOT NULL,
-                folder_id TEXT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                created_by TEXT NULL,
-                updated_by TEXT NULL,
-                tags TEXT NULL,
-                PRIMARY KEY (domain, object_type, object_id)
-            );
-            CREATE INDEX IF NOT EXISTS workspace_objects_by_folder ON workspace_objects (domain, object_type, folder_id);
-            CREATE INDEX IF NOT EXISTS workspace_folders_by_parent ON workspace_folders (domain, parent_id);
-            CREATE TABLE IF NOT EXISTS datatable_tables (
-                table_id TEXT NOT NULL PRIMARY KEY,
-                saved_at TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS datatable_rows (
-                table_id TEXT NOT NULL,
-                row_id INTEGER NOT NULL,
-                created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL,
-                data TEXT NOT NULL,
-                PRIMARY KEY (table_id, row_id)
-            );
-            CREATE TABLE IF NOT EXISTS datatable_schemas (
-                table_id TEXT NOT NULL PRIMARY KEY,
-                physical_name TEXT NOT NULL,
-                columns TEXT NOT NULL
-            );
-            CREATE TABLE IF NOT EXISTS workspace_takeovers (
-                what TEXT NOT NULL PRIMARY KEY,
-                taken_from TEXT NOT NULL,
-                taken_at TEXT NOT NULL,
-                items INTEGER NOT NULL
-            );
-            """;
-        await command.ExecuteNonQueryAsync().ConfigureAwait(false);
-    }
+    /// <summary>
+    /// Brings the file to the last of its migrations, once for this process: at the start of the server
+    /// (<see cref="SqliteWorkspaceMigrationService"/>), or at its first use if that comes first.
+    /// </summary>
+    public static Task PrepareAsync(string databasePath, ILogger? logger = null) =>
+        Prepared.GetOrAdd(databasePath, path => new Lazy<Task>(() => SqliteWorkspaceMigrations.MigrateAsync(path, logger ?? NullLogger.Instance))).Value;
 }

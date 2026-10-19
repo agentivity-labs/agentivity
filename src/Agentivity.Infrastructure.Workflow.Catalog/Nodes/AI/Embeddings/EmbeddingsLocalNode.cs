@@ -11,11 +11,11 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Embeddings;
 /// <see cref="ResourcePortCategory.Embeddings"/> so it can be plugged into any memory/vector-store
 /// node's optional "embeddings" input port when that node's own bundled default isn't wanted.
 /// <para>
-/// Most users never need to place this node at all — every memory node already falls back to the
+/// Most users never need to place this node at all — every vector store already falls back to the
 /// exact same shared <see cref="LocalEmbeddingService"/> when nothing is connected to its
 /// "embeddings" port and it has no bundled credentials configured. This node exists for the one
 /// case that needs it: making the choice explicit and visible on the canvas, or reusing the same
-/// local model across several memory nodes without repeating anything.
+/// local model across several vector stores without repeating anything.
 /// </para>
 /// </summary>
 public sealed class EmbeddingsLocalNode : ResourceNode, IEmbeddingProvider
@@ -29,7 +29,7 @@ public sealed class EmbeddingsLocalNode : ResourceNode, IEmbeddingProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.Embeddings);
 
-        DefineMetadata("Local Embeddings", "Free, offline embeddings (all-MiniLM-L6-v2) — no credentials, no external API calls.", "ai.embeddings", whenToUse: "To make visible, or share between several memories, the free offline model that compares texts by meaning. Plug it into the Embeddings of a memory; memories already use this model when nothing else is set.");
+        DefineMetadata("Local Embeddings", "Free, offline embeddings (all-MiniLM-L6-v2) — no credentials, no external API calls.", "ai.embeddings", whenToUse: "To compare texts by meaning for free, offline: plug it into the Embeddings port of a vector store or of an SEO step (Sitemap Structure, Internal Link Suggester). Vector stores already use this model when nothing else is set.");
         DefineEffects(NodeEffects.None);
 
         ClearInputPorts();

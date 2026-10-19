@@ -1,8 +1,12 @@
+using System.Collections.Concurrent;
+
 namespace Agentivity.Infrastructure.Workflows.Resources;
 
 public static class ResourceNodeRegistry
 {
-    private static readonly Dictionary<string, string> ResourceTypes = new(StringComparer.OrdinalIgnoreCase);
+    // Written by every resource node's constructor, and a node is built for each execution: executions at the same time write
+    // at the same time.
+    private static readonly ConcurrentDictionary<string, string> ResourceTypes = new(StringComparer.OrdinalIgnoreCase);
 
     public static void Register(string nodeType, string resourceType)
     {

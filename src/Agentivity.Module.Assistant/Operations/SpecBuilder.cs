@@ -306,7 +306,10 @@ public sealed class SpecBuilder(IBuilderApi builder, OperationEngine engine, ICa
 
     private static void TranslateGraph(JsonObject entity, string kind, string name, string at, CapabilitySnapshot platform, List<Step> plan, List<SpecProblem> problems, List<string> notes)
     {
-        plan.Add(new Step(new BuilderOperation("create_entity", new JsonObject { ["kind"] = kind, ["name"] = name }), at, null, [], name));
+        var create = new JsonObject { ["kind"] = kind, ["name"] = name };
+        if (Text(entity, "role") is { } role)
+            create["role"] = role;
+        plan.Add(new Step(new BuilderOperation("create_entity", create), at, null, [], name));
 
         var steps = entity["steps"] as JsonArray ?? [];
         var resources = entity["resources"] as JsonArray ?? [];

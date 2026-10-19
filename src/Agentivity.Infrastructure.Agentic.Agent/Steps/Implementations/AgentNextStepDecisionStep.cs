@@ -86,6 +86,19 @@ public sealed class AgentNextStepDecisionStep : AgentStep<LlmConversationRespons
         return !string.Equals(mode?.Trim(), "ask", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// The conversation as the turn saw it, followed — when it ends with the agent's own reply — by a short request from the
+    /// user's side: recent models refuse a conversation that ends with their own message ("assistant prefill"). Only this call
+    /// sends it; the conversation kept is unchanged.
+    /// </summary>
+    public override IReadOnlyList<LlmChatMessage> ResolveMessages(AgentStepContext context)
+    {
+        var messages = base.ResolveMessages(context);
+        if (messages.Count == 0 || !string.Equals(messages[^1].Role, "assistant", StringComparison.OrdinalIgnoreCase))
+            return messages;
+        return [.. messages, new LlmChatMessage("user", "Your reply above is complete. Now say what happens next with agent_next_step.")];
+    }
+
     public override IReadOnlyList<JsonObject>? ResolveTools(AgentStepContext context) =>
         context.Config.TurnConclusionTool is { } tool ? [(context.AfterDeliveredSends ? tool.WithoutContentDependentActions() : tool).Definition] : null;
 

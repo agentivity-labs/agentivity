@@ -297,7 +297,8 @@ public sealed class RunsService
                 try
                 {
                     await teamEngine.ExecuteAsync(run, CancellationToken.None).ConfigureAwait(false);
-                    await executionStore.SaveAsync(execution with { State = "completed", UpdatedAt = DateTimeOffset.UtcNow }, CancellationToken.None).ConfigureAwait(false);
+                    // Finished, waiting for a person's answer, or failed: the execution says where its run stands.
+                    await executionStore.SaveAsync(execution with { State = Agentivity.Infrastructure.Execution.Executions.ExecutionContext.StateOf(runCtx.Status), UpdatedAt = DateTimeOffset.UtcNow }, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -352,7 +353,8 @@ public sealed class RunsService
                 try
                 {
                     await workflowEngine.ExecuteAsync(runIdGuid, workflowId, input, CancellationToken.None, parentContext: runCtx).ConfigureAwait(false);
-                    await executionStore.SaveAsync(execution with { State = "completed", UpdatedAt = DateTimeOffset.UtcNow }, CancellationToken.None).ConfigureAwait(false);
+                    // Finished, waiting for a person's answer, or failed: the execution says where its run stands.
+                    await executionStore.SaveAsync(execution with { State = Agentivity.Infrastructure.Execution.Executions.ExecutionContext.StateOf(runCtx.Status), UpdatedAt = DateTimeOffset.UtcNow }, CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

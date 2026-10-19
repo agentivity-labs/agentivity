@@ -60,7 +60,7 @@ public sealed class WorkflowSessionProxy : IAgentSessionProxy
     }
 
     /// <inheritdoc />
-    public async ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, string memoryContext, CancellationToken ct)
+    public async ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, CancellationToken ct)
     {
         if (!sessionContext.Enabled)
         {
@@ -72,7 +72,6 @@ public sealed class WorkflowSessionProxy : IAgentSessionProxy
         sessionContext.State.Metadata["last_response"] = finalResponse;
         sessionContext.State.Metadata["last_finish_reason"] = finishReason;
         sessionContext.State.Metadata["last_iterations"] = executedIterations;
-        sessionContext.State.Metadata["memory_context_used"] = !string.IsNullOrWhiteSpace(memoryContext);
         sessionContext.State.Metadata["updated_at_utc"] = DateTimeOffset.UtcNow.ToString("O");
         sessionContext.State.Metadata.Remove(HumanLoopHelper.PendingHumanReviewMetadataKey);
         HumanLoopConversationContextHelper.ClearClarificationLedger(_services.RunId);

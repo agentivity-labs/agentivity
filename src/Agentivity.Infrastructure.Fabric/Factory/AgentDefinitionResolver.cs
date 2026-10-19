@@ -75,11 +75,9 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
         var resolvedPolicies = policyResolver.Resolve(AgentPolicyLayerFactory.BuildPolicyLayers(modeRuntime, externalPolicyLayers));
         var resolvedGuardrails = aiNodeId is not null ? AgentGraphResolver.ResolveGuardrails(agentDefinition, aiNodeId) : (IReadOnlyList<AgentGuardrailDefinition>)[];
 
-        // ── Memory / RAG ──────────────────────────────────────────────────────
-        var memoryPort = AgentMemoryResolver.TryCreate(agentDefinition);
         var resolvedPrompt = ResolvePrompt(aiNodeParams, args);
 
-        return ResolveCoreAsync(args, context, aiNodeParams, aiNodeId, modeRuntime, runtimeParameters, resolvedPolicies, resolvedGuardrails, memoryPort, resolvedPrompt, llmProvider, llmBinding, ct);
+        return ResolveCoreAsync(args, context, aiNodeParams, aiNodeId, modeRuntime, runtimeParameters, resolvedPolicies, resolvedGuardrails, resolvedPrompt, llmProvider, llmBinding, ct);
     }
 
     private async ValueTask<ResolvedAgentDefinition> ResolveCoreAsync(
@@ -91,23 +89,14 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
         AgentRuntimeParameters runtimeParameters,
         ResolvedAgentPolicies resolvedPolicies,
         IReadOnlyList<AgentGuardrailDefinition> resolvedGuardrails,
-        AgentMemoryResolver? memoryPort,
         string resolvedPrompt,
         Agentivity.Infrastructure.Workflows.Resources.ILlmProvider llmProvider,
         Agentivity.Infrastructure.Workflows.Resources.ResourceBinding llmBinding,
         CancellationToken ct
     )
     {
-        // ── Memory / RAG ──────────────────────────────────────────────────────
-        var memoryContext = string.Empty;
-        if (memoryPort is not null)
-        {
-            var memoryTopK = ReadInt(aiNodeParams, "memory_top_k") ?? 3;
-            memoryContext = await memoryPort.RetrieveAsync(resolvedPrompt, memoryTopK, ct).ConfigureAwait(false);
-        }
-
         // ── Runtime port ──────────────────────────────────────────────────────
-        var toolPort = aiNodeId is not null ? StandaloneAgentToolProxy.TryCreate(agentDefinition, aiNodeId) : null;
+        var toolPort = aiNodeId is not null ? StandaloneAgentToolProxy.TryCreate(agentDefinition, aiNodeId, context.ToolState) : null;
 
         var runId = Guid.TryParse(context.RunId, out var rid) ? rid : Guid.NewGuid();
         var stepId = context.EntityId;
@@ -118,7 +107,6 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
         var policyPort = new ComposedAgentPolicyProxy(agentHost.PolicyRuntime, resolvedPolicies);
         IAgentGuardrailPort? guardrailPort = resolvedGuardrails.Count > 0 ? new ComposedAgentGuardrailProxy(agentHost, resolvedGuardrails, llmProvider, llmBinding) : null;
         // Enrich the incoming context in-place — RunContext is mutable, no copy needed.
-        context.Memory = memoryPort;
         context.Policy = policyPort;
         context.Guardrail = guardrailPort;
         var correlation = context.ToCorrelationContext();
@@ -163,7 +151,7 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
         var runtimeArguments = new Dictionary<string, global::Agentivity.Domain.Arguments.ArgumentDefinition>(StringComparer.OrdinalIgnoreCase);
         var images = ReadImages(args);
 
-        return new ResolvedAgentDefinition(modeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, memoryContext, resolvedPrompt, systemPrompt, persistSession, runtimePort, contextServices, images);
+        return new ResolvedAgentDefinition(modeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, resolvedPrompt, systemPrompt, persistSession, runtimePort, contextServices, images);
     }
 
     /// <summary>

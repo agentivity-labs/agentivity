@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Agentivity.Domain.Run;
 using Agentivity.Infrastructure.Execution.Executions;
@@ -155,7 +156,6 @@ public sealed class RunContext : IRecordConvertible<RunRecord>
     }
 
     public Observability.Contracts.IRunToolsPort? Tools { get; set; }
-    public Observability.Contracts.IAgentMemoryProxy? Memory { get; set; }
     public object? Policy { get; set; }
     public object? Guardrail { get; set; }
 
@@ -227,6 +227,13 @@ public sealed class RunContext : IRecordConvertible<RunRecord>
     public List<RunStepTransitionSnapshot> Transitions { get; } = [];
     public List<string> Logs { get; } = [];
     public List<string> Errors { get; } = [];
+
+    /// <summary>
+    /// What the run's tools keep for the time of the run (an In-Memory Vector Store's texts), shared by all of them. Saved with the
+    /// run's record, so a run paused and resumed — even after a restart — finds it again. Its values are plain data: read back
+    /// after a restart, each is a <see cref="JsonElement"/> its tool turns back into its own shape.
+    /// </summary>
+    public ConcurrentDictionary<string, object?> ToolState { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     // ── Thread-safe mutation (was IRunRepository's UpsertStep/AddTransition/etc.) ─────────────
 
@@ -437,7 +444,7 @@ public sealed class RunContext : IRecordConvertible<RunRecord>
             var lastTranscriptSummary = OwnTranscriptScope?.Summary;
             var stepsSnapshot = Steps.Count > 0 ? JsonSerializer.SerializeToElement(Steps.Values.Select(s => s.ToSnapshot()).ToList()) : (JsonElement?)null;
             var transitionsSnapshot = Transitions.Count > 0 ? JsonSerializer.SerializeToElement(Transitions) : (JsonElement?)null;
-            return new(RunId, Kind.ToString(), Status, CreatedAt, EntityId, Execution.ExecutionId, ParentRunId, StepId, SessionId, Error, CompletedAt, PayloadType, Payload, lastTranscriptSummary, stepsSnapshot, transitionsSnapshot, Logs.Count > 0 ? [.. Logs] : null, Errors.Count > 0 ? [.. Errors] : null);
+            return new(RunId, Kind.ToString(), Status, CreatedAt, EntityId, Execution.ExecutionId, ParentRunId, StepId, SessionId, Error, CompletedAt, PayloadType, Payload, lastTranscriptSummary, stepsSnapshot, transitionsSnapshot, Logs.Count > 0 ? [.. Logs] : null, Errors.Count > 0 ? [.. Errors] : null, ToolState.IsEmpty ? null : JsonSerializer.SerializeToElement(ToolState.ToDictionary(e => e.Key, e => e.Value), JsonSerializerOptions.Web));
         }
     }
 
@@ -561,6 +568,10 @@ public sealed class RunContext : IRecordConvertible<RunRecord>
 
         if (r.Errors is { } errors)
             ctx.Errors.AddRange(errors);
+
+        if (r.ToolState is { ValueKind: JsonValueKind.Object } toolState)
+            foreach (var entry in toolState.EnumerateObject())
+                ctx.ToolState[entry.Name] = entry.Value.Clone();
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ public sealed class SitemapStructureNode : BaseAINode
         DefineEffects(NodeEffects.ReadsExternal | NodeEffects.Costs);
 
         DefineResourceInputPort("llm_model", "LLM Model", ResourcePortCategory.LlmModel, "LLM model for semantic analysis");
-        DefineResourceInputPort("llm_memory", "RAG/Memory", ResourcePortCategory.LlmMemory, "RAG provider for vector clustering (optional, improves accuracy)", isRequired: false);
+        DefineResourceInputPort("embeddings", "Embeddings", ResourcePortCategory.Embeddings, "The embeddings model that compares the pages by meaning to group them (Local Embeddings is free).");
         DefineResourceInputPort("scraper", "Scraper", ResourcePortCategory.WebScraper, "Web scraper for content analysis (optional)", isRequired: false);
 
         DefineInput(
@@ -324,11 +324,11 @@ public sealed class SitemapStructureNode : BaseAINode
         }
 
         // Get embedding provider (REQUIRED)
-        (IEmbeddingProvider Tool, ResourceBinding Binding)? embeddingResolved = ResourceResolver.TryResolveToolNode<IEmbeddingProvider>(config, "llm_memory", ResourcePortCategory.LlmMemory);
+        (IEmbeddingProvider Tool, ResourceBinding Binding)? embeddingResolved = ResourceResolver.TryResolveToolNode<IEmbeddingProvider>(config, "embeddings", ResourcePortCategory.Embeddings);
 
         if (embeddingResolved is null)
         {
-            throw new InvalidOperationException("RAG/Memory resource must be connected and provide embedding capability.");
+            throw new InvalidOperationException("Connect an Embeddings step (Local Embeddings is free) to the Embeddings port: it compares the pages by meaning.");
         }
 
         (IEmbeddingProvider? embeddingProvider, ResourceBinding? embeddingBinding) = embeddingResolved.Value;

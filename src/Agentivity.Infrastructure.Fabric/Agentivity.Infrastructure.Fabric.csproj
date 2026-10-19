@@ -9,6 +9,12 @@
     <ModuleOutputDirectory>$(MSBuildThisFileDirectory)..\..\_modules\</ModuleOutputDirectory>
   </PropertyGroup>
   <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>Agentivity.Unit.Agentic.Agent</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Agentivity.Domain\Agentivity.Domain.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.Agentic\Agentivity.Infrastructure.Agentic.csproj" />
@@ -19,6 +25,7 @@
     <ProjectReference Include="..\Agentivity.Observability.Contracts\Agentivity.Observability.Contracts.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.Interactions\Agentivity.Infrastructure.Interactions.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.DataTables\Agentivity.Infrastructure.DataTables.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.KnowledgeBases\Agentivity.Infrastructure.KnowledgeBases.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Serilog" Version="4.4.0" />

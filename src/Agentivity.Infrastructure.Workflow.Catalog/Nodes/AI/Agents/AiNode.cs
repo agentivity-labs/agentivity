@@ -34,15 +34,14 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         _interactionStore = interactionStore ?? throw new ArgumentNullException(nameof(interactionStore));
         _eventBus = eventBus;
 
-        DefineMetadata("AI Agent", "Runs a multi-step LLM agent with native tool calling, optional retrieval via llm_memory, and connectable knowledge sources.", "ai.agents", whenToUse: "To have an AI work through a task step by step in this workflow, with the model, tools, knowledge and people you plug into it. Not for a single question and answer: use LLM Prompt instead; to reuse an agent saved in your library, use Agent.");
+        DefineMetadata("AI Agent", "Runs a multi-step LLM agent with native tool calling, and searches the Knowledge Bases connected to it.", "ai.agents", whenToUse: "To have an AI work through a task step by step in this workflow, with the model, tools, knowledge and people you plug into it. Not for a single question and answer: use LLM Prompt instead; to reuse an agent saved in your library, use Agent.");
         DefineEffects(NodeEffects.Costs | NodeEffects.Delegates);
 
         DefineInputPort("in", "In", "Entry point", maxConnections: 1, color: "#FF607D8B");
         DefineOutputPort("out", "Out", "Default output port");
 
         DefineResourceInputPort("llm_model", "LLM Model", ResourcePortCategory.LlmModel, "LLM provider and model configuration", color: "#FF9AA0D6");
-        DefineResourceInputPort("llm_memory", "LLM Memory", ResourcePortCategory.LlmMemory, "Embedding and retrieval resource used to rank connected knowledge documents (optional)", isRequired: false, color: "#FFA9C4AB");
-        DefineResourceInputPort("knowledge", "Knowledge Sources", ResourcePortCategory.KnowledgeSource, "Connect one or more ai.knowledge resources that provide the input corpus (optional)", maxConnections: -1, isRequired: false, color: "#FF9EBC99");
+        DefineResourceInputPort("knowledge", "Knowledge Bases", ResourcePortCategory.KnowledgeSource, "The Knowledge Bases the agent searches, each with the Knowledge Base step (optional)", maxConnections: -1, isRequired: false, color: "#FF9EBC99");
         DefineResourceInputPort("channel", "Human Loop Channel", ResourcePortCategory.InteractionChannel, "Human interaction channel used when the agent needs human input (optional)", isRequired: false, color: "#FFD7C07C");
         DefineResourceInputPort("session", "Agent Session", ResourcePortCategory.AIAgentSession, "Persistent conversation session store (optional)", isRequired: false, color: "#FFD9A79F");
         DefineResourceInputPort("tools", "AI Agent Tools", ResourcePortCategory.AIAgentTool, "LLM-callable AI agent tools", maxConnections: -1, isRequired: false, color: "#FFAFBCC1");
@@ -205,19 +204,6 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
             required: false
         );
         DefineInput(
-            "memory_top_k",
-            ArgumentType.Number,
-            "Number of knowledge snippets to retrieve when llm_memory and knowledge sources are connected",
-            3,
-            ui: new ArgumentUiMetadata
-            {
-                Tab = "Memory",
-                Group = "Retrieval",
-                Order = 10,
-            },
-            required: false
-        );
-        DefineInput(
             "session_id",
             ArgumentType.Text,
             "Session identifier (leave empty to create a new one when a session resource is connected)",
@@ -274,7 +260,6 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         DefineOutput("finish_reason", ArgumentType.Text, "Final LLM finish reason");
         DefineOutput("iterations", ArgumentType.Number, "Number of rounds the agent took");
         DefineOutput("tool_calls", ArgumentType.Text, "Executed tool calls as JSON");
-        DefineOutput("memory_context_used", ArgumentType.Text, "config retrieved from memory (if used)");
         DefineOutput("guardrail_warnings", ArgumentType.Text, "JSON array of non-blocking guardrail matches (guardrail_id, stage, message) — branch on this with an If/Switch to decide what to do (empty array when nothing matched)");
         DefineOutput("session_id", ArgumentType.Text, "Resolved session identifier when a session resource is connected");
         DefineOutput("session_scope", ArgumentType.Text, "Resolved session scope");
@@ -348,7 +333,6 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
                 .AddText("finish_reason", result.FinishReason)
                 .AddNumber("iterations", result.ExecutedIterations)
                 .AddText("tool_calls", executedToolCallsJson)
-                .AddText("memory_context_used", result.MemoryContextUsed)
                 .AddText("guardrail_warnings", guardrailWarningsJson)
                 .AddText("session_id", sessionContext.SessionId)
                 .AddText("session_scope", sessionContext.Scope)
@@ -397,10 +381,7 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
         // so workflow and standalone paths are always characterized identically.
         AgentRuntimeParameters runtimeParameters = AgentRuntimeParameterResolver.Resolve(new AgentParameterReader(args.GetText, args.GetDouble, args.GetInt, args.GetBoolean), resolvedModeRuntime.Capabilities.AllowsToolChoiceConfiguration);
 
-        int memoryTopK = Math.Max(1, args.GetInt("memory_top_k") ?? 3);
         bool persistSession = args.GetBoolean("persist_session") ?? true;
-
-        string memoryContext = await new WorkflowAgentMemoryProxy(config, services).RetrieveAsync(prompt, memoryTopK, ct).ConfigureAwait(false);
 
         // ── Policies + guardrails ─────────────────────────────────────────────
         ResolvedAgentPolicies resolvedPolicies = new AgentPolicyResolver().Resolve(AgentPolicyLayerFactory.BuildPolicyLayers(resolvedModeRuntime, AgentPolicyResourceResolver.ResolveConnectedPolicyLayers(config)));
@@ -434,6 +415,6 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
             LogDebug = msg => services.LogDebug(msg),
         };
 
-        return new ResolvedAgentDefinition(resolvedModeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, memoryContext, prompt, systemPrompt, persistSession, runtimePort, contextServices, images.Count > 0 ? images : null);
+        return new ResolvedAgentDefinition(resolvedModeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, prompt, systemPrompt, persistSession, runtimePort, contextServices, images.Count > 0 ? images : null);
     }
 }

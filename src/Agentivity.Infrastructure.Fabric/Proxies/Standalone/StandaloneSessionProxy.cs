@@ -52,7 +52,7 @@ internal sealed class StandaloneSessionProxy : IAgentSessionProxy
     }
 
     /// <inheritdoc />
-    public async ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, string memoryContext, CancellationToken ct)
+    public async ValueTask<int> SaveAsync(SessionContext sessionContext, IReadOnlyList<LlmChatMessage> finalMessages, string prompt, string finalResponse, string finishReason, int executedIterations, CancellationToken ct)
     {
         if (_sessionPort is null || !sessionContext.Enabled)
             return 0;

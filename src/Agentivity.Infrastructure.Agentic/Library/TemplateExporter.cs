@@ -22,7 +22,8 @@ public sealed partial class TemplateExporter(
     IEntityRepository<TeamEntity> teams,
     IEntityRepository<WorkflowEntity> workflows,
     CredentialsService credentials,
-    IEnumerable<ITemplateDataTableSource> dataTables
+    IEnumerable<ITemplateDataTableSource> dataTables,
+    IEnumerable<ITemplateKnowledgeBaseSource>? knowledgeBases = null
 )
 {
     public const int MaxFileBytes = 5 * 1024 * 1024;
@@ -113,18 +114,22 @@ public sealed partial class TemplateExporter(
             collected.Items.Count(i => i.Kind == "agent"),
             collected.Items.Count(i => i.Kind == "team"),
             collected.Items.Count(i => i.Kind == "workflow"),
-            collected.Items.Count(i => i.Kind == "datatable")
+            collected.Items.Count(i => i.Kind == "datatable"),
+            collected.Items.Count(i => i.Kind == KnowledgeBaseKind)
         );
         var contents = collected.Items.Select(i => new TemplateContentItem(i.Kind, i.Id, i.Name, i.Role, i.Depth)).ToList();
 
-        return new TemplateExportResult(suggestion, counts, contents, collected.Unresolved, families, problems, size, preview || problems.Count > 0 ? null : file);
+        return new TemplateExportResult(suggestion, counts, contents, collected.Unresolved, families, problems, size, preview || problems.Count > 0 ? null : file, collected.ToConfigure);
     }
 
     // ── Contents ──────────────────────────────────────────────────────────────────────────────
 
-    private sealed record Item(string Kind, string Id, string Name, string? Role, int Depth, JsonNode Entry, IReadOnlyList<string> Tags);
+    /// <summary>The kind of a Knowledge Base among the entities of a Template.</summary>
+    public const string KnowledgeBaseKind = TemplateReferences.KnowledgeBaseKind;
 
-    private sealed record Collected(List<Item> Items, List<TemplateUnresolved> Unresolved, Dictionary<string, JsonArray> Rows, ISet<string> CredentialIds, bool HasModelNodes, string? RootGoal);
+    private sealed record Item(string Kind, string Id, string Name, string? Role, int Depth, JsonNode Entry, IReadOnlyList<string> Tags, IReadOnlyList<string>? ToConfigure = null);
+
+    private sealed record Collected(List<Item> Items, List<TemplateUnresolved> Unresolved, Dictionary<string, JsonArray> Rows, ISet<string> CredentialIds, bool HasModelNodes, string? RootGoal, List<TemplateToConfigure> ToConfigure);
 
     private readonly record struct Pending(string FromKind, string FromId, string FromName, int Depth, LibraryReference Reference);
 
@@ -135,6 +140,8 @@ public sealed partial class TemplateExporter(
         var rows = new Dictionary<string, JsonArray>(StringComparer.OrdinalIgnoreCase);
         var credentialIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var tables = new Dictionary<string, (string FromKind, string FromId, string FromName)>(StringComparer.OrdinalIgnoreCase);
+        var bases = new Dictionary<string, (string FromKind, string FromId, string FromName)>(StringComparer.OrdinalIgnoreCase);
+        var toConfigure = new List<TemplateToConfigure>();
         var hasModelNodes = false;
         string? rootGoal = null;
 
@@ -158,7 +165,7 @@ public sealed partial class TemplateExporter(
                     var result = await agents.GetAsync(id, cancellationToken).ConfigureAwait(false);
                     var agent = result.IsSuccess && result.Value is not null ? result.Value : throw new TemplateExportException("entity_not_found", $"Agent '{id}' not found.");
                     items.Add(new Item("agent", agent.Id, agent.Name, agent.Role, depth, JsonSerializer.SerializeToNode(agent, JsonDefaults.Default)!, agent.Tags));
-                    InspectGraph(agent.Graph, "agent", agent.Id, agent.Name, depth, pending, tables, credentialIds, ref hasModelNodes);
+                    InspectGraph(agent.Graph, "agent", agent.Id, agent.Name, depth, pending, tables, bases, credentialIds, ref hasModelNodes);
                     break;
                 }
                 case LibraryEntityKind.Workflow:
@@ -166,7 +173,7 @@ public sealed partial class TemplateExporter(
                     var result = await workflows.GetAsync(id, cancellationToken).ConfigureAwait(false);
                     var workflow = result.IsSuccess && result.Value is not null ? result.Value : throw new TemplateExportException("entity_not_found", $"Workflow '{id}' not found.");
                     items.Add(new Item("workflow", workflow.Id, workflow.Name, workflow.Role, depth, JsonSerializer.SerializeToNode(workflow, JsonDefaults.Default)!, workflow.Tags));
-                    InspectGraph(workflow, "workflow", workflow.Id, workflow.Name, depth, pending, tables, credentialIds, ref hasModelNodes);
+                    InspectGraph(workflow, "workflow", workflow.Id, workflow.Name, depth, pending, tables, bases, credentialIds, ref hasModelNodes);
                     break;
                 }
                 default:
@@ -233,10 +240,46 @@ public sealed partial class TemplateExporter(
             }
         }
 
-        return new Collected(items, unresolved, rows, credentialIds, hasModelNodes, rootGoal);
+        // Knowledge Bases: their definition, never their documents; what is the author's own is left out, to configure.
+        foreach (var (baseId, from) in bases)
+        {
+            if (IsComputed(baseId))
+            {
+                unresolved.Add(new TemplateUnresolved(from.FromKind, from.FromId, from.FromName, baseId, "computed_at_run_time"));
+                continue;
+            }
+
+            TemplateKnowledgeBase? knowledgeBase = null;
+            foreach (var candidate in knowledgeBases ?? [])
+            {
+                knowledgeBase = await candidate.GetAsync(baseId, cancellationToken).ConfigureAwait(false);
+                if (knowledgeBase is not null)
+                {
+                    break;
+                }
+            }
+
+            if (knowledgeBase is null)
+            {
+                // Without the Knowledge Base module there is nothing to read it from: the Template would be incomplete just the same.
+                unresolved.Add(new TemplateUnresolved(from.FromKind, from.FromId, from.FromName, baseId, "not_found"));
+                continue;
+            }
+
+            var role = knowledgeBase.Entry.TryGetProperty("role", out var given) && given.ValueKind == JsonValueKind.String ? given.GetString() : null;
+            items.Add(new Item(KnowledgeBaseKind, knowledgeBase.Id, knowledgeBase.Name, role, 1, JsonNode.Parse(knowledgeBase.Entry.GetRawText())!, [], knowledgeBase.ToConfigure));
+            // The connections it reads with are among what the person needs.
+            CollectStrings(knowledgeBase.Entry, credentialIds);
+            if (knowledgeBase.ToConfigure.Count > 0)
+            {
+                toConfigure.Add(new TemplateToConfigure(KnowledgeBaseKind, knowledgeBase.Id, knowledgeBase.Name, knowledgeBase.ToConfigure));
+            }
+        }
+
+        return new Collected(items, unresolved, rows, credentialIds, hasModelNodes, rootGoal, toConfigure);
     }
 
-    private static void InspectGraph(WorkflowEntity graph, string kind, string id, string name, int depth, List<Pending> pending, Dictionary<string, (string, string, string)> tables, ISet<string> credentialIds, ref bool hasModelNodes)
+    private static void InspectGraph(WorkflowEntity graph, string kind, string id, string name, int depth, List<Pending> pending, Dictionary<string, (string, string, string)> tables, Dictionary<string, (string, string, string)> bases, ISet<string> credentialIds, ref bool hasModelNodes)
     {
         var references = new List<LibraryReference>();
         foreach (var node in graph.Nodes)
@@ -245,6 +288,11 @@ public sealed partial class TemplateExporter(
             if (LibraryReferences.DataTableId(node) is { } tableId)
             {
                 tables.TryAdd(tableId, (kind, id, name));
+            }
+
+            if (LibraryReferences.KnowledgeBaseId(node) is { } baseId)
+            {
+                bases.TryAdd(baseId, (kind, id, name));
             }
 
             if (node.NodeType.StartsWith(ModelNodePrefix, StringComparison.OrdinalIgnoreCase))
@@ -544,7 +592,14 @@ public sealed partial class TemplateExporter(
                 TagRoot(rootEntry);
             }
 
-            entities.Add(new JsonObject { ["kind"] = item.Kind, ["id"] = item.Id, ["name"] = item.Name, ["entry"] = entry });
+            var entity = new JsonObject { ["kind"] = item.Kind, ["id"] = item.Id, ["name"] = item.Name, ["entry"] = entry };
+            if (item.ToConfigure is { Count: > 0 } settings)
+            {
+                // Left out because they are the author's own: the person fills them in after the import.
+                entity["toConfigure"] = new JsonArray(settings.Select(s => (JsonNode?)s).ToArray());
+            }
+
+            entities.Add(entity);
         }
 
         file["entities"] = entities;

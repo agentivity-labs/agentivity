@@ -2,7 +2,7 @@ namespace Agentivity.Infrastructure.Workflows.Resources.Capabilities;
 
 /// <summary>
 /// Capability for creating text embeddings.
-/// Any RAG/Memory resource node can provide this capability.
+/// Any node that turns a text into a vector (Embeddings, Vector Stores) can provide this capability.
 ///
 /// External developers can create custom embedding providers by:
 /// 1. Creating a resource node

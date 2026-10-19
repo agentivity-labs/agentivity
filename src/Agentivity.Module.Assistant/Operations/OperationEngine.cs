@@ -20,7 +20,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
     /// <summary>The names an operation can take, in the order they are documented.</summary>
     public static readonly IReadOnlyList<string> Operations =
     [
-        "create_entity", "rename_entity", "set_tags", "delete_entity",
+        "create_entity", "rename_entity", "set_role", "set_tags", "delete_entity",
         "add_node", "add_resource", "complete_resources", "set_input", "remove_input", "connect", "disconnect", "move_node", "remove_node", "set_entry",
         "set_orchestrator", "add_member", "set_member_group", "remove_member", "set_manager", "set_goal", "connect_members", "disconnect_members",
         "open_entity", "set_root", "set_folder",
@@ -130,6 +130,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         {
             "create_entity" => await CreateEntityAsync(index, op, work, ct).ConfigureAwait(false),
             "rename_entity" => await RenameEntityAsync(index, op, work, ct).ConfigureAwait(false),
+            "set_role" => await SetRoleAsync(index, op, work, ct).ConfigureAwait(false),
             "set_tags" => await SetTagsAsync(index, op, work, ct).ConfigureAwait(false),
             "delete_entity" => await DeleteEntityAsync(index, op, work, ct).ConfigureAwait(false),
             "add_node" => await AddNodeAsync(index, op, work, snapshot, ct).ConfigureAwait(false),
@@ -246,6 +247,13 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         if (entity.Kind == EntityKinds.Agent && entity.Draft["graph"] is JsonObject graph)
             graph["name"] = name;
         return Ok(index, op, $"Renamed the {entity.Kind} to '{name}'.");
+    }
+
+    private async Task<OperationOutcome> SetRoleAsync(int index, BuilderOperation op, Work work, CancellationToken ct)
+    {
+        var entity = await ResolveAsync(op, work, ct).ConfigureAwait(false);
+        entity.Draft["role"] = Require(op, "role");
+        return Ok(index, op, $"Set the role of '{entity.Name}'.");
     }
 
     private async Task<OperationOutcome> SetTagsAsync(int index, BuilderOperation op, Work work, CancellationToken ct)
@@ -445,7 +453,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         AddNodeCoreAsync(index, op, work, snapshot, asResource: false, ct);
 
     /// <summary>
-    /// Adds what a step uses (a model, a memory, a session, a channel, a tool) and connects it to that step. A resource is not
+    /// Adds what a step uses (a model, a Knowledge Base, a session, a channel, a tool) and connects it to that step. A resource is not
     /// a step of the flow: it has no place in the sequence and its connection is always resource to consumer, so the port and
     /// the direction are found here and not left to the author.
     /// </summary>
@@ -578,9 +586,9 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
 
         var isResource = string.Equals(details["nodeClass"]?.GetValue<string>(), "resource", StringComparison.OrdinalIgnoreCase);
         if (isResource && !asResource)
-            throw Refuse("use_add_resource", $"'{type}' is a resource: it supplies a model, a memory, a tool or a channel to a step, it is not a step of the flow.", $"Use add_resource to=<the step that uses it> type={type}; it is connected for you.");
+            throw Refuse("use_add_resource", $"'{type}' is a resource: it supplies a model, a Knowledge Base, a session, a tool or a channel to a step, it is not a step of the flow.", $"Use add_resource to=<the step that uses it> type={type}; it is connected for you.");
         if (!isResource && asResource)
-            throw Refuse("use_add_node", $"'{type}' is a step of the flow, not a resource.", "Use add_node for a step. add_resource is for what a step uses: a model, a memory, a session, a channel, a tool.");
+            throw Refuse("use_add_node", $"'{type}' is a step of the flow, not a resource.", "Use add_node for a step. add_resource is for what a step uses: a model, a Knowledge Base, a session, a channel, a tool.");
 
         string id;
         if (op.Text("id") is { } requested)
@@ -817,7 +825,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         var toPort = op.Text("toPort");
         var notes = new List<string>();
 
-        // A resource (a model, a memory…) is connected from the resource to the one that uses it. Models often give it the
+        // A resource (a model, a Knowledge Base…) is connected from the resource to the one that uses it. Models often give it the
         // other way round: when only the reverse can fit, take it the reverse way instead of refusing.
         var providesResource = outputs.Any(p => PortKind(p) == "resource");
         var otherOutputs = Ports(toDetails, "outputPorts");
@@ -902,7 +910,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
         if (named is not null)
             return named;
         if (candidates.Count == 0)
-            throw Refuse("no_port", $"'{nodeId}' has no {direction} port that fits this connection.", "Check the ports with describe_capability: a data connection goes from an output port to an input port, a resource (model, memory, tool) from the resource to the step that uses it.");
+            throw Refuse("no_port", $"'{nodeId}' has no {direction} port that fits this connection.", "Check the ports with describe_capability: a data connection goes from an output port to an input port, a resource (model, Knowledge Base, tool) from the resource to the step that uses it.");
         throw Refuse("ambiguous_port", $"'{nodeId}' has several {direction} ports that could fit ({string.Join(", ", candidates.Select(p => p["name"]!.GetValue<string>()))}); say which one.", "Name it with fromPort / toPort.", [.. candidates.Select(p => p["name"]!.GetValue<string>())]);
     }
 

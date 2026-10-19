@@ -29,6 +29,8 @@
     <ProjectReference Include="..\Agentivity.Infrastructure\Agentivity.Infrastructure.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.Workflow\Agentivity.Infrastructure.Workflow.csproj" />
     <ProjectReference Include="..\Agentivity.Infrastructure.Agentic\Agentivity.Infrastructure.Agentic.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.DataTables\Agentivity.Infrastructure.DataTables.csproj" />
+    <ProjectReference Include="..\Agentivity.Infrastructure.KnowledgeBases\Agentivity.Infrastructure.KnowledgeBases.csproj" />
   </ItemGroup>
 
   <Target Name="CopyModuleToModulesDirectory" AfterTargets="Build">

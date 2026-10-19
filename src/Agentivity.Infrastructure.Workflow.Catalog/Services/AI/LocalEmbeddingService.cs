@@ -1,4 +1,5 @@
 using Agentivity.Infrastructure.Core;
+using Agentivity.Infrastructure.Core.Llm.Knowledge;
 using Agentivity.Infrastructure.Options;
 using Agentivity.Infrastructure.Workflow.Catalog.AI.Models;
 using Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Models.Capabilities;
@@ -17,7 +18,7 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Services.AI;
 /// <c>CatalogPlugin.ConfigureServices</c> / <c>ServiceCollectionExtensions.AddSingleton(typeof(Node), nodeType)</c>),
 /// so a concrete node type can never be resolved as itself.
 /// </summary>
-public sealed class LocalEmbeddingService : IEmbeddingProvider, IDisposable
+public sealed class LocalEmbeddingService : IEmbeddingProvider, ITextEmbedder, IDisposable
 {
     private readonly OnnxLocalEmbeddingCapability? _onnx;
 
@@ -26,6 +27,10 @@ public sealed class LocalEmbeddingService : IEmbeddingProvider, IDisposable
     public bool IsAvailable => _onnx is not null;
 
     public LocalEmbeddingService(IOptions<LLMModelsOptions> modelsOptions, ILogger<LocalEmbeddingService> logger)
+        : this(modelsOptions, logger, network: null) { }
+
+    /// <summary>[network] stands for the internet in tests: the download goes through it.</summary>
+    internal LocalEmbeddingService(IOptions<LLMModelsOptions> modelsOptions, ILogger<LocalEmbeddingService> logger, HttpMessageHandler? network)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
@@ -35,10 +40,10 @@ public sealed class LocalEmbeddingService : IEmbeddingProvider, IDisposable
         if (!File.Exists(onnxModelPath))
         {
             logger.LogInformation("ONNX model not found, attempting download from HuggingFace...");
-            bool downloaded = OnnxModelDownloader.EnsureSentenceTransformerModelAsync("all-MiniLM-L6-v2", modelsBasePath, logger).GetAwaiter().GetResult();
+            string? why = OnnxModelDownloader.DownloadSentenceTransformerAsync("all-MiniLM-L6-v2", modelsBasePath, logger, network).GetAwaiter().GetResult();
 
-            if (!downloaded)
-                logger.LogWarning("Failed to download ONNX model. Local embeddings will not be available.");
+            if (why is not null)
+                logger.LogWarning("The free local embedding model could not be downloaded: {Why}. Everything else works; what uses this model (Knowledge Bases, Local Embeddings, a vector store with no Embeddings connected) will say so when it runs. The download is tried again at the next start.", why);
         }
 
         if (File.Exists(onnxModelPath))
@@ -68,6 +73,13 @@ public sealed class LocalEmbeddingService : IEmbeddingProvider, IDisposable
         return _onnx!.CreateBatchEmbeddingsAsync(texts, cancellationToken);
     }
 
+    /// <summary>The vectors of the Knowledge Bases: the same free local model.</summary>
+    public async Task<IReadOnlyList<float[]>> EmbedAsync(IReadOnlyList<string> texts, CancellationToken cancellationToken = default)
+    {
+        EnsureAvailable();
+        return await _onnx!.CreateBatchEmbeddingsAsync(texts, cancellationToken).ConfigureAwait(false);
+    }
+
     public int GetEmbeddingDimensions(ResourceBinding binding) => _onnx?.EmbeddingDimensions ?? 384;
 
     public string GetModelName(ResourceBinding binding) => _onnx?.ModelName ?? "all-MiniLM-L6-v2 (ONNX Local)";
@@ -75,7 +87,7 @@ public sealed class LocalEmbeddingService : IEmbeddingProvider, IDisposable
     private void EnsureAvailable()
     {
         if (_onnx is null)
-            throw new InvalidOperationException("Local ONNX embedding model is not available. Ensure the model is downloaded.");
+            throw new InvalidOperationException("The free local embedding model is not available: it could not be downloaded when the platform started (the log says why). Connect an Embeddings node to the memory, or restart the platform once it can reach huggingface.co.");
     }
 
     public void Dispose() => _onnx?.Dispose();

@@ -151,6 +151,8 @@ public static class TemplatesEndpoints
             },
             requires = new { credentials = result.RequiresCredentials },
             toConfigure = result.ToConfigure,
+            // What was created without the author's own settings (a path on the server, a connection string): to fill in, then synchronise.
+            itemsToConfigure = result.ItemsToConfigure.Select(c => new { kind = c.Kind, id = c.Id, name = c.Name, settings = c.Settings }),
             warnings = result.Warnings,
         };
 
@@ -174,7 +176,9 @@ public static class TemplatesEndpoints
         new
         {
             suggestion = new { id = result.Suggestion.Id, name = result.Suggestion.Name, description = result.Suggestion.Description, tags = result.Suggestion.Tags },
-            counts = new { agents = result.Counts.Agents, teams = result.Counts.Teams, workflows = result.Counts.Workflows, dataTables = result.Counts.DataTables },
+            counts = new { agents = result.Counts.Agents, teams = result.Counts.Teams, workflows = result.Counts.Workflows, dataTables = result.Counts.DataTables, knowledgeBases = result.Counts.KnowledgeBases },
+            // What travels without the author's own settings (a path on the server, a connection string), to fill in after the import.
+            toConfigure = result.ToConfigure.Select(c => new { kind = c.Kind, id = c.Id, name = c.Name, settings = c.Settings }),
             contents = result.Contents.Select(c => new { kind = c.Kind, id = c.Id, name = c.Name, role = c.Role, depth = c.Depth }),
             unresolved = result.Unresolved.Select(u => new { fromKind = u.FromKind, fromId = u.FromId, fromName = u.FromName, reference = u.Reference, reason = u.Reason }),
             requires = new { credentials = result.RequiresCredentials },

@@ -110,7 +110,7 @@ public sealed class WorkflowAgentLlmProxy(NodeConfig config, WorkflowRunServices
         }
 
         Services.PublishStatus($"Executing AI agent tool '{toolCall.Name}'...");
-        var result = await McpToolRouter.CallToolAsync(Config, "tools", ResourcePortCategory.AIAgentTool, toolCall.Name, arguments, cancellationToken).ConfigureAwait(false);
+        var result = await McpToolRouter.CallToolAsync(Config, AgentToolPorts.All, toolCall.Name, arguments, cancellationToken).ConfigureAwait(false);
 
         var resultContent = McpToolResultJson.GetTextContent(result);
         var isError = McpToolResultJson.IsError(result);

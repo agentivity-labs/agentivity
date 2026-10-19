@@ -63,6 +63,7 @@ public sealed class NodeCapabilityContributor : ICapabilityContributor
             Description = meta?.Description ?? "",
             WhenToUse = meta?.WhenToUse,
             Category = meta?.CategoryId,
+            ReplacedBy = meta?.ReplacedBy,
             Keywords = keywords,
             Details = details,
             Card = Card(node, meta, nodeClass, inputs, outputs, inputPorts, outputPorts),
@@ -149,6 +150,8 @@ public sealed class NodeCapabilityContributor : ICapabilityContributor
                 if (input.Required == true)
                     sb.Append('*');
                 sb.Append(" (").Append(input.Type);
+                if (!string.IsNullOrWhiteSpace(input.Ui?.AssetKind))
+                    sb.Append(": ").Append(input.Ui!.AssetKind);
                 if (input.Choices is { Count: > 0 } choices)
                 {
                     sb.Append(": ").Append(string.Join(" | ", choices.Take(MaxChoicesInCard).Select(c => c.Value)));

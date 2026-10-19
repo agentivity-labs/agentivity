@@ -22,7 +22,7 @@ namespace Agentivity.Infrastructure.Fabric;
 /// When the agent is accessed through the catalogue registry, use <see cref="StandaloneAgentIExecutable"/>.
 /// </para>
 /// </summary>
-public sealed class StandaloneAgent(AgentHost agentHost, IInteractionRequestStore? interactionStore = null, IRunEventBus? eventBus = null, IAgentTelemetryEmitter? telemetryEmitter = null)
+public sealed class StandaloneAgent(AgentHost agentHost, IInteractionRequestStore? interactionStore = null, IRunEventBus? eventBus = null, IAgentTelemetryEmitter? telemetryEmitter = null, Agentivity.Infrastructure.Repository.IRepository<RunContext, RunRecord>? runRepository = null)
 {
     /// <summary>
     /// Executes the given agent and returns the final run result.
@@ -43,7 +43,7 @@ public sealed class StandaloneAgent(AgentHost agentHost, IInteractionRequestStor
         ArgumentNullException.ThrowIfNull(context);
 
         var (tools, session, hil, trace, preparedHumanLoopContext) = AgentProxyFactory.BuildStandalone(agent, agentHost, interactionStore, eventBus, context);
-        var resolver = AgentProxyFactory.BuildResolver(agent, agentHost, eventBus, telemetryEmitter);
+        var resolver = AgentProxyFactory.BuildResolver(agent, agentHost, eventBus, telemetryEmitter, runRepository);
         var executable = new AgentExecutable(agent, agentHost, telemetryEmitter);
         return executable.ExecuteAgentAsync(args, context, tools, session, hil, trace, preparedHumanLoopContext, resolver, ct);
     }

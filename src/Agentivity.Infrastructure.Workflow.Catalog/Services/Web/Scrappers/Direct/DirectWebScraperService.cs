@@ -26,7 +26,7 @@ public sealed class DirectWebScraperService : IWebScraperService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var scraper = new DirectWebScraper(_httpClientFactory.CreateClient(), _loggerFactory.CreateLogger(typeof(DirectWebScraper)));
+        var scraper = new DirectWebScraper(_httpClientFactory.CreateClient(PublicNetwork.FollowingRedirectsHttpClientName), _loggerFactory.CreateLogger(typeof(DirectWebScraper)));
 
         return scraper.ScrapeAsync(request.Url, request.Options, cancellationToken);
     }

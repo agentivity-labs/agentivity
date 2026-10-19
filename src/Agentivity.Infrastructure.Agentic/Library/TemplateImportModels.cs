@@ -36,6 +36,9 @@ public sealed record TemplateImportResult(
 )
 {
     public bool IsValid => Problems.Count == 0;
+
+    /// <summary>What was (or would be) created without the author's own settings (a path on the server, a connection string), under its new identifier: to fill in before using it.</summary>
+    public IReadOnlyList<TemplateToConfigure> ItemsToConfigure { get; init; } = [];
 }
 
 /// <summary>Why an import stopped: the chosen model connection does not exist or is not usable, or something could not be saved (what was created is then removed).</summary>

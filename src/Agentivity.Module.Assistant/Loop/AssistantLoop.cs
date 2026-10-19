@@ -150,6 +150,9 @@ public sealed class AssistantLoop(IAssistantModelProvider models, AssistantTools
         var steps = 0;
         var changedThisTurn = false;
         var gateRounds = 0;
+        // The agents as they were when the turn began: the ones built or changed during it are checked for their tools once.
+        var agentsBefore = AgentGraphs(changeset);
+        var toolsReviewed = false;
         string finalText = "";
         string reason = "answered";
         Question? asked = null;
@@ -230,6 +233,16 @@ public sealed class AssistantLoop(IAssistantModelProvider models, AssistantTools
                     messages.Add(new LlmChatMessage("user", "Before you answer: the work is not complete. " + missing + " Build what is missing now, referring to what already exists by its name; do not say it is ready until it exists. If you decided not to build it, say so plainly and why."));
                     await sink.EmitAsync(new ToolStarted("plan-" + gateRounds, "validate", "Comparing with the plan"), cancellationToken).ConfigureAwait(false);
                     await sink.EmitAsync(new ToolFinished("plan-" + gateRounds, "validate", false, "Part of the plan is not built yet"), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                if (changedThisTurn && !toolsReviewed && await ToolsToReviewAsync(id, agentsBefore, cancellationToken).ConfigureAwait(false) is { } agents)
+                {
+                    toolsReviewed = true;
+                    messages.Add(new LlmChatMessage("assistant", response.Content ?? ""));
+                    messages.Add(new LlmChatMessage("user", "Before you answer: check that each agent you built or changed has the tools its job needs. " + agents + " For each one, name what its instructions and its knowledge rely on: today's date (a deadline, a warranty, \"within 30 days\"), reading or changing a table, the web, sending an e-mail, asking a person… Each of these needs a tool connected to it: find it with search_capabilities (its \"when to use\" says which agents need it) and connect it; remove a tool its instructions never use. What you cannot connect is said plainly to the person, as something they provide. If every agent already has what it needs, answer now."));
+                    await sink.EmitAsync(new ToolStarted("tools-review", "validate", "Checking each agent has the tools its job needs"), cancellationToken).ConfigureAwait(false);
+                    await sink.EmitAsync(new ToolFinished("tools-review", "validate", true, "Checked the tools of each agent"), cancellationToken).ConfigureAwait(false);
                     continue;
                 }
 
@@ -388,6 +401,43 @@ public sealed class AssistantLoop(IAssistantModelProvider models, AssistantTools
         return $"It has {top.Count} separate pieces that nothing holds together: {string.Join(", ", top.Select(e => $"{e.Name} ({e.Kind})"))}. A solution is one main entity that contains the others: a team whose members are these agents, or a workflow that calls them.";
     }
 
+    /// <summary>Each agent of the work, by id: its graph as written, to tell which ones a turn built or changed.</summary>
+    private static Dictionary<string, string> AgentGraphs(Changeset changeset) =>
+        changeset.Entities.Where(e => e.Kind == EntityKinds.Agent && e.State != EntityStates.Deleted).ToDictionary(e => e.Id, e => e.Draft["graph"]?.ToJsonString() ?? "");
+
+    /// <summary>
+    /// The agents built or changed since <paramref name="before"/>, each with the tools and the knowledge connected to it, in
+    /// one line for the model; null when none was.
+    /// </summary>
+    private async Task<string?> ToolsToReviewAsync(string changesetId, Dictionary<string, string> before, CancellationToken ct)
+    {
+        if (await store.GetAsync(changesetId, ct).ConfigureAwait(false) is not { } changeset)
+            return null;
+
+        var touched = AgentGraphs(changeset).Where(a => !before.TryGetValue(a.Key, out var was) || was != a.Value).Select(a => changeset.Entities.First(e => e.Id == a.Key)).ToList();
+        if (touched.Count == 0)
+            return null;
+
+        string Connected(JsonObject graph, string port)
+        {
+            var nodes = (graph["nodes"] as JsonArray)?.OfType<JsonObject>().ToDictionary(n => n["id"]?.ToString() ?? "", n => n["nodeType"]?.ToString() ?? "", StringComparer.OrdinalIgnoreCase) ?? [];
+            var names = (graph["connections"] as JsonArray)?.OfType<JsonObject>()
+                .Where(c => string.Equals(c["toPort"]?.ToString(), port, StringComparison.OrdinalIgnoreCase))
+                .Select(c => nodes.GetValueOrDefault(c["from"]?.ToString() ?? "") is { Length: > 0 } type ? registry.Current.Get(CapabilityKinds.Node, type)?.Name ?? type : c["from"]?.ToString() ?? "")
+                .Where(n => n.Length > 0)
+                .ToList() ?? [];
+            return names.Count == 0 ? "" : string.Join(", ", names);
+        }
+
+        return string.Join(" ", touched.Select(a =>
+        {
+            var graph = a.Draft["graph"] as JsonObject ?? [];
+            var tools = Connected(graph, "tools");
+            var knowledge = Connected(graph, "knowledge");
+            return $"'{a.Name}': {(tools.Length == 0 ? "no tools" : "tools " + tools)}{(knowledge.Length == 0 ? "" : "; knowledge " + knowledge)}.";
+        }));
+    }
+
     /// <summary>The errors of the work in progress as one line for the model, or null when there are none.</summary>
     private async Task<string?> UnresolvedErrorsAsync(string changesetId, CancellationToken ct)
     {
@@ -467,6 +517,10 @@ public sealed class AssistantLoop(IAssistantModelProvider models, AssistantTools
                 return "Browsing what is available";
             case "list_workspace":
                 return "Checking what already exists";
+            case "list_connections":
+                return "Checking your connections";
+            case "list_assets":
+                return "Looking at your data";
             case "get_entity":
                 return $"Reading “{Text(args, "entity") ?? "it"}”";
             case "build_from_spec":

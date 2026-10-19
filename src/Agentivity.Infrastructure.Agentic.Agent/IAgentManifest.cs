@@ -54,13 +54,6 @@ public sealed record AgentRunResult(string Response, string FinishReason, int Ex
     public int PersistedMessageCount { get; init; }
 
     /// <summary>
-    /// Memory/RAG context retrieved for this run (empty when no memory resource is connected).
-    /// Populated by <see cref="Agentivity.Infrastructure.Agentic.Composables.AgentExecutable"/> from
-    /// <see cref="IAgentDefinitionResolver"/> resolution; consumed for node output reporting.
-    /// </summary>
-    public string MemoryContextUsed { get; init; } = string.Empty;
-
-    /// <summary>
     /// Every guardrail match recorded during the run with a non-blocking action (Warn — a
     /// Block match never reaches here, since <see cref="AgentHost.ApplyGuardrailsAsync"/> throws
     /// immediately instead of returning). Empty when no guardrail matched anything. Exists so a

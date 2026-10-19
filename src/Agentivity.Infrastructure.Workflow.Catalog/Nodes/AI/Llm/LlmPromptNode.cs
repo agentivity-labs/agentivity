@@ -1,4 +1,4 @@
-﻿using Agentivity.Domain.Workflow;
+using Agentivity.Domain.Workflow;
 using Agentivity.Infrastructure.Arguments;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Fabric;
@@ -22,7 +22,7 @@ public sealed class LlmPromptNode : BaseAINode
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        DefineMetadata("LLM Prompt", "Executes a prompt using an LLM with optional structured output, retrieval via llm_memory, and connectable knowledge sources.", "ai.llm", whenToUse: "To get a single answer from a model for one prompt (summarize, classify, extract, write), as text, or as JSON when you give a JSON Schema. Not for work that needs tools or several steps: use AI Agent instead.");
+        DefineMetadata("LLM Prompt", "Executes a prompt using an LLM with optional structured output, answering from the Knowledge Bases connected to it.", "ai.llm", whenToUse: "To get a single answer from a model for one prompt (summarize, classify, extract, write), as text, or as JSON when you give a JSON Schema. Not for work that needs tools or several steps: use AI Agent instead.");
         DefineEffects(NodeEffects.Costs);
 
         // LLM provider — same resource-port pattern as AiNode ("AI Agent"): the connected
@@ -33,9 +33,7 @@ public sealed class LlmPromptNode : BaseAINode
         // (there is no credentials *template* literally named "llm").
         DefineResourceInputPort("llm_model", "LLM Model", ResourcePortCategory.LlmModel, "LLM provider and model configuration");
 
-        // RAG support
-        DefineResourceInputPort("llm_memory", "LLM Memory", ResourcePortCategory.LlmMemory, "Embedding and retrieval resource used to rank connected knowledge documents (optional)", isRequired: false);
-        DefineResourceInputPort("knowledge", "Knowledge Sources", ResourcePortCategory.KnowledgeSource, "Connect one or more ai.knowledge resources that provide the input corpus (optional)", maxConnections: -1, isRequired: false);
+        DefineResourceInputPort("knowledge", "Knowledge Bases", ResourcePortCategory.KnowledgeSource, "The Knowledge Bases searched with the prompt, each with the Knowledge Base step (optional)", maxConnections: -1, isRequired: false);
 
         // Inputs
         DefineInput(
@@ -96,21 +94,6 @@ public sealed class LlmPromptNode : BaseAINode
             required: false
         );
         DefineInput(
-            "rag_top_k",
-            ArgumentType.Number,
-            "Number of knowledge snippets to retrieve when llm_memory and knowledge sources are connected",
-            3,
-            ui: new ArgumentUiMetadata
-            {
-                Tab = "Memory",
-                Group = "Retrieval",
-                Order = 10,
-                Min = 1,
-                Step = 1,
-            },
-            required: false
-        );
-        DefineInput(
             "temperature",
             ArgumentType.Number,
             "Creativity (0-2)",
@@ -144,7 +127,7 @@ public sealed class LlmPromptNode : BaseAINode
 
         // Outputs
         DefineOutput("response", ArgumentType.Text, "LLM response");
-        DefineOutput("rag_context_used", ArgumentType.Text, "config retrieved from RAG (if used)");
+        DefineOutput("knowledge_used", ArgumentType.Text, "What the Knowledge Bases gave for this prompt (empty when none is connected)");
 
         DefineIcon(NodeIcon.Embedded("aillm"));
     }
@@ -159,31 +142,21 @@ public sealed class LlmPromptNode : BaseAINode
         double temperature = args.GetDouble("temperature") ?? 0.7;
         int maxTokens = args.GetInt("max_tokens") ?? 8000;
         string responseSchema = args.GetText("response_schema") ?? "";
-        int ragTopK = args.GetInt("rag_top_k") ?? 3;
 
         services.PublishStatus("Executing LLM prompt...");
 
-        // Check if RAG is connected
-        bool hasRAG = ResourceResolver.TryResolve(config, "llm_memory", ResourcePortCategory.LlmMemory) != null;
-        string ragContext = "";
+        string knowledgeUsed = "";
 
-        if (hasRAG)
+        // The Knowledge Bases on its Knowledge port: searched once with the prompt (it has no tools to search them itself).
+        foreach (var (knowledgeBase, binding) in ResourceResolver.ResolveToolNodes<IKnowledgeRetriever>(config, "knowledge", ResourcePortCategory.KnowledgeSource))
         {
-            services.PublishStatus("RAG connected - retrieving relevant config...");
-            // The same retrieval as an AI agent's: a failure stops the node, it is not answered as if there were no knowledge.
-            ragContext = await new WorkflowAgentMemoryProxy(config, services).RetrieveAsync(prompt, ragTopK, cancellationToken).ConfigureAwait(false);
-
-            if (!string.IsNullOrWhiteSpace(ragContext))
+            services.PublishStatus("Searching the knowledge base...");
+            string found = await knowledgeBase.RetrieveContextAsync(binding, prompt, Knowledge.KnowledgeBaseNode.Results(binding), cancellationToken).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(found))
             {
-                services.PublishStatus($"Retrieved {ragContext.Split('\n').Length} config snippets from RAG");
-
-                // Inject RAG config into system prompt
-                string ragSection = $"\n\nRelevant config from Knowledge Base:\n{ragContext}\n\nUse this config to answer the user's question when relevant.";
-                systemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? ragSection.TrimStart() : systemPrompt + ragSection;
-            }
-            else
-            {
-                services.PublishStatus("No relevant config found in RAG");
+                knowledgeUsed = string.IsNullOrEmpty(knowledgeUsed) ? found : knowledgeUsed + "\n\n" + found;
+                string section = $"\n\nWhat the knowledge base says on this:\n{found}\n\nAnswer from it when it is relevant.";
+                systemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? section.TrimStart() : systemPrompt + section;
             }
         }
 
@@ -213,8 +186,7 @@ public sealed class LlmPromptNode : BaseAINode
 
         services.PublishStatus("LLM response received.");
 
-        // Return string directly with RAG config info
-        return NodeResult.Create().AddText("response", result.Content ?? string.Empty).AddText("rag_context_used", ragContext ?? "");
+        return NodeResult.Create().AddText("response", result.Content ?? string.Empty).AddText("knowledge_used", knowledgeUsed);
     }
 
 }

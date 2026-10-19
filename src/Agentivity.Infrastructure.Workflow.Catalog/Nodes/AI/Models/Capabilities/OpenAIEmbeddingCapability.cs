@@ -11,7 +11,7 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Models.Capabilitie
 
 /// <summary>
 /// OpenAI-based embedding capability.
-/// Can be used by any LLM Memory node that has OpenAI credentials.
+/// Used by OpenAI Embeddings and by the vector stores that have OpenAI credentials of their own.
 /// </summary>
 public sealed class OpenAIEmbeddingCapability : IEmbeddingCapability
 {
@@ -104,65 +104,5 @@ public sealed class OpenAIEmbeddingCapability : IEmbeddingCapability
     {
         [JsonPropertyName("embedding")]
         public float[]? Embedding { get; set; }
-    }
-}
-
-/// <summary>
-/// Factory for creating OpenAI embedding capabilities.
-/// Registered for ai.memory.simple and ai.memory.openai nodes.
-/// </summary>
-public sealed class OpenAIEmbeddingCapabilityFactory : IResourceCapabilityFactory<IEmbeddingCapability>
-{
-    private readonly CredentialsService _credentialsService;
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly ILogger<OpenAIEmbeddingCapability>? _logger;
-
-    public Type CapabilityType => typeof(IEmbeddingCapability);
-
-    public OpenAIEmbeddingCapabilityFactory(CredentialsService credentialsService, IHttpClientFactory httpClientFactory, ILogger<OpenAIEmbeddingCapability>? logger = null)
-    {
-        _credentialsService = credentialsService;
-        _httpClientFactory = httpClientFactory;
-        _logger = logger;
-    }
-
-    public async ValueTask<IEmbeddingCapability> CreateAsync(ResourceBinding binding, NodeConfig context, CancellationToken cancellationToken = default)
-    {
-        string ragType = binding.GetString("type") ?? "simple";
-
-        string apiKey,
-            baseUrl,
-            model;
-
-        if (ragType == "openai")
-        {
-            // OpenAI Memory has its own credentials
-            string credentialsId = binding.RequireString("credentials");
-            model = binding.GetString("embedding_model") ?? "text-embedding-3-small";
-
-            Credentials credentials = await _credentialsService.GetByIdAsync(credentialsId, cancellationToken) ?? throw new InvalidOperationException($"Credentials '{credentialsId}' not found.");
-
-            apiKey = credentials.GetField("api_key") ?? throw new InvalidOperationException("Credentials missing 'api_key' field.");
-            baseUrl = credentials.GetField("base_url", "https://api.openai.com/v1");
-        }
-        else
-        {
-            // Simple Memory - use llm_model credentials
-            ResourceBinding llmBinding = ResourceResolver.Require(context, "llm_model", ResourcePortCategory.LlmModel); // Now uses "ai.llm.model"
-            string credentialsId = llmBinding.RequireString("credentials");
-
-            Credentials credentials = await _credentialsService.GetByIdAsync(credentialsId, cancellationToken) ?? throw new InvalidOperationException($"Credentials '{credentialsId}' not found.");
-
-            apiKey = credentials.GetField("api_key") ?? throw new InvalidOperationException("Credentials missing 'api_key' field.");
-            baseUrl = credentials.GetField("base_url", "https://api.openai.com/v1");
-            model = "text-embedding-3-small";
-        }
-
-        return new OpenAIEmbeddingCapability(_httpClientFactory, apiKey, baseUrl, model, _logger);
-    }
-
-    async ValueTask<IResourceCapability> IResourceCapabilityFactory.CreateAsync(ResourceBinding binding, NodeConfig context, CancellationToken cancellationToken)
-    {
-        return await CreateAsync(binding, context, cancellationToken);
     }
 }

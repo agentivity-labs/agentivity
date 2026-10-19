@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.KnowledgeBases.DependencyInjection;
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
 using Agentivity.Infrastructure.Agentic.Agent;
@@ -29,7 +30,7 @@ public static class FabricServiceCollectionExtensions
 {
     public static IServiceCollection AddFabric(this IServiceCollection services, IConfiguration configuration)
     {
-        services.TryAddSingleton<StandaloneAgent>(sp => new StandaloneAgent(sp.GetRequiredService<AgentHost>(), sp.GetService<IInteractionRequestStore>(), sp.GetService<IRunEventBus>(), sp.GetService<IAgentTelemetryEmitter>()));
+        services.TryAddSingleton<StandaloneAgent>(sp => new StandaloneAgent(sp.GetRequiredService<AgentHost>(), sp.GetService<IInteractionRequestStore>(), sp.GetService<IRunEventBus>(), sp.GetService<IAgentTelemetryEmitter>(), sp.GetService<Agentivity.Infrastructure.Repository.IRepository<RunContext, RunRecord>>()));
 
         services.AddSingleton<Agentivity.Infrastructure.Interactions.IResumableEngine, StandaloneAgentResumableEngine>();
 
@@ -51,6 +52,7 @@ public static class FabricServiceCollectionExtensions
         // (Env, Memories, Secret, Scheduling) get their own AddXxx() in their own project and are
         // aggregated here alongside it, same as executables above.
         services.AddDataTables(configuration);
+        services.AddKnowledgeBases(configuration);
 
         return services;
     }

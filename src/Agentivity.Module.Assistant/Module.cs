@@ -38,6 +38,9 @@ public sealed class Module(bool enabled) : IModule, IModuleFeatureProvider
         );
         services.AddSingleton<IEntityLookup, RepositoryEntityLookup>();
         services.AddSingleton<IConnectionLookup, CredentialsConnectionLookup>();
+        services.AddSingleton<DataTableAssetLookup>();
+        services.AddSingleton<KnowledgeBaseAssetLookup>();
+        services.AddSingleton<IAssetLookup>(sp => new CompositeAssetLookup([sp.GetRequiredService<DataTableAssetLookup>(), sp.GetRequiredService<KnowledgeBaseAssetLookup>()]));
         services.AddSingleton<OperationEngine>();
         services.AddSingleton<ChangesetValidator>();
         services.AddSingleton<ChangesetApplier>();

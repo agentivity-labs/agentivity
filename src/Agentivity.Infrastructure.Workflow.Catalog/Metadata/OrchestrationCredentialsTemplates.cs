@@ -21,6 +21,7 @@ public static class OrchestrationCredentialsTemplates
         RegisterGeminiTemplate();
         RegisterSmtpTemplate();
         RegisterImapTemplate();
+        RegisterHttpApiTemplate();
         RegisterSlackTemplate();
         RegisterTavilyTemplate();
         RegisterSerpApiTemplate();
@@ -127,7 +128,7 @@ public static class OrchestrationCredentialsTemplates
                 Id = "pinecone",
                 Category = CredentialsCategories.Data,
                 DisplayName = "Pinecone",
-                Description = "Connection settings for a Pinecone index. Used by the Pinecone vector-store memory node.",
+                Description = "Connection settings for a Pinecone index. Used by Pinecone Vector Store.",
                 Icon = 0xe1db, // storage
                 IconColor = "#FF1A1A2E", // Pinecone dark navy
                 Fields =
@@ -162,7 +163,7 @@ public static class OrchestrationCredentialsTemplates
                 Id = "qdrant",
                 Category = CredentialsCategories.Data,
                 DisplayName = "Qdrant",
-                Description = "Connection settings for a Qdrant vector database instance (self-hosted or Qdrant Cloud). Used by vector-store memory nodes.",
+                Description = "Connection settings for a Qdrant vector database instance (self-hosted or Qdrant Cloud). Used by Qdrant Vector Store.",
                 Icon = 0xe1db, // storage
                 IconColor = "#FFDC244C", // Qdrant red
                 Fields =
@@ -442,6 +443,41 @@ public static class OrchestrationCredentialsTemplates
                         Label = "Security (auto, ssl, starttls or none)",
                         Placeholder = "auto",
                         DefaultValue = "auto",
+                    },
+                ],
+            }
+        );
+    }
+
+    private static void RegisterHttpApiTemplate()
+    {
+        CredentialsTemplateRegistry.Register(
+            new CredentialsTemplate
+            {
+                Id = "http_api",
+                Category = CredentialsCategories.Other,
+                DisplayName = "HTTP API",
+                Description = "The key or token of a web API, sent in a header of every call that uses this connection: the HTTP Request step and the agent's HTTP Request tool. The key is kept here, never written in a step.",
+                Icon = 0xe157,
+                IconColor = "#FF607D8B",
+                Fields =
+                [
+                    new()
+                    {
+                        Key = "header_name",
+                        Type = CredentialsFieldType.Text,
+                        Required = true,
+                        Label = "Header",
+                        DefaultValue = "Authorization",
+                        HelpText = "The header the API reads its key from: Authorization for a token, or the name the API's documentation gives, such as X-API-Key.",
+                    },
+                    new()
+                    {
+                        Key = "header_value",
+                        Type = CredentialsFieldType.Secret,
+                        Required = true,
+                        Label = "Value",
+                        HelpText = "What the header carries, exactly as the API expects it: for a token, Bearer followed by the token; otherwise the key itself.",
                     },
                 ],
             }

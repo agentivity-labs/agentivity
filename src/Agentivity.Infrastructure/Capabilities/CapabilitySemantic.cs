@@ -81,7 +81,7 @@ public sealed class CapabilitySemanticIndex
         var vectors = new Dictionary<string, float[]>();
         var toCompute = new List<(CapabilityDescriptor Item, string Text, string Hash)>();
 
-        foreach (var item in snapshot.Items)
+        foreach (var item in snapshot.Offered)
         {
             // Nothing is said about it: a vector of its name alone is a vector of noise, and it would surface for any query.
             // It stays findable by its identifier (words), and the fix is to describe it.
@@ -135,7 +135,7 @@ public sealed class CapabilitySemanticIndex
     {
         var q = Normalize(query);
         var hits = new List<CapabilityHit>();
-        foreach (var item in _snapshot.Items)
+        foreach (var item in _snapshot.Offered)
         {
             if (kind is not null && !string.Equals(item.Kind, kind, StringComparison.OrdinalIgnoreCase))
                 continue;

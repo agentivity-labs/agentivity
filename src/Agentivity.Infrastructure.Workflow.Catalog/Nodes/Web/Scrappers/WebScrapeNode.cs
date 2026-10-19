@@ -18,8 +18,9 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.Web.Scrappers;
 /// already has. It adds no scraping of its own: it uses whichever scraper resource is connected
 /// (Direct, Jina, Firecrawl — the same ones the knowledge nodes and agent tools use) and falls back
 /// to the free Direct scraper when none is, so a workflow can take a link a person gave and turn it
-/// into text with an explicit, visible step. Links pointing inside the backend's network are refused
-/// by default (see <see cref="PublicUrlGuard"/>).
+/// into text with an explicit, visible step. Links pointing inside the backend's network are always
+/// refused: said at once when the link shows it (see <see cref="PublicUrlGuard"/>), and in any case on the
+/// address the scraper connects to (see <see cref="Agentivity.Infrastructure.Web.PublicNetwork"/>).
 /// </summary>
 public sealed class WebScrapeNode : ControlFlowNode
 {
@@ -49,7 +50,6 @@ public sealed class WebScrapeNode : ControlFlowNode
         DefineInput("url", ArgumentType.Text, "The page to read (http or https)", ui: new ArgumentUiMetadata { Group = "Page", Order = 10 }, required: true);
         DefineInput("timeout_seconds", ArgumentType.Number, "How long to wait for the page", 30, ui: new ArgumentUiMetadata { Group = "Options", Order = 20 }, required: false);
         DefineInput("max_content_length", ArgumentType.Number, "Longest content kept, in characters", 50000, ui: new ArgumentUiMetadata { Group = "Options", Order = 30 }, required: false);
-        DefineInput("allow_private_addresses", ArgumentType.Boolean, "Allow links that point inside the backend's own network (localhost, private ranges). Leave off when the link comes from a person", false, ui: new ArgumentUiMetadata { Group = "Options", Order = 40 }, required: false);
 
         DefineOutput("markdown", ArgumentType.Text, "The page content as Markdown");
         DefineOutput("text", ArgumentType.Text, "The same content as plain text");
@@ -67,13 +67,10 @@ public sealed class WebScrapeNode : ControlFlowNode
         ArgumentInputValues args = GetInputs(config);
         string url = args.RequireText("url").Trim();
 
-        if (args.GetBoolean("allow_private_addresses") != true)
+        string? refusal = await PublicUrlGuard.CheckAsync(url, cancellationToken).ConfigureAwait(false);
+        if (refusal is not null)
         {
-            string? refusal = await PublicUrlGuard.CheckAsync(url, cancellationToken).ConfigureAwait(false);
-            if (refusal is not null)
-            {
-                return Failed(url, refusal);
-            }
+            return Failed(url, refusal);
         }
 
         services.PublishStatus($"Reading '{url}'...");

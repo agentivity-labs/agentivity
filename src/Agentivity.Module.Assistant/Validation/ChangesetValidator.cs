@@ -6,6 +6,7 @@ using Agentivity.Infrastructure.Agentic.Library;
 using Agentivity.Infrastructure.Capabilities;
 using Agentivity.Infrastructure.Core.Json;
 using Agentivity.Infrastructure.Workflows;
+using Agentivity.Infrastructure.Workflows.Resources;
 using Agentivity.Infrastructure.Workflows.Validation;
 using Agentivity.Module.Assistant.Changesets;
 using Agentivity.Module.Assistant.Operations;
@@ -56,6 +57,44 @@ public sealed class ChangesetValidator(ICapabilityRegistry registry, IEntityLook
 
     private static bool Blank(JsonNode? value) => value is null || value is JsonValue v && v.TryGetValue<string>(out var s) && string.IsNullOrWhiteSpace(s);
 
+    /// <summary>
+    /// An agent step whose way of reasoning never uses what is plugged into it as tools (its Tools, its Knowledge Bases —
+    /// <see cref="AgentToolPorts"/>) while something is: it would be silently ignored.
+    /// </summary>
+    private void ModeIgnoresTools(ChangesetEntity entity, JsonObject graph, List<JsonObject> graphNodes, CapabilitySnapshot snapshot, List<ValidationIssue> issues)
+    {
+        var connections = (graph["connections"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
+        var typeOf = graphNodes.ToDictionary(n => n["id"]?.GetValue<string>() ?? "", n => n["nodeType"]?.GetValue<string>() ?? "", StringComparer.OrdinalIgnoreCase);
+        foreach (var node in graphNodes)
+        {
+            var id = node["id"]?.GetValue<string>() ?? "";
+            var declared = (snapshot.Get(CapabilityKinds.Node, typeOf.GetValueOrDefault(id) ?? "")?.Details["inputs"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault(i => i["name"]?.GetValue<string>() == "agent_mode");
+            if (declared is null)
+                continue;
+
+            var mode = (node["inputs"] as JsonObject)?["agent_mode"]?.ToString() is { Length: > 0 } chosen ? chosen : declared["defaultValue"]?.ToString();
+            if (mode is null || snapshot.Get(CapabilityKinds.AgentMode, mode)?.Details["usesConnectedTools"]?.GetValue<bool>() != false)
+                continue;
+
+            var giving = connections
+                .Where(c => string.Equals(c["to"]?.GetValue<string>(), id, StringComparison.OrdinalIgnoreCase))
+                .Select(c => (Port: c["toPort"]?.GetValue<string>() ?? "", From: c["from"]?.GetValue<string>() ?? ""))
+                .Where(c => AgentToolPorts.All.Any(p => string.Equals(p.Port, c.Port, StringComparison.OrdinalIgnoreCase)) && GivesTools(c.Port, typeOf.GetValueOrDefault(c.From)))
+                .Select(c => c.From)
+                .ToList();
+            if (giving.Count == 0)
+                continue;
+
+            var usingTools = snapshot.List(CapabilityKinds.AgentMode).Where(m => m.Details["usesConnectedTools"]?.GetValue<bool>() == true).Select(m => m.Id).ToList();
+            issues.Add(Error(entity, "mode_ignores_tools", $"'{id}' reasons in the mode '{mode}', which never uses its tools: {string.Join(", ", giving)} would be ignored.", id, $"Set its agent_mode to one that uses them ({string.Join(", ", usingTools)}), with set_input."));
+        }
+    }
+
+    // On the Tools port, everything is a tool; elsewhere (Knowledge), only what gives tools (a Knowledge Base).
+    private bool GivesTools(string port, string? nodeType) =>
+        AgentToolPorts.All.Any(p => string.Equals(p.Port, port, StringComparison.OrdinalIgnoreCase) && p.ResourceType == ResourcePortCategory.AIAgentTool)
+        || nodes.FirstOrDefault(n => string.Equals(n.Name, nodeType, StringComparison.OrdinalIgnoreCase)) is IAgentTool;
+
     private async Task ValidateGraphAsync(Changeset changeset, ChangesetEntity entity, CapabilitySnapshot snapshot, WorkflowValidator workflowValidator, List<ValidationIssue> issues, CancellationToken ct)
     {
         var graph = entity.Kind == EntityKinds.Agent ? entity.Draft["graph"] as JsonObject : entity.Draft;
@@ -65,8 +104,13 @@ public sealed class ChangesetValidator(ICapabilityRegistry registry, IEntityLook
             return;
         }
 
+        // An agent made here says what it is for: the editor shows it as its Role, and a team chooses its members by it.
+        if (entity.Kind == EntityKinds.Agent && entity.State == EntityStates.Created && Blank(entity.Draft["role"]))
+            issues.Add(Error(entity, "missing_role", $"The agent '{entity.Name}' has no role.", hint: "Write it with set_role: one or two sentences on what it handles and what it does not."));
+
         var graphNodes = (graph["nodes"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        ModeIgnoresTools(entity, graph, graphNodes, snapshot, issues);
 
         foreach (var node in graphNodes)
         {
@@ -122,8 +166,8 @@ public sealed class ChangesetValidator(ICapabilityRegistry registry, IEntityLook
             {
                 if (TemplateReferences.IsComputed(reference.Value))
                     continue;
-                if (reference.IsDataTable)
-                    continue; // data tables are not part of a changeset yet
+                if (reference.AssetKind is not null)
+                    continue; // data tables and Knowledge Bases are not part of a changeset yet
                 if (!await EntityExistsAsync(changeset, reference.Value, ct).ConfigureAwait(false))
                     issues.Add(Error(entity, "reference_not_found", $"'{node["id"]?.GetValue<string>()}' points to '{reference.Value}', which does not exist.", node["id"]?.GetValue<string>(), "Create the entity first, or choose an existing one."));
             }

@@ -87,7 +87,7 @@ public static class ResourceResolver
     ///
     /// Example:
     ///   var embedding = await ResourceResolver.GetCapabilityAsync&lt;IEmbeddingCapability&gt;(
-    ///       context, "llm_memory", ResourceTypes.LlmMemory, cancellationToken);
+    ///       context, "embeddings", ResourcePortCategory.Embeddings, cancellationToken);
     /// </summary>
     public static async ValueTask<TCapability?> GetCapabilityAsync<TCapability>(NodeConfig context, string portName, string resourceType, CancellationToken cancellationToken = default)
         where TCapability : class, IResourceCapability
@@ -229,7 +229,7 @@ public static class ResourceResolver
     /// Resolves a resource node implementing TInterface connected to one of ANOTHER resource
     /// node's own input ports — for a resource node that itself needs a resource (e.g. a memory
     /// node with an optional "embeddings" port), called from inside a method that only received a
-    /// <see cref="ResourceBinding"/> for that memory node, not a full <see cref="NodeConfig"/>.
+    /// <see cref="ResourceBinding"/> for that vector store, not a full <see cref="NodeConfig"/>.
     /// Returns null if <paramref name="ownBinding"/> carries no graph context (see
     /// <see cref="ResourceBinding.Definition"/>) or nothing is connected to that port.
     /// </summary>

@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.KnowledgeBases.Endpoints;
 using Agentivity.Domain.Run;
 using Agentivity.Host.Agentic;
 using Agentivity.Host.Icons;
@@ -387,6 +388,7 @@ public sealed class AgentivityHost : IAgentivityHost
         _app.MapWorkflowNodeSessionsApi();
         _app.MapExecutableEntitiesApi();
         _app.MapDataTablesApi();
+        _app.MapKnowledgeBasesApi();
         _app.MapRunInspectorApi();
         _app.MapUnifiedExecutionStreamApi();
         _app.MapAgUiWidgetBundleApi();

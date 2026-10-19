@@ -16,12 +16,13 @@ public sealed record ResourcePortCategory
 
     // LLM resources (accepts all implementations)
     public static readonly ResourcePortCategory LlmModel = new("llm.model.*");
-    public static readonly ResourcePortCategory LlmMemory = new("llm.memory.*");
+    // What an agent or an LLM Prompt knows: the Knowledge Base step, on their Knowledge port.
     public static readonly ResourcePortCategory KnowledgeSource = new("ai.knowledge.*");
 
-    // Standalone embedding provider (decoupled from any particular vector store — a vector
-    // store node accepts this as an input and exposes LlmMemory on its own output, so existing
-    // llm_memory consumers need no changes).
+    // A vector store (In-Memory, Qdrant, Pinecone, pgvector): texts kept with their vectors, apart from Knowledge Bases.
+    public static readonly ResourcePortCategory VectorStore = new("ai.vectorstore.*");
+
+    // The model that turns a text into a vector, plugged into a vector store or a step that compares texts by meaning.
     public static readonly ResourcePortCategory Embeddings = new("ai.embeddings.*");
 
     // Image generation resources

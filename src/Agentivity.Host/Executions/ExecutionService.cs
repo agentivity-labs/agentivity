@@ -93,7 +93,7 @@ public sealed class ExecutionService
         var agentId = executable.Definition.Id;
         var createdAt = DateTimeOffset.UtcNow;
 
-        await Agentivity.Host.Runs.AgentProgressWriter.SetPayloadAsync(runRepository, runId, body.Input, ct: ct).ConfigureAwait(false);
+        await Agentivity.Infrastructure.Agentic.Agent.AgentProgressWriter.SetPayloadAsync(runRepository, runId, body.Input, ct: ct).ConfigureAwait(false);
         if (runRepository is not null)
         {
             var ctx = await runRepository.FindAsync(runId, ct).ConfigureAwait(false);
@@ -166,7 +166,7 @@ public sealed class ExecutionService
                     completedCtx?.UpsertStep(agentId, step => { step.Status = RunStatus.Completed; step.Outputs = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["output"] = result.Content }; });
                     if (entryNodeId is not null)
                         completedCtx?.UpsertStep(entryNodeId, step => step.Status = RunStatus.Completed);
-                    await Agentivity.Host.Runs.AgentProgressWriter.SetPayloadAsync(runRepository, runId, body.Input, result.Content).ConfigureAwait(false);
+                    await Agentivity.Infrastructure.Agentic.Agent.AgentProgressWriter.SetPayloadAsync(runRepository, runId, body.Input, result.Content).ConfigureAwait(false);
                     if (entryNodeId is not null)
                         eventBus.Publish(new RunEvent(RunId: runId, DefinitionId: agentId, RunKind: RunKind.Agent, Kind: RunEventKind.node_updated, EventName: "node_updated", OccurredAtUtc: DateTimeOffset.UtcNow, ExecutionId: executionId, StreamId: streamId));
                 }
@@ -253,10 +253,11 @@ public sealed class ExecutionService
             {
                 await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false);
                 // A caught, structured failure (e.g. LlmCallException converted to a Failed graph
-                // task) never rethrows here — it only flips RunContext.Status. Reading that back
-                // rather than assuming "completed" is what keeps the Execution's state consistent
-                // with its run's actual outcome (see Agentivity.Domain.Run.RunStatus).
-                executionCtx.SetState(runCtx.Status == RunStatus.Failed ? "failed" : "completed");
+                // task) never rethrows here — it only flips RunContext.Status; and a run that asked a
+                // person something returns here waiting for the answer. Reading that back rather than
+                // assuming "completed" is what keeps the Execution's state consistent with its run's
+                // actual outcome (see ExecutionContext.StateOf).
+                executionCtx.SetState(ExecutionContext.StateOf(runCtx.Status));
                 await executionRepository.AddAsync(executionCtx, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception ex)

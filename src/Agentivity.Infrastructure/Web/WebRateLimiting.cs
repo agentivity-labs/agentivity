@@ -87,13 +87,19 @@ public static class WebRateLimiting
                 response.Dispose();
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
-            catch (HttpRequestException ex) when (attempt < policy.MaxRetries)
+            // A call refused for leading inside the network is not tried again: it would be refused again.
+            catch (HttpRequestException ex) when (attempt < policy.MaxRetries && !PublicNetwork.IsRefusal(ex))
             {
                 var (delay, _) = GetDelay(retryAfter: null, attempt, policy);
                 retryDelayMs.Add(delay.TotalMilliseconds);
                 logger.LogWarning(ex, "HTTP request failed with a transient transport error. Retrying in {DelayMs} ms (attempt {Attempt}/{MaxAttempts}).", delay.TotalMilliseconds, attempt + 2, policy.MaxRetries + 1);
 
                 await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex) when (PublicNetwork.IsRefusal(ex))
+            {
+                // Said as it is, so whoever called knows the address was refused, not unreachable.
+                throw;
             }
             catch (HttpRequestException ex)
             {
@@ -194,7 +200,6 @@ public static class WebRateLimiting
         {
             "web_search" => "Web search request",
             "web_scrape" => "Web scraping request",
-            "web_fetch" => "Web fetch request",
             _ => "Request",
         };
 

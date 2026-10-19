@@ -115,7 +115,7 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
         DefineInputPort("in", "In", "Entry point", maxConnections: 1);
         DefineOutputPort("out", "Out", "Default output port");
         DefineResourceInputPort("llm_model", "LLM Model", ResourcePortCategory.LlmModel, "LLM for anchor text generation");
-        DefineResourceInputPort("llm_memory", "RAG/Memory", ResourcePortCategory.LlmMemory, "Embeddings for semantic scoring (optional)", isRequired: false);
+        DefineResourceInputPort("embeddings", "Embeddings", ResourcePortCategory.Embeddings, "The embeddings model that scores how close each page is to the article (optional; Local Embeddings is free).", isRequired: false);
 
         DefineInput(
             "article_topic",
@@ -343,7 +343,7 @@ public sealed class InternalLinkSuggesterNode : BaseAINode
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 2: Compute semantic scores for each category
         // ═══════════════════════════════════════════════════════════════════════
-        (IEmbeddingProvider Tool, ResourceBinding Binding)? embeddingResolved = ResourceResolver.TryResolveToolNode<IEmbeddingProvider>(config, "llm_memory", ResourcePortCategory.LlmMemory);
+        (IEmbeddingProvider Tool, ResourceBinding Binding)? embeddingResolved = ResourceResolver.TryResolveToolNode<IEmbeddingProvider>(config, "embeddings", ResourcePortCategory.Embeddings);
 
         IEmbeddingCapability? embeddingProvider = embeddingResolved is not null ? new EmbeddingProviderAdapter(embeddingResolved.Value.Tool, embeddingResolved.Value.Binding) : null;
 

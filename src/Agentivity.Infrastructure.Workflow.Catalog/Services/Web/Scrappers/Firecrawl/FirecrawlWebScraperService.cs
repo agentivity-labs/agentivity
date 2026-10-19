@@ -35,7 +35,7 @@ public sealed class FirecrawlWebScraperService : IWebScraperService
 
         string apiKey = credentials.GetField("api_key") ?? throw new InvalidOperationException("Firecrawl credentials missing 'api_key' field.");
 
-        var scraper = new FirecrawlWebScraper(_httpClientFactory.CreateClient(), apiKey, _loggerFactory.CreateLogger(typeof(FirecrawlWebScraper)));
+        var scraper = new FirecrawlWebScraper(_httpClientFactory.CreateClient(PublicNetwork.FollowingRedirectsHttpClientName), apiKey, _loggerFactory.CreateLogger(typeof(FirecrawlWebScraper)));
 
         return await scraper.ScrapeAsync(request.Url, request.Options, cancellationToken).ConfigureAwait(false);
     }

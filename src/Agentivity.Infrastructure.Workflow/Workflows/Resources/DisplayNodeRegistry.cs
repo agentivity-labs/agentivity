@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Agentivity.Infrastructure.Workflows.Resources;
 
 /// <summary>
@@ -7,7 +9,8 @@ namespace Agentivity.Infrastructure.Workflows.Resources;
 /// </summary>
 public static class DisplayNodeRegistry
 {
-    private static readonly HashSet<string> DisplayNodeTypes = new(StringComparer.OrdinalIgnoreCase);
+    // Written by every display node's constructor, at the same time when executions run at the same time (see ResourceNodeRegistry).
+    private static readonly ConcurrentDictionary<string, byte> DisplayNodeTypes = new(StringComparer.OrdinalIgnoreCase);
 
     public static void Register(string nodeType)
     {
@@ -16,8 +19,8 @@ public static class DisplayNodeRegistry
             throw new ArgumentException("Node type is required", nameof(nodeType));
         }
 
-        DisplayNodeTypes.Add(nodeType);
+        DisplayNodeTypes.TryAdd(nodeType, 0);
     }
 
-    public static bool IsDisplayNode(string? nodeType) => !string.IsNullOrWhiteSpace(nodeType) && DisplayNodeTypes.Contains(nodeType);
+    public static bool IsDisplayNode(string? nodeType) => !string.IsNullOrWhiteSpace(nodeType) && DisplayNodeTypes.ContainsKey(nodeType);
 }

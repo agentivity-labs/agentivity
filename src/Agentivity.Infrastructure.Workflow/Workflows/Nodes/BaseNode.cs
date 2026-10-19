@@ -307,6 +307,10 @@ public abstract class BaseNode : Node, INodeMetadataProvider
     /// </summary>
     protected void DefineEffects(NodeEffects effects) => _effects = effects;
 
+    /// <summary>Says that <paramref name="nodeType"/> replaces this node: kept for the workflows that use it, no longer offered.</summary>
+    protected void DefineReplacedBy(string nodeType) =>
+        _nodeMetadata = (_nodeMetadata ?? throw new InvalidOperationException("Define the metadata before saying what replaces the node.")) with { ReplacedBy = nodeType };
+
     /// <summary>
     /// Says that this node also produces outputs that cannot be listed ahead of time, and in which way (for example "one
     /// output per field configured in the node"). Declared outputs stay in <see cref="DefineOutput"/>; this is the part that

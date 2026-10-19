@@ -66,8 +66,9 @@ public sealed class CapabilitySnapshot
         Problems = problems;
         _byKey = items.ToDictionary(i => (i.Kind.ToLowerInvariant(), i.Id.ToLowerInvariant()));
         Version = ComputeVersion(items);
+        Offered = [.. items.Where(i => string.IsNullOrWhiteSpace(i.ReplacedBy))];
 
-        _documents = [.. items.Select(Index)];
+        _documents = [.. Offered.Select(Index)];
         _documentFrequency = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var document in _documents)
         foreach (var term in document.Weights.Keys)
@@ -80,13 +81,16 @@ public sealed class CapabilitySnapshot
     /// <summary>Every capability, ordered by kind then id.</summary>
     public IReadOnlyList<CapabilityDescriptor> Items { get; }
 
+    /// <summary>What is offered: every capability but those replaced by another (still found by <see cref="Get"/>).</summary>
+    public IReadOnlyList<CapabilityDescriptor> Offered { get; }
+
     /// <summary>Contributors that failed or entries that were refused, so a broken subsystem is visible instead of silent.</summary>
     public IReadOnlyList<string> Problems { get; }
 
     public CapabilityDescriptor? Get(string kind, string id) => _byKey.GetValueOrDefault((kind.ToLowerInvariant(), id.ToLowerInvariant()));
 
     public IReadOnlyList<CapabilityDescriptor> List(string? kind = null, string? category = null) =>
-        [.. Items.Where(i => (kind is null || string.Equals(i.Kind, kind, StringComparison.OrdinalIgnoreCase)) && (category is null || string.Equals(i.Category, category, StringComparison.OrdinalIgnoreCase)))];
+        [.. Offered.Where(i => (kind is null || string.Equals(i.Kind, kind, StringComparison.OrdinalIgnoreCase)) && (category is null || string.Equals(i.Category, category, StringComparison.OrdinalIgnoreCase)))];
 
     public IReadOnlyList<CapabilityKindOverview> Overview() =>
         [

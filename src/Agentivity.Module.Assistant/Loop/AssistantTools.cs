@@ -34,7 +34,7 @@ public sealed class ToolOutcome
 /// exists, building in the changeset, checking it, stating the plan and asking the person. There is deliberately no tool that
 /// saves, publishes or deletes from the workspace.
 /// </summary>
-public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup lookup, IBuilderApi builder, IChangesetStore store, IConnectionLookup? connections = null, SpecBuilder? specs = null)
+public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup lookup, IBuilderApi builder, IChangesetStore store, IConnectionLookup? connections = null, SpecBuilder? specs = null, IAssetLookup? assets = null)
 {
     /// <summary>
     /// When true (the default) nothing new is created until a plan has been stated and the person has answered it. This is
@@ -45,16 +45,17 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
     /// <summary>Longest result handed to the model; beyond it the result is cut and the model told to narrow its request.</summary>
     public const int MaxResultChars = 6000;
 
-    private static readonly string[] OperationReference =
+    internal static readonly string[] OperationReference =
     [
-        "create_entity: kind (workflow|agent|team), name, [root]",
+        "create_entity: kind (workflow|agent|team), name, [role, root]",
         "rename_entity: entity, name",
+        "set_role: entity, role  (an agent's role: one or two sentences on what it handles and what it does not; a team chooses its members by it)",
         "set_tags: entity, tags[]",
         "open_entity: entity (id or name of something already saved: brings it into the work with everything it holds, to change it)",
         "delete_entity: entity",
         "set_root: entity",
         "add_node: entity, type, [id, label, inputs{}, position{x,y}]  (a step of the flow: workflow or agent; never a resource)",
-        "add_resource: entity, to (the step that uses it), type (a resource type), [port, id, label, inputs{}]  (a model, memory, session, channel or tool: it is created and connected to that step for you)",
+        "add_resource: entity, to (the step that uses it), type (a resource type), [port, id, label, inputs{}]  (a model, Knowledge Base, session, channel or tool: it is created and connected to that step for you)",
         "complete_resources: entity, [node]  (gives every step the resources it requires and lacks, when there is no doubt which; reports the choices otherwise)",
         "set_input: entity, node, input, value",
         "remove_input: entity, node, input",
@@ -104,13 +105,18 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
             """{"type":"object","properties":{"kind":{"type":"string","description":"e.g. model, smtp"}}}"""
         ),
         Tool(
+            "list_assets",
+            "List the assets of the workspace a step input can point at: an input written \"(AssetRef: <kind>)\" in a capability card, such as the table a Data Table tool reads (kind \"datatable\"). Gives each one's id, name, folder and what it holds (a table's columns). Use the id as the input's value, for the one the person means; optionally filter by a word of its name or folder.",
+            """{"type":"object","properties":{"kind":{"type":"string","description":"The asset kind of the input, e.g. datatable"},"query":{"type":"string","description":"A word of its name or folder"}}}"""
+        ),
+        Tool(
             "get_entity",
             "Read one entity of the changeset or of the workspace: its steps and connections (workflow, agent) or its members and pattern (team). Use full=true only when you need every value.",
             """{"type":"object","properties":{"entity":{"type":"string","description":"id or name"},"full":{"type":"boolean"}},"required":["entity"]}"""
         ),
         Tool(
             "build_from_spec",
-            "Build whole workflows, agents or teams from a light description written with the catalog's type identifiers: {\"workflow\"|\"agent\"|\"team\": name, \"steps\": [{id, type, inputs}], \"resources\": [{id, type}], \"connections\": [[from, to] | {resource, for}]}. For several things: {\"solution\": {\"kind\", \"name\"}, \"entities\": [..]}, where \"solution\" names the one the person runs and which contains the others (a team with its agents: the team). The platform completes it (ports, ids, positions, missing resources) and checks it; you get every problem at once and nothing is built unless it is sound.",
+            "Build whole workflows, agents or teams from a light description written with the catalog's type identifiers: {\"workflow\"|\"agent\"|\"team\": name, \"role\": what it handles and what it does not (every agent has one), \"steps\": [{id, type, inputs}], \"resources\": [{id, type}], \"connections\": [[from, to] | {resource, for}]}. For several things: {\"solution\": {\"kind\", \"name\"}, \"entities\": [..]}, where \"solution\" names the one the person runs and which contains the others (a team with its agents: the team). The platform completes it (ports, ids, positions, missing resources) and checks it; you get every problem at once and nothing is built unless it is sound.",
             """{"type":"object","properties":{"spec":{"type":"object","description":"The description"}},"required":["spec"]}"""
         ),
         Tool(
@@ -126,7 +132,7 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         Tool(
             "set_plan",
             "State or revise the plan for the person: the goal, what will be built (in business words), and what only they can provide. It shows the plan, asks the person to confirm (question and options, written in their language) and ENDS your turn: call it before building anything new or any big change, and build only after they answer.",
-            """{"type":"object","properties":{"brief":{"type":"string"},"name":{"type":"string","description":"A name for the solution"},"steps":{"type":"array","items":{"type":"string"}},"needs":{"type":"array","items":{"type":"string"}},"builds":{"type":"array","description":"Everything that will exist when the plan is done, one entry each: the team itself as well as each of its agents","items":{"type":"object","properties":{"kind":{"type":"string","enum":["workflow","agent","team"]},"name":{"type":"string"}},"required":["kind","name"]}},"question":{"type":"string","description":"The confirmation question, in the person's language"},"options":{"type":"array","items":{"type":"string"},"description":"The answers offered, in the person's language. The first one is the go-ahead, the others ask for a change: e.g. go ahead / change something"}},"required":["brief","steps","builds"]}"""
+            """{"type":"object","properties":{"brief":{"type":"string"},"name":{"type":"string","description":"A name for the solution"},"steps":{"type":"array","items":{"type":"string"}},"needs":{"type":"array","items":{"type":"string"}},"builds":{"type":"array","description":"Everything that will exist when the plan is done, one entry each: the team itself as well as each of its agents","items":{"type":"object","properties":{"kind":{"type":"string","enum":["workflow","agent","team"]},"name":{"type":"string"},"tools":{"type":"array","items":{"type":"string"},"description":"For an agent: each tool it gets and why, in a few words of the person's language, e.g. 'Date & Time: to count the 30 days of the returns policy'"}},"required":["kind","name"]}},"question":{"type":"string","description":"The confirmation question, in the person's language"},"options":{"type":"array","items":{"type":"string"},"description":"The answers offered, in the person's language. The first one is the go-ahead, the others ask for a change: e.g. go ahead / change something"}},"required":["brief","steps","builds"]}"""
         ),
         Tool(
             "ask_connection",
@@ -151,6 +157,7 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
                 "list_capabilities" => List(args),
                 "list_workspace" => await ListWorkspaceAsync(args, cancellationToken).ConfigureAwait(false),
                 "list_connections" => await ListConnectionsAsync(args, cancellationToken).ConfigureAwait(false),
+                "list_assets" => await ListAssetsAsync(args, cancellationToken).ConfigureAwait(false),
                 "get_entity" => await GetEntityAsync(changesetId, args, cancellationToken).ConfigureAwait(false),
                 "apply_operations" => await ApplyAsync(changesetId, args, cancellationToken).ConfigureAwait(false),
                 "build_from_spec" => await BuildFromSpecAsync(changesetId, args, cancellationToken).ConfigureAwait(false),
@@ -284,6 +291,27 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         if (found.Count == 0)
             result["note"] = "The person has none of this kind yet. Do not stop there and do not send them away: call ask_connection with this kind, they can create one from the conversation (now, or a placeholder to set up later), then carry on with it.";
         return new ToolOutcome { Content = Cap(JsonText(result)), Summary = found.Count == 0 ? "Checking your connections — none yet" : $"Checking your connections — {found.Count} found" };
+    }
+
+    private async Task<ToolOutcome> ListAssetsAsync(JsonObject args, CancellationToken ct)
+    {
+        var kind = Text(args, "kind");
+        var query = Text(args, "query");
+        var found = assets is null ? [] : await assets.ListAsync(kind, ct).ConfigureAwait(false);
+        if (query is not null)
+            found = [.. found.Where(a => a.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || (a.Folder?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false))];
+
+        var result = new JsonObject
+        {
+            ["count"] = found.Count,
+            ["assets"] = new JsonArray([.. found.Select(a => (JsonNode)new JsonObject { ["kind"] = a.Kind, ["id"] = a.Id, ["name"] = a.Name, ["folder"] = a.Folder, ["holds"] = a.Description })]),
+        };
+        var sameName = found.GroupBy(a => (a.Kind, a.Name.Trim().ToLowerInvariant())).Where(g => g.Count() > 1).Select(g => g.First().Name).ToList();
+        if (sameName.Count > 0)
+            result["note"] = $"Several have the same name ({string.Join(", ", sameName)}): unless the person said which, ask the person which one (by its folder) with ask_user.";
+        if (found.Count == 0)
+            result["note"] = "None found. Do not leave the input empty without saying so, and never invent an id: tell the person and list it under what they need to provide.";
+        return new ToolOutcome { Content = Cap(JsonText(result)), Summary = found.Count == 0 ? "Looking at your data — nothing found" : $"Looking at your data — {found.Count} found" };
     }
 
     private async Task<ToolOutcome> GetEntityAsync(string changesetId, JsonObject args, CancellationToken ct)
@@ -546,7 +574,7 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         static List<string> Strings(JsonNode? node) => (node as JsonArray)?.Select(n => n?.ToString() ?? "").Where(s => !string.IsNullOrWhiteSpace(s)).ToList() ?? [];
 
         var builds = (args["builds"] as JsonArray)?.OfType<JsonObject>()
-            .Select(b => new PlannedEntity { Kind = (Text(b, "kind") ?? "").ToLowerInvariant(), Name = Text(b, "name") ?? "" })
+            .Select(b => new PlannedEntity { Kind = (Text(b, "kind") ?? "").ToLowerInvariant(), Name = Text(b, "name") ?? "", Tools = Strings(b["tools"]) })
             .Where(b => b.Kind is EntityKinds.Workflow or EntityKinds.Agent or EntityKinds.Team)
             .ToList() ?? [];
         var plan = new AssistantPlan { Brief = brief, Name = Text(args, "name"), Steps = Strings(args["steps"]), Needs = Strings(args["needs"]), Builds = builds };

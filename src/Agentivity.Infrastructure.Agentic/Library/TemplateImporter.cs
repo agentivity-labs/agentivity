@@ -21,22 +21,26 @@ public sealed partial class TemplateImporter(
     IEntityRepository<TeamEntity> teams,
     IEntityRepository<WorkflowEntity> workflows,
     LlmConnectionReplacer replacer,
-    ITemplateDataTableSink? dataTables = null
+    ITemplateDataTableSink? dataTables = null,
+    ITemplateKnowledgeBaseSink? knowledgeBases = null
 )
 {
     private const string ModelNodePrefix = "ai.llm.model.";
-    private static readonly string[] Kinds = ["agent", "team", "workflow", "datatable"];
+    private static readonly string[] Kinds = ["agent", "team", "workflow", TemplateReferences.DataTableKind, TemplateReferences.KnowledgeBaseKind];
 
     [GeneratedRegex(@"^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")]
     private static partial Regex SemVer();
 
-    private sealed class Item(string kind, string oldId, string name, JsonObject json)
+    private sealed class Item(string kind, string oldId, string name, JsonObject json, IReadOnlyList<string> toConfigure)
     {
         public string Kind { get; } = kind;
         public string OldId { get; } = oldId;
         public string NewId { get; } = Guid.NewGuid().ToString();
         public string Name { get; } = name;
         public JsonObject Json { get; } = json;
+
+        /// <summary>The settings it travelled without (the author's own installation), to fill in after the import.</summary>
+        public IReadOnlyList<string> ToConfigure { get; } = toConfigure;
     }
 
     private readonly record struct Resolution(string State, Item? Target, bool ByName);
@@ -67,9 +71,27 @@ public sealed partial class TemplateImporter(
             return new TemplateImportResult(options.DryRun, templateId, name, version, null, [], new TemplateImportModel("nothing_to_adapt", null, nodesFound, 0, null), requires, toConfigure, problems, warnings);
         }
 
-        if (items.Any(i => i.Kind == "datatable") && dataTables is null)
+        if (items.Any(i => i.Kind == TemplateReferences.DataTableKind) && dataTables is null)
         {
             problems.Add(new TemplateProblem("entities", "data_tables_unavailable", "This Template carries data tables, and the Data Tables module is not installed here."));
+        }
+
+        var bases = items.Where(i => i.Kind == TemplateReferences.KnowledgeBaseKind).ToList();
+        if (bases.Count > 0 && knowledgeBases is null)
+        {
+            problems.Add(new TemplateProblem("entities", "knowledge_bases_unavailable", "This Template carries Knowledge Bases, and the Knowledge Base module is not installed here."));
+        }
+        else if (knowledgeBases is not null)
+        {
+            // A base reads with a type of data source this installation may not offer (the hosted edition does not read the server's files).
+            foreach (var knowledgeBase in bases.Where(b => !knowledgeBases.Reads(Text(b.Json, "sourceType") ?? string.Empty)))
+            {
+                problems.Add(new TemplateProblem("entities", "knowledge_source_unavailable", $"The Knowledge Base '{knowledgeBase.Name}' reads '{Text(knowledgeBase.Json, "sourceType")}', which this installation does not offer: the Template is not imported."));
+            }
+        }
+
+        if (problems.Count > 0)
+        {
             return new TemplateImportResult(options.DryRun, templateId, name, version, null, [], new TemplateImportModel("nothing_to_adapt", null, nodesFound, 0, null), requires, toConfigure, problems, warnings);
         }
 
@@ -88,7 +110,7 @@ public sealed partial class TemplateImporter(
         if (options.DryRun)
         {
             var preview = items.Select(i => new TemplateImportItem(i.Kind, i.OldId, i.NewId, i.Name, "would_create")).ToList();
-            return new TemplateImportResult(true, templateId, name, version, root, preview, ModelPlan(options, credential, nodesFound), requires, toConfigure, problems, warnings);
+            return new TemplateImportResult(true, templateId, name, version, root, preview, ModelPlan(options, credential, nodesFound), requires, toConfigure, problems, warnings) { ItemsToConfigure = ItemsToConfigure(items) };
         }
 
         // One place for the whole Template: found, or made, in each library that receives something, before the first item.
@@ -97,7 +119,8 @@ public sealed partial class TemplateImporter(
         var created = new List<Item>();
         try
         {
-            foreach (var item in items.OrderBy(i => i.Kind == "datatable" ? 0 : 1))
+            // The items of data first: what calls them is saved once they exist.
+            foreach (var item in items.OrderBy(i => TemplateReferences.IsAsset(i.Kind) ? 0 : 1))
             {
                 await SaveAsync(item, file, options.IncludeRows, folders, cancellationToken).ConfigureAwait(false);
                 created.Add(item);
@@ -111,8 +134,12 @@ public sealed partial class TemplateImporter(
 
         var model = await AdaptModelAsync(options, credential, root, items, nodesFound, cancellationToken).ConfigureAwait(false);
         var done = items.Select(i => new TemplateImportItem(i.Kind, i.OldId, i.NewId, i.Name, "created")).ToList();
-        return new TemplateImportResult(false, templateId, name, version, root, done, model, requires, toConfigure, problems, warnings);
+        return new TemplateImportResult(false, templateId, name, version, root, done, model, requires, toConfigure, problems, warnings) { ItemsToConfigure = ItemsToConfigure(items) };
     }
+
+    /// <summary>What was (or would be) created without the author's own settings, under its new identifier.</summary>
+    private static IReadOnlyList<TemplateToConfigure> ItemsToConfigure(List<Item> items) =>
+        [.. items.Where(i => i.ToConfigure.Count > 0).Select(i => new TemplateToConfigure(i.Kind, i.NewId, i.Name, i.ToConfigure))];
 
     // ── Reading the file ──────────────────────────────────────────────────────────────────────
 
@@ -161,7 +188,7 @@ public sealed partial class TemplateImporter(
         {
             if (node is not JsonObject element || Text(element, "kind")?.ToLowerInvariant() is not { } kind || !Kinds.Contains(kind))
             {
-                Problem("entities", "invalid_entity", "An item has no known kind (agent, team, workflow or datatable).");
+                Problem("entities", "invalid_entity", "An item has no known kind (agent, team, workflow, datatable or knowledgebase).");
                 continue;
             }
 
@@ -185,7 +212,8 @@ public sealed partial class TemplateImporter(
                 continue;
             }
 
-            items.Add(new Item(kind, itemId, Text(element, "name") ?? Text(entry, "name") ?? itemId, entry));
+            var toConfigure = (element["toConfigure"] as JsonArray)?.Select(n => (n as JsonValue)?.ToString()).Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!).ToList() ?? [];
+            items.Add(new Item(kind, itemId, Text(element, "name") ?? Text(entry, "name") ?? itemId, entry, toConfigure));
         }
 
         return items;
@@ -227,7 +255,7 @@ public sealed partial class TemplateImporter(
             return null;
         }
 
-        if (!byId.TryGetValue(rootId, out var item) || item.Kind != rootKind || item.Kind == "datatable")
+        if (!byId.TryGetValue(rootId, out var item) || item.Kind != rootKind || TemplateReferences.IsAsset(item.Kind))
         {
             problems.Add(new TemplateProblem("root", "root_not_found", "The root is not one of the Template's agents, teams or workflows."));
             return null;
@@ -255,7 +283,7 @@ public sealed partial class TemplateImporter(
 
     // ── References ────────────────────────────────────────────────────────────────────────────
 
-    private static Resolution Resolve(string value, IReadOnlyList<LibraryEntityKind> kinds, bool isTable, Dictionary<string, Item> byId, List<Item> all)
+    private static Resolution Resolve(string value, IReadOnlyList<LibraryEntityKind> kinds, string? assetKind, Dictionary<string, Item> byId, List<Item> all)
     {
         if (TemplateReferences.IsComputed(value))
         {
@@ -264,12 +292,13 @@ public sealed partial class TemplateImporter(
 
         if (byId.TryGetValue(value, out var target))
         {
-            var allowed = isTable ? target.Kind == "datatable" : kinds.Contains(ToLibraryKind(target.Kind)) && target.Kind != "datatable";
+            // An item of data is reached only as what it is; an agent, a team or a workflow only as one of the kinds asked for.
+            var allowed = assetKind is not null ? target.Kind == assetKind : !TemplateReferences.IsAsset(target.Kind) && kinds.Contains(ToLibraryKind(target.Kind));
             return new Resolution(allowed ? "found" : "wrong_kind", allowed ? target : null, false);
         }
 
         // A nested workflow may be called by its name.
-        if (!isTable && kinds.Contains(LibraryEntityKind.Workflow))
+        if (assetKind is null && kinds.Contains(LibraryEntityKind.Workflow))
         {
             var named = all.Where(i => i.Kind == "workflow" && string.Equals(i.Name, value, StringComparison.OrdinalIgnoreCase)).ToList();
             if (named.Count > 0)
@@ -283,9 +312,9 @@ public sealed partial class TemplateImporter(
 
     private static void CheckReferences(List<Item> items, Dictionary<string, Item> byId, List<TemplateProblem> problems)
     {
-        void Check(Item from, string value, IReadOnlyList<LibraryEntityKind> kinds, bool isTable)
+        void Check(Item from, string value, IReadOnlyList<LibraryEntityKind> kinds, string? assetKind)
         {
-            var resolution = Resolve(value, kinds, isTable, byId, items);
+            var resolution = Resolve(value, kinds, assetKind, byId, items);
             if (resolution.State is "not_found" or "wrong_kind")
             {
                 problems.Add(new TemplateProblem("entities", "reference_not_found", $"The {from.Kind} '{from.Name}' points to '{value}', which is not in the Template: it would be incomplete."));
@@ -298,7 +327,7 @@ public sealed partial class TemplateImporter(
             {
                 foreach (var reference in TemplateReferences.In(node))
                 {
-                    Check(item, reference.Value, reference.Kinds, reference.IsDataTable);
+                    Check(item, reference.Value, reference.Kinds, reference.AssetKind);
                 }
             }
 
@@ -306,7 +335,7 @@ public sealed partial class TemplateImporter(
             {
                 foreach (var (_, value, kind) in TemplateReferences.MembersOf(item.Json))
                 {
-                    Check(item, value, [kind], false);
+                    Check(item, value, [kind], null);
                 }
             }
         }
@@ -331,7 +360,7 @@ public sealed partial class TemplateImporter(
             {
                 foreach (var reference in TemplateReferences.In(node))
                 {
-                    var resolution = Resolve(reference.Value, reference.Kinds, reference.IsDataTable, byId, items);
+                    var resolution = Resolve(reference.Value, reference.Kinds, reference.AssetKind, byId, items);
                     // A reference by name keeps the name (names are kept); one by identifier follows the new identifier.
                     if (resolution is { State: "found", ByName: false, Target: { } target })
                     {
@@ -344,7 +373,7 @@ public sealed partial class TemplateImporter(
             {
                 foreach (var (member, value, kind) in TemplateReferences.MembersOf(item.Json))
                 {
-                    var resolution = Resolve(value, [kind], false, byId, items);
+                    var resolution = Resolve(value, [kind], null, byId, items);
                     if (resolution is { State: "found", Target: { } target })
                     {
                         member["memberEntityId"] = target.NewId;
@@ -399,6 +428,17 @@ public sealed partial class TemplateImporter(
                     Require((await workflows.SaveAsync(entity, folders.Workflows, cancellationToken).ConfigureAwait(false)).IsSuccess, item);
                     break;
                 }
+                case TemplateReferences.KnowledgeBaseKind:
+                {
+                    // Created in its folder, then synchronised, unless it has settings to fill in first.
+                    var knowledgeBase = new TemplateKnowledgeBase(item.NewId, item.Name, JsonDocument.Parse(text).RootElement.Clone(), item.ToConfigure, folders.Path);
+                    if (await knowledgeBases!.CreateAsync(knowledgeBase, cancellationToken).ConfigureAwait(false) is { } error)
+                    {
+                        throw new TemplateImportException("save_failed", error);
+                    }
+
+                    break;
+                }
                 default:
                 {
                     var rows = includeRows && (file["data"] as JsonObject)?[item.OldId] is JsonObject tableData && tableData["rows"] is JsonArray array ? array.Select(r => JsonDocument.Parse(r!.ToJsonString()).RootElement.Clone()).ToList() : [];
@@ -442,6 +482,13 @@ public sealed partial class TemplateImporter(
                         break;
                     case "workflow":
                         await workflows.DeleteAsync(item.NewId).ConfigureAwait(false);
+                        break;
+                    case TemplateReferences.KnowledgeBaseKind:
+                        if (knowledgeBases is not null)
+                        {
+                            await knowledgeBases.DeleteAsync(item.NewId).ConfigureAwait(false);
+                        }
+
                         break;
                     default:
                         if (dataTables is not null)

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Agentivity.Module.Workspace.SQLite;
@@ -24,8 +25,12 @@ public sealed class Module(bool enabled) : IModule
     {
         services.TryAddSingleton(configuration);
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IWorkspaceObjectStoreProvider, SqliteWorkspaceObjectStoreProvider>());
+        // The file is brought to the last of its migrations at the start, before the server answers.
+        // First of the services that start with the server: the others may use the database.
+        services.Insert(0, ServiceDescriptor.Singleton<IHostedService, SqliteWorkspaceMigrationService>());
         // The Data Tables are real tables of the same file.
         services.TryAddSingleton<IDataTableStore>(sp => new SqliteDataTableStore(SqliteWorkspaceObjectStoreProvider.DatabasePathOf(sp.GetRequiredService<IConfiguration>())));
+        services.TryAddSingleton<IKnowledgeBaseStore>(sp => new SqliteKnowledgeBaseStore(SqliteWorkspaceObjectStoreProvider.DatabasePathOf(sp.GetRequiredService<IConfiguration>())));
         // Where their rows were kept before, as JSON, in the same file — itself taking over those kept in files before that.
         services.TryAddSingleton<ITableRowsStorage>(sp =>
         {

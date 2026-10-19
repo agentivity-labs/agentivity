@@ -30,7 +30,7 @@ public sealed class ResourceBinding : IResourceBindingReader
 
     /// <summary>
     /// The full workflow graph, when available — lets a resource node resolve ITS OWN resource
-    /// input ports (e.g. a memory node with an optional "embeddings" port) from inside methods
+    /// input ports (e.g. a vector store with an optional "embeddings" port) from inside methods
     /// that only receive a <see cref="ResourceBinding"/>, not a <see cref="NodeConfig"/>. Null for
     /// bindings constructed without graph context (e.g. <c>AgUiCapabilityResolver</c>'s probes).
     /// </summary>

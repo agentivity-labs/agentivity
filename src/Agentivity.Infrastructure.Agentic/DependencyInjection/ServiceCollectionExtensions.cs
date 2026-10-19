@@ -80,7 +80,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IEntityRepository<TeamEntity>>(),
             sp.GetRequiredService<IEntityRepository<Agentivity.Infrastructure.Workflows.WorkflowEntity>>(),
             sp.GetRequiredService<Agentivity.Infrastructure.Workflow.Services.CredentialsManagement.CredentialsService>(),
-            sp.GetServices<Agentivity.Infrastructure.Templates.ITemplateDataTableSource>()
+            sp.GetServices<Agentivity.Infrastructure.Templates.ITemplateDataTableSource>(),
+            sp.GetServices<Agentivity.Infrastructure.Templates.ITemplateKnowledgeBaseSource>()
         ));
 
         // Draws the cover of a Template in the house style, with the user's image model.
@@ -96,7 +97,8 @@ public static class ServiceCollectionExtensions
             sp.GetRequiredService<IEntityRepository<TeamEntity>>(),
             sp.GetRequiredService<IEntityRepository<Agentivity.Infrastructure.Workflows.WorkflowEntity>>(),
             sp.GetRequiredService<Agentivity.Infrastructure.Agentic.Library.LlmConnectionReplacer>(),
-            sp.GetService<Agentivity.Infrastructure.Templates.ITemplateDataTableSink>()
+            sp.GetService<Agentivity.Infrastructure.Templates.ITemplateDataTableSink>(),
+            sp.GetService<Agentivity.Infrastructure.Templates.ITemplateKnowledgeBaseSink>()
         ));
 
         // Feature declaration — separate from infra wiring.

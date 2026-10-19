@@ -1,7 +1,7 @@
 namespace Agentivity.Infrastructure.Workflows.Resources;
 
 /// <summary>
-/// Interface for embedding resource nodes (LLM Memory nodes).
+/// Interface for the nodes that turn a text into a vector (Embeddings, Vector Stores).
 /// The node is the client — consumers resolve the node and call it directly.
 /// No factory or capability registry involved.
 /// </summary>

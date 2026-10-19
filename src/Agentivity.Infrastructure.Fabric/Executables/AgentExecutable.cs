@@ -168,7 +168,6 @@ public sealed class AgentExecutable : IExecutable
                     resolved.SystemPrompt,
                     resolved.ResolvedPrompt,
                     string.Empty,
-                    resolved.MemoryContext,
                     resolved.ModeRuntime,
                     resolved.RuntimeArguments,
                     resolved.RuntimeParameters,
@@ -197,8 +196,6 @@ public sealed class AgentExecutable : IExecutable
 
             throw;
         }
-
-        agentResult = agentResult with { MemoryContextUsed = resolved.MemoryContext };
 
         // ── Clear the per-run human-loop clarification ledger ─────────────────
         HumanLoopConversationContextHelper.ClearClarificationLedger(Guid.Parse(context.RunId));

@@ -9,7 +9,7 @@ public sealed class AIAgentFirecrawlWebScraperToolNode : AIAgentWebScraperToolNo
     public AIAgentFirecrawlWebScraperToolNode(CredentialsService credentialsService, IHttpClientFactory httpClientFactory, ILoggerFactory loggerFactory)
         : base(
             "ai.tools.web.scraper.firecrawl",
-            "AI Tool - Web Scraper - Firecrawl",
+            "AI Agent Web Scraper Tool (Firecrawl)",
             "Exposes the Firecrawl web scraper to AI agents as a callable tool.",
             "To let an agent read a web page from its address through Firecrawl, a paid service that returns the page's main content cleaned up. Needs a Firecrawl API key: try the free Direct scraper first.",
             "scrape_web_firecrawl",

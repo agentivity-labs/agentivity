@@ -53,5 +53,7 @@ public sealed record RunRecord(
     /// <summary><see cref="RunContext.Logs"/> — same rationale as <see cref="StepsSnapshot"/>.</summary>
     IReadOnlyList<string>? Logs = null,
     /// <summary><see cref="RunContext.Errors"/> — same rationale as <see cref="StepsSnapshot"/>.</summary>
-    IReadOnlyList<string>? Errors = null
+    IReadOnlyList<string>? Errors = null,
+    /// <summary><see cref="RunContext.ToolState"/> — what the run's tools keep for the run, so a resume finds it again.</summary>
+    JsonElement? ToolState = null
 );

@@ -116,7 +116,22 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
         }
     }
 
-    /// <summary>Thread-safe state transition ("active" | "paused" | "completed" | "failed"). Stamps <see cref="UpdatedAt"/>.</summary>
+    /// <summary>
+    /// The state of an execution, from the state of its top run: running is "active", waiting (for a person's answer, or
+    /// paused) is "paused", and ended is "completed", "failed" or "cancelled". The one rule every path that starts or takes
+    /// up a run again uses, whatever the kind of the run.
+    /// </summary>
+    public static string StateOf(Agentivity.Domain.Run.RunStatus status) =>
+        status switch
+        {
+            Agentivity.Domain.Run.RunStatus.Pending or Agentivity.Domain.Run.RunStatus.Running => "active",
+            Agentivity.Domain.Run.RunStatus.Paused or Agentivity.Domain.Run.RunStatus.WaitingForInput => "paused",
+            Agentivity.Domain.Run.RunStatus.Completed => "completed",
+            Agentivity.Domain.Run.RunStatus.Cancelled => "cancelled",
+            _ => "failed",
+        };
+
+    /// <summary>Thread-safe state transition ("active" | "paused" | "completed" | "failed" | "cancelled"). Stamps <see cref="UpdatedAt"/>.</summary>
     public void SetState(string state)
     {
         lock (_gate)

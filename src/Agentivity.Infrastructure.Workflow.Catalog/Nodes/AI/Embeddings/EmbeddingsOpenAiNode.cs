@@ -11,7 +11,7 @@ namespace Agentivity.Infrastructure.Workflow.Catalog.Nodes.AI.Embeddings;
 
 /// <summary>
 /// Standalone OpenAI Embeddings node — same API and models as the embedding step bundled directly
-/// into <c>LlmMemoryOpenAINode</c>/<c>LlmMemoryQdrantNode</c>/etc., but exposed on its own so it
+/// into <c>LlmMemoryOpenAINode</c>/<c>QdrantVectorStoreNode</c>/etc., but exposed on its own so it
 /// can be swapped independently of whichever vector store consumes it (or reused across several).
 /// Exposes <see cref="ResourcePortCategory.Embeddings"/>.
 /// </summary>
@@ -30,7 +30,7 @@ public sealed class EmbeddingsOpenAiNode : ResourceNode, IEmbeddingProvider
 
         ResourceNodeRegistry.Register(Name, ResourcePortCategory.Embeddings);
 
-        DefineMetadata("OpenAI Embeddings", "Embeddings via the OpenAI API — usable standalone or plugged into any vector store's \"embeddings\" input.", "ai.embeddings", whenToUse: "To have a memory compare texts by meaning with an OpenAI model instead of the free local one, or to share the same OpenAI settings between several memories. Plug it into the Embeddings of a memory.");
+        DefineMetadata("OpenAI Embeddings", "Embeddings via the OpenAI API — usable standalone or plugged into any vector store's \"embeddings\" input.", "ai.embeddings", whenToUse: "To compare texts by meaning with an OpenAI model instead of the free local one: plug it into the Embeddings port of a vector store or of an SEO step (Sitemap Structure, Internal Link Suggester).");
         DefineEffects(NodeEffects.Costs);
 
         ClearInputPorts();
