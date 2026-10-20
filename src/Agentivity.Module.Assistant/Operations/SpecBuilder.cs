@@ -439,6 +439,10 @@ public sealed class SpecBuilder(IBuilderApi builder, OperationEngine engine, ICa
         if (Text(entity, "entry") is { } entry)
             plan.Add(new Step(new BuilderOperation("set_entry", new JsonObject { ["entity"] = name, ["node"] = entry }), $"{at}.entry", null, [entry], name));
 
+        // What a workflow gives to whoever calls it, once its steps are there.
+        if (kind == EntityKinds.Workflow && entity["outputs"] is JsonObject or JsonArray)
+            plan.Add(new Step(new BuilderOperation("set_outputs", new JsonObject { ["entity"] = name, ["outputs"] = entity["outputs"]!.DeepClone() }), $"{at}.outputs", null, [], name));
+
         // What a step requires and the description left out (its model, its session…) is filled in where there is no doubt.
         plan.Add(new Step(new BuilderOperation("complete_resources", new JsonObject { ["entity"] = name }), $"{at}.resources", null, [], name));
     }

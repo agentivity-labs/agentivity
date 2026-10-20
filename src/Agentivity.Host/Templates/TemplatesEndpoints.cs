@@ -46,7 +46,7 @@ public static class TemplatesEndpoints
 
                 if (preview == true)
                 {
-                    return Results.Ok(ToPreviewDto(result, await covers.IsAvailableAsync(ct)));
+                    return Results.Ok(ToPreviewDto(result, await covers.IsAvailableAsync(ct), await covers.ConnectionsAsync(ct)));
                 }
 
                 if (!result.IsValid || result.File is null)
@@ -73,7 +73,7 @@ public static class TemplatesEndpoints
             {
                 try
                 {
-                    var cover = await covers.GenerateAsync(new TemplateCoverBrief(request.Name ?? string.Empty, request.Tagline, request.Description, request.Accent, request.Quality, request.Variation), ct);
+                    var cover = await covers.GenerateAsync(new TemplateCoverBrief(request.Name ?? string.Empty, request.Tagline, request.Description, request.Accent, request.Quality, request.Variation), request.CredentialId, ct);
                     return Results.Ok(new { dataUri = cover.DataUri, sizeBytes = cover.SizeBytes });
                 }
                 catch (TemplateCoverException ex)
@@ -81,7 +81,7 @@ public static class TemplatesEndpoints
                     return ex.Code switch
                     {
                         "no_image_provider" => ApiConflictError(code: ex.Code, userMessage: ex.Message, detail: ex.Message),
-                        "name_required" => ApiValidationError(code: ex.Code, userMessage: ex.Message, detail: ex.Message),
+                        "name_required" or "not_an_openai_connection" => ApiValidationError(code: ex.Code, userMessage: ex.Message, detail: ex.Message),
                         _ => ApiConflictError(code: ex.Code, userMessage: ex.Message, detail: ex.Message),
                     };
                 }
@@ -172,7 +172,7 @@ public static class TemplatesEndpoints
             request.IncludeRows ?? true
         );
 
-    private static object ToPreviewDto(TemplateExportResult result, bool canGenerateCover) =>
+    private static object ToPreviewDto(TemplateExportResult result, bool canGenerateCover, IReadOnlyList<TemplateCoverConnection> coverConnections) =>
         new
         {
             suggestion = new { id = result.Suggestion.Id, name = result.Suggestion.Name, description = result.Suggestion.Description, tags = result.Suggestion.Tags },
@@ -186,10 +186,12 @@ public static class TemplatesEndpoints
             sizeBytes = result.SizeBytes,
             valid = result.IsValid,
             canGenerateCover,
+            // The connections a cover can be drawn with (those that lead to OpenAI), to choose from.
+            coverConnections = coverConnections.Select(c => new { id = c.Id, name = c.Name }),
         };
 }
 
-internal sealed record GenerateCoverRequest(string? Name, string? Tagline, string? Description, string? Accent, string? Quality, int? Variation);
+internal sealed record GenerateCoverRequest(string? Name, string? Tagline, string? Description, string? Accent, string? Quality, int? Variation, string? CredentialId = null);
 
 internal sealed record ExportTemplateRoot(string Kind, string Id);
 

@@ -79,13 +79,6 @@ public sealed class StandaloneAgentIExecutable : IExecutable
         var executable = new AgentExecutable(_agentDefinition, _agentHost, _telemetryEmitter);
 
         var result = await executable.ExecuteAgentAsync(args, context, tools, session, hil, trace, humanLoopCtx, resolver, ct).ConfigureAwait(false);
-
-        if (result.Status == ExecutableStatus.WaitingFor)
-            return ExecutorResult.WaitingFor(result.WaitingForToken!);
-
-        return ExecutorResult.FromText(result.Response) with
-        {
-            RoutingHint = result.OrchestrationHint,
-        };
+        return AgentExecutable.ResultOf(result, _agentDefinition);
     }
 }

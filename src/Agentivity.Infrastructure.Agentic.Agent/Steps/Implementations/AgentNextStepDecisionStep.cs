@@ -10,39 +10,10 @@ namespace Agentivity.Infrastructure.Agentic.Agent.Steps.Implementations;
 /// generic end-of-turn step (<c>AgentManifest.ResolveTurnConclusionAsync</c>) and as a forced
 /// follow-up when a team member's free-text turn needs an explicit routing decision
 /// (<c>AgentManifest.ApplyHumanLoopDecisionAsync</c>) — both call sites previously duplicated
-/// this exact token-budget/tool-restriction/apply logic; this is the single implementation.
+/// this exact tool-restriction/apply logic; this is the single implementation.
 /// </summary>
 public sealed class AgentNextStepDecisionStep : AgentStep<LlmConversationResponse>
 {
-    /// <summary>
-    /// Token budget for this call. Its whole output is a structured tool call (an action, a
-    /// target, a short message), never free text — so the agent's own (often much larger)
-    /// <see cref="AgentConfig.MaxTokens"/> would be the wrong budget to reuse.
-    /// <para>
-    /// This is a safety net, not a content constraint: this call already sets
-    /// <c>ToolChoiceMode.Required</c>, which *asks* the model to always emit the tool call — but
-    /// that's an instruction, not an enforced guarantee, and some backends/models don't reliably
-    /// honor it (see <see cref="ApplyAsync"/>'s graceful-degradation fallback). Confirmed in
-    /// production against LM Studio on <em>two different models</em> (Qwen2.5-14B and Qwen3-14B —
-    /// swapping models did not fix this): despite <c>required</c>, the model abandoned the
-    /// structured call and rambled in free text instead, consuming a full 4000-token budget
-    /// (~90+ seconds) before giving up. The cap still bounds that failure mode, just more
-    /// generously: it never truncates a real decision, and current models have output ceilings
-    /// far above this value.
-    /// </para>
-    /// <para>
-    /// Do not set this to <see langword="null"/> to "remove the limit": an absent <c>max_tokens</c>
-    /// does not mean unbounded-but-safe — it means the provider's own default applies instead
-    /// (often the full context window), which is a worse, less predictable ceiling than this one.
-    /// </para>
-    /// <para>
-    /// This only bounds this call's own output — it does not limit what this call can read:
-    /// <see cref="ResolveMessages"/> is not overridden, so it sees the exact same full
-    /// conversation (system prompt, team summary, transcript) as the turn that preceded it.
-    /// </para>
-    /// </summary>
-    public const int RoutingDecisionMaxTokens = 10000;
-
     public override string Name => "agent_next_step_decision";
 
     /// <summary>
@@ -102,8 +73,9 @@ public sealed class AgentNextStepDecisionStep : AgentStep<LlmConversationRespons
     public override IReadOnlyList<JsonObject>? ResolveTools(AgentStepContext context) =>
         context.Config.TurnConclusionTool is { } tool ? [(context.AfterDeliveredSends ? tool.WithoutContentDependentActions() : tool).Definition] : null;
 
+    // No token limit: its whole output is one tool call, and a call cut off by a limit is an error.
     public override LlmConversationOptions BuildOptions(AgentStepContext context) =>
-        new(Temperature: context.Config.Temperature, MaxTokens: RoutingDecisionMaxTokens, ToolChoiceMode: LlmToolChoiceMode.Required, AllowParallelToolCalls: false);
+        new(Temperature: context.Config.Temperature, ToolChoiceMode: LlmToolChoiceMode.Required, AllowParallelToolCalls: false);
 
     public override ValueTask<LlmConversationResponse> ApplyAsync(LlmConversationResponse response, AgentStepContext context, CancellationToken cancellationToken)
     {

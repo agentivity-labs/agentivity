@@ -137,8 +137,9 @@ public sealed class AgentGuardrailRuntime
 
         try
         {
+            // No token limit: a judge cut off fails open, and a model that reasons before its one word would always be cut off.
             string classificationPrompt = $"{guardrail.JudgePrompt}\n\n--- Content to classify ---\n{content}\n--- End of content ---\n\nRespond with exactly one word, nothing else: FLAGGED if the content violates the instruction above, or OK if it does not.";
-            LlmConversationResponse response = await invokeLlm([new LlmChatMessage("user", classificationPrompt)], null, new LlmConversationOptions(Temperature: 0, MaxTokens: 10), cancellationToken).ConfigureAwait(false);
+            LlmConversationResponse response = await invokeLlm([new LlmChatMessage("user", classificationPrompt)], null, new LlmConversationOptions(Temperature: 0), cancellationToken).ConfigureAwait(false);
             return response.Content?.TrimStart().StartsWith("FLAGGED", StringComparison.OrdinalIgnoreCase) == true;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

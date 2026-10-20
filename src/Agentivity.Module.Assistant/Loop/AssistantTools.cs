@@ -51,6 +51,7 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         "rename_entity: entity, name",
         "set_role: entity, role  (an agent's role: one or two sentences on what it handles and what it does not; a team chooses its members by it)",
         "set_tags: entity, tags[]",
+        "set_outputs: entity, outputs{name: value}  (workflow: what it gives to the step or team that calls it; each value is taken from its steps, {{ step.field }}; \"output\" is its answer)",
         "open_entity: entity (id or name of something already saved: brings it into the work with everything it holds, to change it)",
         "delete_entity: entity",
         "set_root: entity",
@@ -254,7 +255,18 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         var result = new JsonObject
         {
             ["count"] = refs.Count,
-            ["entities"] = new JsonArray([.. refs.Select(e => (JsonNode)new JsonObject { ["kind"] = e.Kind, ["id"] = e.Id, ["name"] = e.Name, ["tags"] = new JsonArray([.. e.Tags.Select(t => (JsonNode)JsonValue.Create(t)!)]) })]),
+            ["entities"] = new JsonArray(
+                [
+                    .. refs.Select(e =>
+                    {
+                        var item = new JsonObject { ["kind"] = e.Kind, ["id"] = e.Id, ["name"] = e.Name, ["tags"] = new JsonArray([.. e.Tags.Select(t => (JsonNode)JsonValue.Create(t)!)]) };
+                        // What a step that calls it reads: {{ step.output }}, and {{ step.<name> }} for each of these.
+                        if (e.Outputs is { Count: > 0 } outputs)
+                            item["gives"] = new JsonArray([.. outputs.Select(o => (JsonNode)JsonValue.Create(o)!)]);
+                        return (JsonNode)item;
+                    }),
+                ]
+            ),
         };
         return new ToolOutcome { Content = Cap(JsonText(result)), Summary = refs.Count == 0 ? "Checking what already exists — nothing yet" : $"Checking what already exists — {refs.Count} found" };
     }
@@ -346,6 +358,7 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
     private static JsonObject Summarise(string kind, string name, string state, JsonObject draft)
     {
         var view = new JsonObject { ["kind"] = kind, ["name"] = name, ["state"] = state, ["id"] = draft["id"]?.DeepClone() };
+        view["gives"] = Gives(kind, draft);
         if (kind == EntityKinds.Team)
         {
             view["orchestrator"] = draft["orchestratorId"]?.DeepClone();
@@ -378,6 +391,28 @@ public sealed class AssistantTools(ICapabilityRegistry registry, IEntityLookup l
         );
         view["connections"] = new JsonArray([.. (graph["connections"] as JsonArray ?? []).OfType<JsonObject>().Select(c => (JsonNode)$"{c["from"]}.{c["fromPort"]} -> {c["to"]}.{c["toPort"]}")]);
         return view;
+    }
+
+    /// <summary>
+    /// What it gives to the step or the team that calls it: its answer, read as {{ step.output }}, and its named outputs, each
+    /// read as {{ step.name }}.
+    /// </summary>
+    private static JsonNode Gives(string kind, JsonObject draft)
+    {
+        IEnumerable<string> named = kind switch
+        {
+            EntityKinds.Workflow => (draft["outputs"] as JsonArray ?? []).OfType<JsonObject>().Select(o => o["name"]?.GetValue<string>()).OfType<string>().Where(n => !string.Equals(n, "output", StringComparison.OrdinalIgnoreCase)),
+            EntityKinds.Agent => ((draft["graph"] as JsonObject)?["nodes"] as JsonArray ?? [])
+                .OfType<JsonObject>()
+                .Where(n => string.Equals(n["nodeType"]?.GetValue<string>(), "ai.node", StringComparison.OrdinalIgnoreCase))
+                .SelectMany(n => Agentivity.Infrastructure.Execution.Executable.NamedOutputs.FromSchema((n["inputs"] as JsonObject)?["response_schema"] is JsonNode schema ? (schema is JsonValue sv && sv.TryGetValue<string>(out var s) ? s : schema.ToJsonString()) : null))
+                .Select(p => p.Name),
+            _ => [],
+        };
+        var gives = new JsonObject { ["answer"] = "{{ step.output }}", ["outputs"] = new JsonArray([.. named.Select(n => (JsonNode)JsonValue.Create(n)!)]) };
+        if (kind == EntityKinds.Team)
+            gives["note"] = "A team gives the named outputs of the member who concludes.";
+        return gives;
     }
 
     // ── Work ──────────────────────────────────────────────────────────────────────────────────

@@ -204,7 +204,7 @@ internal static class ExecutionsEndpoints
                                 state = team.Status.ToString().ToLowerInvariant(),
                                 createdAt = team.CreatedAt,
                                 completedAt = team.CompletedAt,
-                                content = teamProgress?.FinalSynthesis,
+                                content = teamProgress is null ? null : Agentivity.Infrastructure.Agentic.Team.TeamAnswer.Of(teamProgress),
                                 error = team.Error,
                             }
                         );

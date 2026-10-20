@@ -20,7 +20,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
     /// <summary>The names an operation can take, in the order they are documented.</summary>
     public static readonly IReadOnlyList<string> Operations =
     [
-        "create_entity", "rename_entity", "set_role", "set_tags", "delete_entity",
+        "create_entity", "rename_entity", "set_role", "set_tags", "set_outputs", "delete_entity",
         "add_node", "add_resource", "complete_resources", "set_input", "remove_input", "connect", "disconnect", "move_node", "remove_node", "set_entry",
         "set_orchestrator", "add_member", "set_member_group", "remove_member", "set_manager", "set_goal", "connect_members", "disconnect_members",
         "open_entity", "set_root", "set_folder",
@@ -132,6 +132,7 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
             "rename_entity" => await RenameEntityAsync(index, op, work, ct).ConfigureAwait(false),
             "set_role" => await SetRoleAsync(index, op, work, ct).ConfigureAwait(false),
             "set_tags" => await SetTagsAsync(index, op, work, ct).ConfigureAwait(false),
+            "set_outputs" => await SetOutputsAsync(index, op, work, ct).ConfigureAwait(false),
             "delete_entity" => await DeleteEntityAsync(index, op, work, ct).ConfigureAwait(false),
             "add_node" => await AddNodeAsync(index, op, work, snapshot, ct).ConfigureAwait(false),
             "add_resource" => await AddResourceAsync(index, op, work, snapshot, ct).ConfigureAwait(false),
@@ -263,6 +264,74 @@ public sealed partial class OperationEngine(ICapabilityRegistry registry, IEntit
             throw Refuse("invalid_value", "'tags' must be a list of texts.", "For example [\"finance\", \"invoices\"].");
         entity.Draft["tags"] = tags.DeepClone();
         return Ok(index, op, $"Set {tags.Count} tag(s) on '{entity.Name}'.");
+    }
+
+    /// <summary>
+    /// What a workflow gives to whoever calls it (a step of another workflow, a team): its outputs, each a name and where its
+    /// value is taken from in the workflow ({{ step.field }}). "output" is its answer. They replace the ones it had.
+    /// </summary>
+    private async Task<OperationOutcome> SetOutputsAsync(int index, BuilderOperation op, Work work, CancellationToken ct)
+    {
+        var entity = await ResolveAsync(op, work, ct).ConfigureAwait(false);
+        if (entity.Kind != EntityKinds.Workflow)
+            throw Refuse(
+                "wrong_kind",
+                $"Only a workflow declares its outputs, not the {entity.Kind} '{entity.Name}'.",
+                entity.Kind == EntityKinds.Agent
+                    ? "An agent's named outputs are the fields of the format of its answer: set the input response_schema of its AI agent step (a JSON Schema of an object)."
+                    : "A team gives the named outputs of the member who concludes: give them to that member."
+            );
+
+        // Given as { name: value } or as [{ name, value, description }].
+        var given = new List<(string Name, string Value, string? Description)>();
+        switch (op.Args["outputs"])
+        {
+            case JsonObject map:
+                foreach (var (name, value) in map)
+                    given.Add((name, value is JsonValue v && v.TryGetValue<string>(out var text) ? text : value?.ToJsonString() ?? "", null));
+                break;
+            case JsonArray list:
+                foreach (var item in list)
+                {
+                    if (item is not JsonObject o || o["name"] is not JsonValue n || !n.TryGetValue<string>(out var name))
+                        throw Refuse("invalid_value", "Each output needs a name and a value.", "For example {\"city\": \"{{ pick.city }}\"}.");
+                    given.Add((name, o["value"] is JsonValue v && v.TryGetValue<string>(out var text) ? text : o["value"]?.ToJsonString() ?? "", o["description"] is JsonValue d && d.TryGetValue<string>(out var description) ? description : null));
+                }
+                break;
+            default:
+                throw Refuse("invalid_value", "'outputs' must give each output its value.", "For example {\"output\": \"{{ write.response }}\", \"city\": \"{{ pick.city }}\"}: \"output\" is the answer of the workflow.");
+        }
+
+        var graph = GraphOf(entity, op.Op);
+        var steps = Nodes(graph).OfType<JsonObject>().Select(n => n["id"]?.GetValue<string>()).OfType<string>().ToList();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var warnings = new List<string>();
+        var outputs = new JsonArray();
+        foreach (var (rawName, value, description) in given)
+        {
+            var name = rawName.Trim();
+            if (name.Length == 0 || NotIdentifier().IsMatch(name))
+                throw Refuse("invalid_value", $"'{rawName}' cannot name an output: a step reads it as {{{{ step.{rawName} }}}}.", "Use letters, digits, '_' or '-', such as city or total_eur.");
+            if (!seen.Add(name))
+                throw Refuse("invalid_value", $"Two outputs are named '{name}'.", "Give each output its own name.");
+
+            // A value is taken from the steps of this workflow: a reference to a step that is not there gives nothing.
+            foreach (Match match in NodeReference().Matches(value))
+            {
+                var from = match.Groups[1].Value;
+                if (!string.Equals(from, "global", StringComparison.OrdinalIgnoreCase) && FindNode(graph, from) is null)
+                    throw Refuse("unknown_node", $"The output '{name}' takes its value from '{from}', which is not a step of '{entity.Name}'.", steps.Count == 0 ? "The workflow has no step yet: add them first." : $"Its steps are: {string.Join(", ", steps)}.", steps);
+            }
+            warnings.AddRange(CheckReferences(graph, new JsonObject { ["id"] = "the outputs" }, name, value));
+
+            var output = new JsonObject { ["name"] = name, ["value"] = value };
+            if (!string.IsNullOrWhiteSpace(description))
+                output["description"] = description;
+            outputs.Add(output);
+        }
+
+        entity.Draft["outputs"] = outputs;
+        return Ok(index, op, outputs.Count == 0 ? $"'{entity.Name}' gives its answer only." : $"'{entity.Name}' gives {string.Join(", ", seen)}.", warnings: warnings);
     }
 
     private async Task<OperationOutcome> DeleteEntityAsync(int index, BuilderOperation op, Work work, CancellationToken ct)

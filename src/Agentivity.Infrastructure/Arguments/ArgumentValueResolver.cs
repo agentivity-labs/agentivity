@@ -434,6 +434,8 @@ public static class ArgumentValueResolver
             // joined; a list containing objects/nested arrays falls back to JSON per-element so
             // nothing is silently dropped.
             List<object?> list => string.Join(", ", list.Select(item => item is string or bool or double or int or long or null ? ConvertToString(item) : JsonSerializer.Serialize(item, SerializerOptions))),
+            // A list of texts as a step gives it (NodeResult.AddTextList): joined the same way.
+            IEnumerable<string> texts => string.Join(", ", texts),
             IDictionary<string, object?> dict => JsonSerializer.Serialize(dict, SerializerOptions),
             _ => value.ToString() ?? string.Empty,
         };

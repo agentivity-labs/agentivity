@@ -48,7 +48,8 @@ public static class NestedCall
         config.State.Remove(RunKey(config));
         config.State.Remove($"__interaction_response_{config.Node.Id}");
 
-        var result = await executable.ExecuteAsync(args, child, cancellationToken).ConfigureAwait(false);
+        // A child that failed fails this step, as an exception: the workflow goes on by the step's Error exit, or stops.
+        var result = (await executable.ExecuteAsync(args, child, cancellationToken).ConfigureAwait(false)).ThrowIfFailed(executable.Definition);
         if (result.Status != ExecutableStatus.WaitingFor)
             return result;
 

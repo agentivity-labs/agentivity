@@ -110,6 +110,8 @@ public sealed class RunRepository : AbstractRepository<RunContext, RunRecord>
                 // JsonSerializerDefaults.Web is itself the shared, stable contract between the two.
                 root["outputs"] = JsonSerializer.SerializeToNode(e.Outputs, JsonSerializerOptions.Web);
                 root["finalSynthesis"] = e.FinalSynthesis;
+                root["answer"] = e.Answer;
+                root["answerOutputs"] = e.AnswerOutputs is null ? null : JsonSerializer.SerializeToNode(e.AnswerOutputs, JsonSerializerOptions.Web);
                 break;
             default:
                 throw new NotSupportedException($"Unhandled {nameof(RepositoryEvent)}: {evt.GetType().Name}");

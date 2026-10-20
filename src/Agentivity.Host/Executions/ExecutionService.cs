@@ -153,7 +153,8 @@ public sealed class ExecutionService
 
             try
             {
-                var result = await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false);
+                // A failed run fails its execution, as every caller of a child does.
+                var result = (await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false)).ThrowIfFailed(executable.Definition);
 
                 // Node/step status must be committed BEFORE the top-level run status flips to
                 // Completed: the frontend poll loop stops the instant it observes the run as
@@ -251,7 +252,8 @@ public sealed class ExecutionService
         {
             try
             {
-                await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false);
+                // A failed run fails its execution, as every caller of a child does.
+                (await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false)).ThrowIfFailed(executable.Definition);
                 // A caught, structured failure (e.g. LlmCallException converted to a Failed graph
                 // task) never rethrows here — it only flips RunContext.Status; and a run that asked a
                 // person something returns here waiting for the answer. Reading that back rather than

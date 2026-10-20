@@ -84,24 +84,62 @@ public sealed record ExecutorResult(
     /// <summary>Crée un résultat contenant uniquement du texte.</summary>
     public static ExecutorResult FromText(string content) => new(content, ImmutableDictionary<string, object?>.Empty, []);
 
+    /// <summary>
+    /// An answer, with the values of the named outputs that what gave it <paramref name="declared"/> (see <see cref="NamedOutputs"/>),
+    /// read from the answer.
+    /// </summary>
+    public static ExecutorResult FromAnswer(string content, IReadOnlyList<Agentivity.Domain.Executable.PortDefinition> declared) => new(content, NamedOutputs.Read(declared, content), []);
+
     /// <summary>Crée un résultat suspendu en attente d'un événement externe identifié par <paramref name="token"/>.</summary>
+    /// <summary>The child failed, for <paramref name="reason"/>: whoever receives it fails in its turn (<see cref="ExecutorResultFailures.ThrowIfFailed"/>).</summary>
+    public static ExecutorResult Failed(string reason) => new(reason, ImmutableDictionary<string, object?>.Empty, [], Status: ExecutableStatus.Failed);
+
     public static ExecutorResult WaitingFor(string token) => new(string.Empty, ImmutableDictionary<string, object?>.Empty, [], Status: ExecutableStatus.WaitingFor, WaitingForToken: token);
 
     /// <summary>Construit un ExecutorResult depuis un TaskOutput existant.</summary>
     public static ExecutorResult FromTaskOutput(TaskOutput output) => new(Content: output.Content, Outputs: ImmutableDictionary<string, object?>.Empty, Artifacts: output.Artifacts, RoutingHint: output.NextAgentTopologyPositionId, Confidence: output.Confidence);
 
     /// <summary>
-    /// What a finished workflow gives back to what called it. Its text is what its last step produced: the last step that
-    /// ran and gave a text under one of the usual names (output, result, response, content), each step's outputs being kept
-    /// in the state as "step.name". A workflow none of whose steps gave one gives the text kept under one of these names
-    /// alone, when there is one.
+    /// What a finished workflow gives back to what called it: its answer, and the outputs it <paramref name="declared"/>, each
+    /// value taken from its <paramref name="state"/> where the output says (<c>{{step.field}}</c>). Nothing else of the state is
+    /// given: what its steps hold stays inside.
+    /// <para>
+    /// Its answer is the output it declares as "output". A workflow that declares none answers what its last step produced:
+    /// the last step that ran and gave a text under one of the usual names (output, result, response, content), each step's
+    /// outputs being kept in the state as "step.name"; or else the text kept under one of these names alone, when there is one.
+    /// </para>
     /// </summary>
-    public static ExecutorResult FromWorkflowState(IReadOnlyDictionary<string, object?> state, IReadOnlyList<string> executedSteps)
+    public static ExecutorResult FromWorkflowState(IReadOnlyDictionary<string, object?> state, IReadOnlyList<string> executedSteps, IReadOnlyList<Agentivity.Domain.Executable.DeclaredOutput> declared)
     {
-        string[] names = ["output", "result", "response", "content"];
-        var keys = executedSteps.Reverse().SelectMany(step => names.Select(name => $"{step}.{name}")).Concat(names);
-        var content = keys.Select(key => state.TryGetValue(key, out var value) ? value?.ToString() : null).FirstOrDefault(text => !string.IsNullOrWhiteSpace(text));
+        var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        string? answer = null;
+        var resolvable = new Dictionary<string, object?>(state, StringComparer.OrdinalIgnoreCase);
+        foreach (var output in declared.Where(o => !string.IsNullOrWhiteSpace(o.Name)))
+        {
+            var value = Agentivity.Infrastructure.Arguments.ArgumentValueResolver.Resolve(output.Value, resolvable);
+            if (string.Equals(output.Name.Trim(), NamedOutputs.Answer, StringComparison.OrdinalIgnoreCase))
+                answer = value?.ToString();
+            else
+                values[output.Name.Trim()] = AsOutputValue(value);
+        }
 
-        return new(content ?? string.Empty, state, []);
+        if (string.IsNullOrWhiteSpace(answer))
+        {
+            string[] names = ["output", "result", "response", "content"];
+            var keys = executedSteps.Reverse().SelectMany(step => names.Select(name => $"{step}.{name}")).Concat(names);
+            answer = keys.Select(key => state.TryGetValue(key, out var value) ? value?.ToString() : null).FirstOrDefault(text => !string.IsNullOrWhiteSpace(text));
+        }
+
+        return new(answer ?? string.Empty, values, []);
     }
+
+    /// <summary>A value as an output holds it (see <see cref="NamedOutputs.ValueOf"/>): what is read from JSON comes as JSON values.</summary>
+    private static object? AsOutputValue(object? value) =>
+        value switch
+        {
+            System.Text.Json.JsonElement element => NamedOutputs.ValueOf(element),
+            List<object?> list when list.All(item => item is string) => (IReadOnlyList<string>)[.. list.Cast<string>()],
+            List<object?> or IDictionary<string, object?> => System.Text.Json.JsonSerializer.Serialize(value),
+            _ => value,
+        };
 }

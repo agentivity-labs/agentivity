@@ -185,7 +185,8 @@ public sealed class RunsService
 
                 try
                 {
-                    var result = await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false);
+                    // A failed run fails its execution, as every caller of a child does.
+                var result = (await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false)).ThrowIfFailed(executable.Definition);
                     var completedAt = DateTimeOffset.UtcNow;
 
                     // Node/step status must be committed BEFORE the top-level run status flips to

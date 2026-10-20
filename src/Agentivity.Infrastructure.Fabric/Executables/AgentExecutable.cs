@@ -92,15 +92,20 @@ public sealed class AgentExecutable : IExecutable
             throw new InvalidOperationException("ExecuteAsync(args, context) requires an AgentExecutable constructed with the proxy-injecting constructor.");
 
         var agentResult = await RunCoreAsync(args, context, _tools, _session, _hil, _trace, _humanLoopCtx, _resolver, _suppressDirectMessageEvent, ct).ConfigureAwait(false);
-
-        if (agentResult.Status == ExecutableStatus.WaitingFor)
-            return ExecutorResult.WaitingFor(agentResult.WaitingForToken!);
-
-        return ExecutorResult.FromText(agentResult.Response) with
-        {
-            RoutingHint = agentResult.OrchestrationHint,
-        };
+        return ResultOf(agentResult, Definition);
     }
+
+    /// <summary>
+    /// What a run of an agent gives to whoever called it (a workflow, a team, the person), the same way whoever it is: it
+    /// waits, it failed, or its answer, with the named outputs the agent declares (the fields of the format of its answer).
+    /// </summary>
+    public static ExecutorResult ResultOf(AgentRunResult run, IExecutableDefinition agent) =>
+        run.Status switch
+        {
+            ExecutableStatus.WaitingFor => ExecutorResult.WaitingFor(run.WaitingForToken!),
+            ExecutableStatus.Failed => ExecutorResult.Failed(run.Response),
+            _ => ExecutorResult.FromAnswer(run.Response, agent.Outputs) with { RoutingHint = run.OrchestrationHint },
+        };
 
     /// <summary>
     /// Called by <c>AiNode</c>, <see cref="StandaloneAgent"/>, and <see cref="TeamAgent"/>.
@@ -167,7 +172,8 @@ public sealed class AgentExecutable : IExecutable
                 .RunAgentAsync(
                     resolved.SystemPrompt,
                     resolved.ResolvedPrompt,
-                    string.Empty,
+                    // The format the answer must have, when the agent sets one.
+                    resolved.ResponseSchema,
                     resolved.ModeRuntime,
                     resolved.RuntimeArguments,
                     resolved.RuntimeParameters,

@@ -206,6 +206,7 @@ internal static class TeamsEndpoints
                                 }),
                                 topologyPositionStatuses = MapTopologyPositionStatuses(topologyPositionStatusRegistry.GetStatuses(runId)),
                                 finalSynthesis = progress?.FinalSynthesis,
+                                answer = progress is null ? null : Agentivity.Infrastructure.Agentic.Team.TeamAnswer.Of(progress),
                                 error = entry.Error,
                                 createdAt = entry.CreatedAt,
                                 startedAt = entry.CreatedAt,

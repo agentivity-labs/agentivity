@@ -122,8 +122,38 @@ internal static class ExecutableEntitiesEndpoints
             .WithSummary("For each asset (a Knowledge Base, a Data Table…), the agents and workflows that use it")
             .WithTags("Entities");
 
+        // PUT /api/v1/entities/{kind}/{id}/tags — the tags of an agent, a team or a workflow, and nothing else (marking it as a
+        // Solution is adding the tag "solution"). Tags are kept in lower case.
+        endpoints
+            .MapV1()
+            .MapPut(
+                "/entities/{kind}/{id}/tags",
+                async (string kind, string id, SetEntityTagsRequest body, [FromServices] IEntityRepository<AgentEntity> agents, [FromServices] IEntityRepository<TeamEntity> teams, [FromServices] IEntityRepository<WorkflowEntity> workflows, CancellationToken ct) =>
+                {
+                    var tags = body.Tags ?? [];
+                    var saved = kind.Trim().ToLowerInvariant() switch
+                    {
+                        "agent" => Tagged(await EntityTags.SetAsync(agents, id, tags, ct).ConfigureAwait(false)),
+                        "team" => Tagged(await EntityTags.SetAsync(teams, id, tags, ct).ConfigureAwait(false)),
+                        "workflow" => Tagged(await EntityTags.SetAsync(workflows, id, tags, ct).ConfigureAwait(false)),
+                        _ => null,
+                    };
+                    if (saved is null)
+                        return ApiEndpointHelpers.ApiValidationError(code: "invalid_kind", userMessage: "Tags can be set on an agent, a team or a workflow.", detail: $"Invalid kind '{kind}'. Must be one of: agent, team, workflow.");
+                    if (saved.Value.Tags is not { } kept)
+                        return ApiEndpointHelpers.ApiNotFound(code: "not_found", userMessage: saved.Value.Error ?? "Not found.", detail: saved.Value.Error ?? "Not found.");
+                    return Results.Ok(new { id, kind = kind.Trim().ToLowerInvariant(), tags = kept });
+                }
+            )
+            .WithName("SetEntityTags")
+            .WithSummary("Set the tags of an agent, a team or a workflow (to mark it as a Solution, say)")
+            .WithTags("Entities");
+
         return endpoints;
     }
+
+    private static (IReadOnlyList<string>? Tags, string? Error)? Tagged<TEntity>(Agentivity.Domain.Common.OperationResult<TEntity> result) where TEntity : Agentivity.Domain.Entity =>
+        result.IsSuccess && result.Value is { } entity ? (entity.Tags, null) : (null, result.Error);
 
     private static async ValueTask CollectFolderNamesAsync<TEntity>(IEntityRepository<TEntity> repo, Dictionary<string, string> entityFolderName, CancellationToken ct) where TEntity : Agentivity.Domain.Entity
     {
@@ -143,3 +173,5 @@ internal static class ExecutableEntitiesEndpoints
 
     private sealed record PortDto(string Name, string Type, string? Description);
 }
+
+internal sealed record SetEntityTagsRequest(IReadOnlyList<string>? Tags);

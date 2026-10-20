@@ -17,6 +17,18 @@ public sealed record AgenticTeamResult(string RunId, TeamRunState FinalState, IR
     public string? FinalSynthesis { get; init; }
 
     /// <summary>
+    /// The answer of the team, as its orchestration says (see <see cref="TeamAnswer"/>): what it gives to whoever called it, and
+    /// what its run shows. Set when the run completes.
+    /// </summary>
+    public string? Answer { get; init; }
+
+    /// <summary>
+    /// The named outputs that go with <see cref="Answer"/>: those of the member who concluded (see <see cref="TeamAnswer"/>).
+    /// Set when the run completes.
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> AnswerOutputs { get; init; } = new Dictionary<string, object?>();
+
+    /// <summary>
     /// Everything the team's members declared they could not cover (see
     /// <see cref="TaskOutput.NotCovered"/>), across the whole run, without duplicates. Computed from
     /// the outputs, so it holds for every orchestrator without any of them doing anything.

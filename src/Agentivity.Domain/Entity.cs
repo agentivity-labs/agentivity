@@ -20,8 +20,21 @@ public abstract record Entity
     [JsonPropertyName("role")]
     public string? Role { get; init; }
 
-    /// <summary>Tags libres pour la recherche et le filtrage dans la bibliothèque.</summary>
-    public IReadOnlyList<string> Tags { get; init; } = [];
+    private readonly IReadOnlyList<string> _tags = [];
+
+    /// <summary>
+    /// Tags libres pour la recherche et le filtrage dans la bibliothèque. Toujours en minuscules, sans espace autour, chacun une
+    /// fois : « Solution » et « solution » sont le même tag, quel que soit le chemin par lequel il arrive.
+    /// </summary>
+    public IReadOnlyList<string> Tags
+    {
+        get => _tags;
+        init => _tags = NormalizeTags(value);
+    }
+
+    /// <summary>Les tags tels qu'une entité les garde : en minuscules, sans vide, sans doublon, dans leur ordre.</summary>
+    public static IReadOnlyList<string> NormalizeTags(IEnumerable<string?>? tags) =>
+        tags is null ? [] : [.. tags.Select(t => t?.Trim().ToLowerInvariant()).Where(t => !string.IsNullOrEmpty(t)).Select(t => t!).Distinct(StringComparer.Ordinal)];
 
     /// <summary>Date de première création.</summary>
     public DateTimeOffset? CreatedAt { get; init; }

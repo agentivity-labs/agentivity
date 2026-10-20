@@ -66,6 +66,12 @@ public sealed record ImageGenerationRequest
     public string? Model { get; init; }
 
     /// <summary>
+    /// The look asked: "vivid" or "natural", or "none" (null too) to keep to the description. Said in the description sent to the
+    /// model, the image models of today having no setting for it.
+    /// </summary>
+    public string? Style { get; init; }
+
+    /// <summary>
     /// Additional metadata to pass to the provider.
     /// </summary>
     public IReadOnlyDictionary<string, object?>? Metadata { get; init; }

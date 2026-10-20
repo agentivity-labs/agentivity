@@ -320,6 +320,7 @@ public static class WorkflowsEndpoints
                     // same way it already is for Agent/Team saves, rather than being the one save
                     // path that silently drops it.
                     Tags = definition.Tags,
+                    DeclaredOutputs = definition.DeclaredOutputs,
                 };
 
                 var saveResult = await workflowService.SaveAsync(definition, cancellationToken).ConfigureAwait(false);

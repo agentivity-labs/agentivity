@@ -139,9 +139,9 @@ public sealed class AIImageGenNode : BaseAINode
         // Get image generation resource
         ResourceBinding binding = ResourceResolver.Require(config, "imagegen_model", ResourcePortCategory.ImageGenModel);
         string credentialsId = binding.RequireString("credentials");
-        _ = binding.GetString("model");
+        string? model = binding.GetString("model");
         string? qualityOverride = binding.GetString("quality");
-        _ = binding.GetString("style");
+        string? style = binding.GetString("style");
 
         services.PublishStatus($"Generating {count} image(s) with mode '{mode}', size '{size}'...");
 
@@ -159,6 +159,8 @@ public sealed class AIImageGenNode : BaseAINode
             Size = size,
             Quality = quality,
             Count = count,
+            Model = model,
+            Style = style,
         };
 
         services.PublishStatus($"Calling image generation provider: {_imageClient.ProviderName}...");

@@ -27,7 +27,7 @@ public sealed class TeamExecutable(TeamEntity team, ITeamEngine engine, IReposit
         if (context.IsResume && runRepository is not null && await runRepository.FindAsync(context.RunId, ct).ConfigureAwait(false) is { Status: RunStatus.Completed, Payload: { } payload })
         {
             var done = TeamProgress.FromRecord(payload);
-            return ExecutorResult.FromText(done.FinalSynthesis ?? (done.Outputs.Count > 0 ? done.Outputs[^1].Content : null) ?? string.Empty);
+            return ExecutorResult.FromText(TeamAnswer.Of(done)) with { Outputs = TeamAnswer.OutputsOf(done) };
         }
 
         var config = new Agentivity.Infrastructure.Team.TeamConfig(team, input, new TeamRunRequestOptions());
@@ -35,13 +35,14 @@ public sealed class TeamExecutable(TeamEntity team, ITeamEngine engine, IReposit
 
         var result = await engine.ExecuteAsync(config, services, ct).ConfigureAwait(false);
 
-        var content = result.FinalSynthesis ?? (result.Outputs.Count > 0 ? result.Outputs[^1].Content : null) ?? string.Empty;
+        var content = TeamAnswer.Of(result);
 
         return result.FinalState switch
         {
-            RunStatus.Failed => ExecutorResult.FromText(result.Error ?? string.Empty) with { Status = ExecutableStatus.Failed },
+            RunStatus.Failed => ExecutorResult.Failed(result.Error ?? string.Empty),
             RunStatus.Paused => ExecutorResult.FromText(content) with { Status = ExecutableStatus.WaitingFor, FinishReason = "hil_pending", WaitingForToken = result.WaitingForToken },
-            _ => ExecutorResult.FromText(content),
+            // Its answer, with the named outputs of the member who concluded.
+            _ => ExecutorResult.FromText(content) with { Outputs = TeamAnswer.OutputsOf(result) },
         };
     }
 }

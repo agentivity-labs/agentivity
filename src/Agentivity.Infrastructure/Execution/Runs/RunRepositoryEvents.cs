@@ -21,4 +21,4 @@ public sealed record GraphChangedEvent(string EntityId, JsonElement? Graph) : Re
 /// <see cref="TaskOutput"/> already lives in this same project, so no serialization indirection is
 /// needed here.
 /// </summary>
-public sealed record OutputsChangedEvent(string EntityId, IReadOnlyList<TaskOutput> Outputs, string? FinalSynthesis) : RepositoryEvent(EntityId);
+public sealed record OutputsChangedEvent(string EntityId, IReadOnlyList<TaskOutput> Outputs, string? FinalSynthesis, string? Answer = null, IReadOnlyDictionary<string, object?>? AnswerOutputs = null) : RepositoryEvent(EntityId);

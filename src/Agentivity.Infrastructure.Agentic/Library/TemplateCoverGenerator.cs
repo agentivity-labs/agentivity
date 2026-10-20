@@ -12,6 +12,9 @@ public sealed record TemplateCoverBrief(string Name, string? Tagline, string? De
 /// <summary>A cover picture ready to embed: <c>data:image/webp;base64,...</c>, at most <see cref="TemplateExporter.MaxCoverBytes"/> bytes.</summary>
 public sealed record TemplateCover(string DataUri, long SizeBytes);
 
+/// <summary>A connection a cover can be drawn with: one that leads to OpenAI and holds a key.</summary>
+public sealed record TemplateCoverConnection(string Id, string Name);
+
 public sealed class TemplateCoverException(string code, string message) : Exception(message)
 {
     public string Code { get; } = code;
@@ -97,26 +100,66 @@ public sealed class TemplateCoverGenerator(IImageGenerationClient images, Creden
         return Math.Abs(hash % 10_000);
     }
 
-    /// <summary>Whether a cover can be drawn: an OpenAI connection that holds a key, or a key in the server's own configuration.</summary>
-    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default) => await FindCredentialAsync(cancellationToken).ConfigureAwait(false) is not null || !string.IsNullOrWhiteSpace(options.Value.ApiKey);
+    /// <summary>What to say when nothing can draw: the author needs an OpenAI account.</summary>
+    public const string NeedsOpenAiAccount = "Drawing a cover needs an OpenAI account: add a connection to OpenAI (api.openai.com) in Settings > Connections.";
 
-    private async Task<CredentialModel?> FindCredentialAsync(CancellationToken cancellationToken)
+    // Where a connection of an OpenAI type leads when it names no address.
+    private const string OpenAiAddress = "https://api.openai.com/v1";
+    private static readonly string[] OpenAiTypes = ["openai", "openai_image"];
+
+    /// <summary>Whether a cover can be drawn: a connection that leads to OpenAI, or a key in the server's own configuration.</summary>
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default) => (await ConnectionsAsync(cancellationToken).ConfigureAwait(false)).Count > 0 || !string.IsNullOrWhiteSpace(options.Value.ApiKey);
+
+    /// <summary>
+    /// The connections a cover can be drawn with, whatever their type: those whose address is OpenAI's (api.openai.com) and that hold
+    /// a key. The type of a connection says the format it speaks, not who answers: one of an OpenAI type may lead to another service.
+    /// </summary>
+    public async Task<IReadOnlyList<TemplateCoverConnection>> ConnectionsAsync(CancellationToken cancellationToken = default)
     {
         var all = await credentials.GetAllAsync(cancellationToken).ConfigureAwait(false);
-        return all.FirstOrDefault(c => string.Equals(c.TemplateId, "openai", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(c.GetField("api_key")));
+        return [.. all.Where(LeadsToOpenAi).Select(c => new TemplateCoverConnection(c.Id, c.Name))];
     }
 
-    public async Task<TemplateCover> GenerateAsync(TemplateCoverBrief brief, CancellationToken cancellationToken = default)
+    private static bool LeadsToOpenAi(CredentialModel credential)
+    {
+        if (string.IsNullOrWhiteSpace(credential.GetField("api_key")))
+            return false;
+        var address = credential.GetField("base_url")?.Trim();
+        if (string.IsNullOrEmpty(address))
+            address = OpenAiTypes.Contains(credential.TemplateId, StringComparer.OrdinalIgnoreCase) ? OpenAiAddress : null;
+        return Uri.TryCreate(address, UriKind.Absolute, out var uri) && string.Equals(uri.Host, "api.openai.com", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Draws the cover with the connection <paramref name="credentialId"/> (one of <see cref="ConnectionsAsync"/>), or, when none is
+    /// given, the first of them, or else the server's own key.
+    /// </summary>
+    public async Task<TemplateCover> GenerateAsync(TemplateCoverBrief brief, string? credentialId = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(brief.Name))
         {
             throw new TemplateCoverException("name_required", "Give the Template a name first: the picture is drawn from it.");
         }
 
-        var credential = await FindCredentialAsync(cancellationToken).ConfigureAwait(false);
+        var usable = await ConnectionsAsync(cancellationToken).ConfigureAwait(false);
+        TemplateCoverConnection? credential;
+        if (!string.IsNullOrWhiteSpace(credentialId))
+        {
+            credential = usable.FirstOrDefault(c => c.Id == credentialId);
+            if (credential is null)
+            {
+                var named = (await credentials.GetAllAsync(cancellationToken).ConfigureAwait(false)).FirstOrDefault(c => c.Id == credentialId)?.Name ?? credentialId;
+                throw new TemplateCoverException("not_an_openai_connection", $"The connection \"{named}\" does not lead to OpenAI (api.openai.com), or holds no key: a cover is drawn by OpenAI's image model.");
+            }
+        }
+        else
+        {
+            credential = usable.FirstOrDefault();
+        }
+
         if (credential is null && string.IsNullOrWhiteSpace(options.Value.ApiKey))
         {
-            throw new TemplateCoverException("no_image_provider", "Drawing a cover needs an OpenAI connection (Settings > Connections).");
+            throw new TemplateCoverException("no_image_provider", NeedsOpenAiAccount);
         }
 
         var quality = brief.Quality is { } q && Qualities.Contains(q, StringComparer.OrdinalIgnoreCase) ? q.ToLowerInvariant() : "medium";

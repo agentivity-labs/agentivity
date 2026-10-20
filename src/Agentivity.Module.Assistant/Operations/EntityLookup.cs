@@ -13,7 +13,8 @@ namespace Agentivity.Module.Assistant.Operations;
 public sealed record LiveEntity(string Kind, string Id, string Name, JsonObject Json);
 
 /// <summary>A saved entity without its content: enough to list and to point at.</summary>
-public sealed record EntityRef(string Kind, string Id, string Name, IReadOnlyList<string> Tags);
+/// <param name="Outputs">Its named outputs (beside its answer, "output"): what a step that calls it reads as {{ step.name }}.</param>
+public sealed record EntityRef(string Kind, string Id, string Name, IReadOnlyList<string> Tags, IReadOnlyList<string>? Outputs = null);
 
 /// <summary>Reads the saved workspace. The engine goes through this so it can be tested without any storage.</summary>
 public interface IEntityLookup
@@ -79,9 +80,9 @@ public sealed class RepositoryEntityLookup(IEntityRepository<WorkflowEntity> wor
     {
         var all = new List<EntityRef>();
         if (kind is null or EntityKinds.Workflow)
-            all.AddRange((await workflows.ListAsync(null, cancellationToken).ConfigureAwait(false)).Select(w => new EntityRef(EntityKinds.Workflow, w.Id, w.Name, w.Tags)));
+            all.AddRange((await workflows.ListAsync(null, cancellationToken).ConfigureAwait(false)).Select(w => new EntityRef(EntityKinds.Workflow, w.Id, w.Name, w.Tags, Named(w))));
         if (kind is null or EntityKinds.Agent)
-            all.AddRange((await agents.ListAsync(null, cancellationToken).ConfigureAwait(false)).Select(a => new EntityRef(EntityKinds.Agent, a.Id, a.Name, a.Tags)));
+            all.AddRange((await agents.ListAsync(null, cancellationToken).ConfigureAwait(false)).Select(a => new EntityRef(EntityKinds.Agent, a.Id, a.Name, a.Tags, Named(a))));
         if (kind is null or EntityKinds.Team)
             all.AddRange((await teams.ListAsync(null, cancellationToken).ConfigureAwait(false)).Select(t => new EntityRef(EntityKinds.Team, t.Id, t.Name, t.Tags)));
 
@@ -90,6 +91,10 @@ public sealed class RepositoryEntityLookup(IEntityRepository<WorkflowEntity> wor
             filtered = filtered.Where(e => e.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || e.Tags.Any(t => t.Contains(query, StringComparison.OrdinalIgnoreCase)));
         return [.. filtered.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).Take(Math.Max(1, limit))];
     }
+
+    /// <summary>Its named outputs, without its answer.</summary>
+    private static IReadOnlyList<string> Named(Agentivity.Domain.Executable.IExecutableDefinition entity) =>
+        [.. entity.Outputs.Select(o => o.Name).Where(n => !string.Equals(n, "output", StringComparison.OrdinalIgnoreCase))];
 
     private static LiveEntity Make<T>(string kind, string id, string name, T entity) => new(kind, id, name, (JsonObject)JsonSerializer.SerializeToNode(entity, JsonDefaults.Default)!);
 }

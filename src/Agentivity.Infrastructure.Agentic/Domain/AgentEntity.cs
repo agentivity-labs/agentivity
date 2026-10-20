@@ -1,6 +1,8 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Agentivity.Domain;
 using Agentivity.Domain.Executable;
+using Agentivity.Infrastructure.Execution.Executable;
 using Agentivity.Infrastructure.Workflows;
 
 namespace Agentivity.Infrastructure.Agentic;
@@ -33,6 +35,16 @@ public sealed record AgentEntity : Entity, IExecutableDefinition
     [JsonIgnore]
     public IReadOnlyList<PortDefinition> Inputs => DefaultPorts.AgentInputs;
 
+    /// <summary>
+    /// Its answer, and, when its answer has a format (the <c>response_schema</c> of its AI agent), one named output per field
+    /// of it (see <see cref="NamedOutputs"/>).
+    /// </summary>
     [JsonIgnore]
-    public IReadOnlyList<PortDefinition> Outputs => DefaultPorts.AgentOutputs;
+    public IReadOnlyList<PortDefinition> Outputs => [.. DefaultPorts.AgentOutputs, .. NamedOutputs.FromSchema(ResponseSchema)];
+
+    private JsonElement ResponseSchema =>
+        Graph.Nodes.FirstOrDefault(n => string.Equals(n.NodeType, "ai.node", StringComparison.OrdinalIgnoreCase))?.Parameters is { ValueKind: JsonValueKind.Object } parameters
+        && parameters.TryGetProperty("response_schema", out var schema)
+            ? schema
+            : default;
 }

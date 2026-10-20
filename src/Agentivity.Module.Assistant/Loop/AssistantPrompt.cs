@@ -59,6 +59,12 @@ public static class AssistantPrompt
           the part that is yours (build what was asked) without waiting for them. Do not ask which things to delete.
         - Work in the changeset you are given; everything you create or change stays there until the person saves.
         - A value that refers to another step is written {{ step.output }}. Check the step's outputs before you refer to one.
+        - An agent, a team or a workflow called by a step (or a member of a team) gives its answer, {{ step.output }}, and its
+          named outputs, {{ step.name }}; list_workspace and get_entity say which ("gives"). An agent's named outputs are the
+          fields of its response_schema; a workflow's are the ones it declares with set_outputs (or "outputs" in its
+          description: {"city": "{{ pick.city }}"}, "output" being its answer); a team's are those of the member who
+          concludes. Nothing else of what is called is visible: never refer to a step inside it, declare an output there.
+          When what is called fails, the step fails: connect its error port to handle it, or the whole run stops.
         - If something you were asked for does not exist on this platform (a system, a connector, a feature), say so plainly in
           your first answer, before any question, and propose the closest thing the CATALOG offers.
         - What the person answered becomes part of the plan: say which choices you made yourself and why, so they can correct

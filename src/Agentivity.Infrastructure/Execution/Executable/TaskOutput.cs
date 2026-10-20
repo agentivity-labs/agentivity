@@ -70,5 +70,18 @@ public sealed record TaskOutput(string TaskId, string AgentId, string Content)
     /// </summary>
     public IReadOnlyList<string> NotCovered { get; init; } = [];
 
+    /// <summary>
+    /// The named outputs the member gave with its answer (an agent: the fields of the format of its answer; a workflow: the
+    /// outputs it declares; a team: those of its member who concluded). See <see cref="NamedOutputs"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, object?> Outputs { get; init; } = new Dictionary<string, object?>();
+
+    /// <summary>
+    /// What the member says to the rest of its team: its answer, and its named outputs, each under its name, that the answer
+    /// does not already hold. What the next members and the manager read of its turn.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string Said => NamedOutputs.Describe(Content, Outputs);
+
     public bool IsEmpty => string.IsNullOrWhiteSpace(Content) && Artifacts.Count == 0;
 }

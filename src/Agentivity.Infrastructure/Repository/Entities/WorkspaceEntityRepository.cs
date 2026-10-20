@@ -161,7 +161,7 @@ public sealed class WorkspaceEntityRepository<TEntity> : IEntityRepository<TEnti
         {
             var entity = TryDeserialize(envelope);
             if (entity is not null)
-                items.Add(new CatalogBrowseItem(Id: entity.Id, Name: entity.Name, Type: _objectType, UpdatedAt: entity.UpdatedAt ?? envelope.Metadata.UpdatedAtUtc, Role: entity.Role, FolderId: envelope.Metadata.FolderId));
+                items.Add(new CatalogBrowseItem(Id: entity.Id, Name: entity.Name, Type: _objectType, UpdatedAt: entity.UpdatedAt ?? envelope.Metadata.UpdatedAtUtc, Role: entity.Role, FolderId: envelope.Metadata.FolderId, Tags: entity.Tags));
         }
 
         return new CatalogBrowseResult(current, folders, items);

@@ -58,11 +58,12 @@ public sealed class WorkflowExecutable : IExecutable
     /// <summary>What the caller is told: the workflow finished, or it stopped to wait and the caller must wait with it.</summary>
     private ExecutorResult ToResult(Agentivity.Domain.Common.OperationResult<WorkflowRunResult> operationResult)
     {
+        // A failure is told in the result, as every child tells it: whoever called it fails in its turn.
         if (!operationResult.IsSuccess || operationResult.Value is null)
-            throw new InvalidOperationException($"Workflow '{_workflowId}' failed: {operationResult.Error}");
+            return ExecutorResult.Failed(operationResult.Error ?? "the workflow failed.");
 
         var run = operationResult.Value;
-        return run.Suspended ? ExecutorResult.WaitingFor(run.WaitingForToken ?? string.Empty) : ExecutorResult.FromWorkflowState(run.State, run.ExecutedNodes);
+        return run.Suspended ? ExecutorResult.WaitingFor(run.WaitingForToken ?? string.Empty) : ExecutorResult.FromWorkflowState(run.State, run.ExecutedNodes, run.Definition.DeclaredOutputs);
     }
 
     private sealed record MinimalWorkflowDefinition(string Id, string Name) : IExecutableDefinition

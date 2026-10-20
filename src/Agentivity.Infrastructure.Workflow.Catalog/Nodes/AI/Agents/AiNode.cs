@@ -415,6 +415,6 @@ public sealed partial class AiNode : BaseAINode, IWorkflowNodeReconfigurable
             LogDebug = msg => services.LogDebug(msg),
         };
 
-        return new ResolvedAgentDefinition(resolvedModeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, prompt, systemPrompt, persistSession, runtimePort, contextServices, images.Count > 0 ? images : null);
+        return new ResolvedAgentDefinition(resolvedModeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, prompt, systemPrompt, persistSession, runtimePort, contextServices, images.Count > 0 ? images : null, args.GetText("response_schema") ?? string.Empty);
     }
 }

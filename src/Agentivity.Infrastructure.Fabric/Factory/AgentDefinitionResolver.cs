@@ -151,7 +151,7 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
         var runtimeArguments = new Dictionary<string, global::Agentivity.Domain.Arguments.ArgumentDefinition>(StringComparer.OrdinalIgnoreCase);
         var images = ReadImages(args);
 
-        return new ResolvedAgentDefinition(modeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, resolvedPrompt, systemPrompt, persistSession, runtimePort, contextServices, images);
+        return new ResolvedAgentDefinition(modeRuntime, runtimeArguments, runtimeParameters, resolvedPolicies, resolvedGuardrails, resolvedPrompt, systemPrompt, persistSession, runtimePort, contextServices, images, ResponseSchemaOf(aiNodeParams));
     }
 
     /// <summary>
@@ -189,6 +189,17 @@ public sealed class AgentDefinitionResolver(AgentEntity agentDefinition, AgentHo
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /// <summary>The format of the final answer, given as a text or as the JSON Schema itself; empty when there is none.</summary>
+    private static string ResponseSchemaOf(JsonElement? el) =>
+        el is { } parameters && parameters.TryGetProperty("response_schema", out var schema)
+            ? schema.ValueKind switch
+            {
+                JsonValueKind.String => schema.GetString() ?? string.Empty,
+                JsonValueKind.Object => schema.GetRawText(),
+                _ => string.Empty,
+            }
+            : string.Empty;
 
     private static string? ReadString(JsonElement? el, string key)
     {

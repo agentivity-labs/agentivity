@@ -169,7 +169,8 @@ internal static class RunsEndpointMappings
                                 state = team.Status.ToString().ToLowerInvariant(),
                                 createdAt = team.CreatedAt,
                                 completedAt = team.CompletedAt,
-                                content = teamProgress?.FinalSynthesis,
+                                // The answer of the team, as its orchestration says.
+                                content = teamProgress is null ? null : Agentivity.Infrastructure.Agentic.Team.TeamAnswer.Of(teamProgress),
                                 error = team.Error,
                             }
                         );

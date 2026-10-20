@@ -128,7 +128,7 @@ public abstract class LibraryCallNode : BaseNode
             nodeResult.AddText("output", result.Content);
         foreach (var (key, value) in result.Outputs)
         {
-            switch (value)
+            switch (NamedOutputs.Normalize(value))
             {
                 case string s:
                     nodeResult.AddText(key, s);

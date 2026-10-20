@@ -19,7 +19,7 @@ public sealed record CatalogBrowseFolder(string Id, string Name, string? ParentF
 /// <summary>
 /// A typed catalogue item (workflow, agent, team, prompt, …) within a browse result.
 /// </summary>
-public sealed record CatalogBrowseItem(string Id, string Name, string Type, DateTimeOffset UpdatedAt, string? Role = null, string? FolderId = null);
+public sealed record CatalogBrowseItem(string Id, string Name, string Type, DateTimeOffset UpdatedAt, string? Role = null, string? FolderId = null, IReadOnlyList<string>? Tags = null);
 
 /// <summary>
 /// The unified browse response shape — identical across all catalogue domains.

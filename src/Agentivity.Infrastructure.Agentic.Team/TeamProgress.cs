@@ -17,17 +17,21 @@ namespace Agentivity.Infrastructure.Agentic.Team;
 /// <param name="Input">Original team input — replayed unchanged on every resume.</param>
 /// <param name="OrchestratorId">Orchestrator selected for this run (fixed for its lifetime).</param>
 /// <param name="Outputs">Final per-task outputs, populated once the orchestrator completes.</param>
-/// <param name="FinalSynthesis">Manager/handoff wrap-up text, if the orchestrator produces one.</param>
+/// <param name="FinalSynthesis">The manager's wrap-up text, if the orchestrator produces one (Manager-led).</param>
 /// <param name="Graph">
 /// The graph scheduler's own restore point — IS the team's execution progress (task statuses,
 /// artifacts, suspension token). Null until the first checkpoint.
 /// </param>
+/// <param name="Answer">The answer of the team, as its orchestration says (see <see cref="TeamAnswer"/>), once the run is completed.</param>
+/// <param name="AnswerOutputs">The named outputs that go with the answer (see <see cref="TeamAnswer"/>), once the run is completed.</param>
 public sealed record TeamProgress(
     string Input,
     string OrchestratorId,
     IReadOnlyList<TaskOutput> Outputs,
     string? FinalSynthesis,
-    GraphRestorePoint? Graph
+    GraphRestorePoint? Graph,
+    string? Answer = null,
+    IReadOnlyDictionary<string, object?>? AnswerOutputs = null
 ) : IRecordConvertible<JsonElement>
 {
     /// <summary>

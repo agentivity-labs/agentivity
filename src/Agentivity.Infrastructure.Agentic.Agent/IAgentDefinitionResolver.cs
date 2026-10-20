@@ -39,7 +39,9 @@ public sealed record ResolvedAgentDefinition(
     /// <summary>Platform services (correlation, checkpoint/state/trace delegates) passed to <c>AgentHost.RunAgentAsync</c>.</summary>
     AgentRunServices ContextServices,
     /// <summary>Images attached to the resolved prompt for a vision-capable model, or <c>null</c> when none.</summary>
-    IReadOnlyList<ImageAttachment>? Images = null
+    IReadOnlyList<ImageAttachment>? Images = null,
+    /// <summary>The format the final answer must have (a JSON Schema, the agent's <c>response_schema</c>), or empty when it has none.</summary>
+    string ResponseSchema = ""
 );
 
 /// <summary>

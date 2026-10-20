@@ -39,14 +39,20 @@ public sealed class OpenAIImageClient : IImageGenerationClient
             return ImageGenerationResult.Fail("Prompt is required");
         }
 
-        // Get API key from credentials if provided
+        // The connection says where to ask and with which key; without one, the server's own key goes to the configured address.
         string? apiKey = null;
+        var endpoint = _options.Endpoint;
         if (!string.IsNullOrWhiteSpace(request.CredentialsId))
         {
             var credentials = await _credentialsService.GetByIdAsync(request.CredentialsId, cancellationToken);
             if (credentials != null)
             {
                 apiKey = credentials.GetField("api_key");
+                if (credentials.GetField("base_url")?.Trim().TrimEnd('/') is { Length: > 0 } baseUrl)
+                {
+                    endpoint = baseUrl + "/images/generations";
+                }
+
                 _logger.LogDebug("Using API key from credentials: {CredentialsId}", request.CredentialsId);
             }
         }
@@ -55,6 +61,7 @@ public sealed class OpenAIImageClient : IImageGenerationClient
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             apiKey = _options.ApiKey;
+            endpoint = _options.Endpoint;
         }
 
         if (string.IsNullOrWhiteSpace(apiKey))
@@ -82,8 +89,8 @@ public sealed class OpenAIImageClient : IImageGenerationClient
 
             var payload = new Dictionary<string, object>
             {
-                ["model"] = request.Model ?? _options.DefaultModel,
-                ["prompt"] = request.Prompt,
+                ["model"] = ModelOf(request.Model),
+                ["prompt"] = WithStyle(request.Prompt, request.Style),
                 ["n"] = Math.Clamp(request.Count, 1, 10),
                 ["size"] = MapSize(request.Size),
                 ["quality"] = MapQuality(request.Quality),
@@ -105,10 +112,10 @@ public sealed class OpenAIImageClient : IImageGenerationClient
 
             var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
-            _logger.LogDebug("Sending request to OpenAI endpoint: {Endpoint}", _options.Endpoint);
+            _logger.LogDebug("Sending request to OpenAI endpoint: {Endpoint}", endpoint);
 
             // Create request with Authorization header
-            using var requestMessage = new HttpRequestMessage(HttpMethod.Post, _options.Endpoint) { Content = content };
+            using var requestMessage = new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
             requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
             var response = await _httpClient.SendAsync(requestMessage, timeoutCts.Token).ConfigureAwait(false);
@@ -248,16 +255,28 @@ public sealed class OpenAIImageClient : IImageGenerationClient
         }
     }
 
+    // The image models of OpenAI today (gpt-image); a step saved for DALL-E ("dall-e-3") is drawn with the default one.
+    private string ModelOf(string? model) =>
+        model?.Trim() is { Length: > 0 } chosen && chosen.StartsWith("gpt-image", StringComparison.OrdinalIgnoreCase) ? chosen : _options.DefaultModel;
+
+    // "standard" and "hd" are the qualities of DALL-E: read as those of today.
     private static string MapQuality(string quality)
     {
         return quality.ToLowerInvariant() switch
         {
             "low" => "low",
-            "medium" => "medium",
-            "high" => "high",
+            "medium" or "standard" => "medium",
+            "high" or "hd" => "high",
             _ => "medium",
         };
     }
+
+    private static string WithStyle(string prompt, string? style) => style?.Trim().ToLowerInvariant() switch
+    {
+        "vivid" => prompt + "\n\nStyle: vivid — saturated colours, strong contrast, dramatic light.",
+        "natural" => prompt + "\n\nStyle: natural — realistic colours and soft, true-to-life light.",
+        _ => prompt,
+    };
 
     // Response DTOs
     private sealed class OpenAIImageResponse

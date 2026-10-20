@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Agentivity.Domain;
 using Agentivity.Domain.DataTables;
 using Agentivity.Domain.Executable;
+using Agentivity.Infrastructure.Execution.Executable;
 
 namespace Agentivity.Infrastructure.Workflows;
 
@@ -112,6 +113,13 @@ public sealed record WorkflowEntity : Entity, IExecutableDefinition
     [JsonPropertyName("annotations")]
     public IReadOnlyList<WorkflowAnnotation> Annotations { get; init; } = [];
 
+    /// <summary>
+    /// What this workflow gives to whoever calls it (a step of another workflow, a team), next to its answer: each output, its
+    /// name and where its value is taken from. Nothing else of the workflow is given: what its steps hold stays inside.
+    /// </summary>
+    [JsonPropertyName("outputs")]
+    public IReadOnlyList<DeclaredOutput> DeclaredOutputs { get; init; } = [];
+
     // ── IExecutableDefinition ────────────────────────────────────────────────
 
     [JsonIgnore]
@@ -120,8 +128,15 @@ public sealed record WorkflowEntity : Entity, IExecutableDefinition
     [JsonIgnore]
     IReadOnlyList<PortDefinition> IExecutableDefinition.Inputs => DefaultPorts.WorkflowInputs;
 
+    /// <summary>Its answer, and the outputs it declares (<see cref="DeclaredOutputs"/>).</summary>
     [JsonIgnore]
-    IReadOnlyList<PortDefinition> IExecutableDefinition.Outputs => DefaultPorts.WorkflowOutputs;
+    IReadOnlyList<PortDefinition> IExecutableDefinition.Outputs =>
+    [
+        .. DefaultPorts.WorkflowOutputs,
+        .. DeclaredOutputs
+            .Where(o => !string.IsNullOrWhiteSpace(o.Name) && !string.Equals(o.Name, NamedOutputs.Answer, StringComparison.OrdinalIgnoreCase))
+            .Select(o => new PortDefinition(o.Name.Trim(), "value", o.Description)),
+    ];
 
     [JsonIgnore]
     private IReadOnlyDictionary<string, WorkflowNodeDefinition> NodeIndex
