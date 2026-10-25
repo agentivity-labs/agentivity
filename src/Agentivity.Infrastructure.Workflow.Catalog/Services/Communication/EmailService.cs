@@ -118,7 +118,8 @@ public sealed class EmailService : IEmailSender, IEmailInbox
         using var client = new SmtpClient();
         try
         {
-            await client.ConnectAsync(host, port, Security(credentials, port, implicitTlsPort: 465), cancellationToken).ConfigureAwait(false);
+            // Through the outbound policy, as every call of the server: a mail server is a service the instance set up.
+            await client.ConnectAsync(await Agentivity.Infrastructure.Web.OutboundPolicy.ConnectAsync(host, port, Agentivity.Infrastructure.Web.OutboundCall.Service, cancellationToken).ConfigureAwait(false), host, port, Security(credentials, port, implicitTlsPort: 465), cancellationToken).ConfigureAwait(false);
             if (credentials.GetField("username")?.Trim() is { Length: > 0 } username)
             {
                 await client.AuthenticateAsync(username, credentials.GetField("password") ?? string.Empty, cancellationToken).ConfigureAwait(false);
@@ -337,7 +338,7 @@ public sealed class EmailService : IEmailSender, IEmailInbox
         using var client = new ImapClient();
         try
         {
-            await client.ConnectAsync(host, port, Security(credentials, port, implicitTlsPort: 993), cancellationToken).ConfigureAwait(false);
+            await client.ConnectAsync(await Agentivity.Infrastructure.Web.OutboundPolicy.ConnectAsync(host, port, Agentivity.Infrastructure.Web.OutboundCall.Service, cancellationToken).ConfigureAwait(false), host, port, Security(credentials, port, implicitTlsPort: 993), cancellationToken).ConfigureAwait(false);
             await client.AuthenticateAsync(username, credentials.GetField("password") ?? string.Empty, cancellationToken).ConfigureAwait(false);
             T result = await work(client).ConfigureAwait(false);
             await client.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
@@ -390,6 +391,7 @@ public sealed class EmailService : IEmailSender, IEmailInbox
         ex switch
         {
             AuthenticationException => new InvalidOperationException($"The {kind} server {host} refused the user name or the password. Check them in the connection (some providers want an app password).", ex),
+            Agentivity.Infrastructure.Web.PrivateNetworkRefusedException refused => new InvalidOperationException($"The {kind} server {host}:{port} is not called: {refused.Message}", ex),
             SslHandshakeException => new InvalidOperationException($"No secure connection could be made with the {kind} server {host}:{port}. Check the port and the security of the connection (port {(kind == "SMTP" ? "465" : "993")} is encrypted from the start, {(kind == "SMTP" ? "587" : "143")} uses STARTTLS).", ex),
             SocketException or IOException or TimeoutException => new InvalidOperationException($"The {kind} server {host}:{port} could not be reached: {ex.Message}", ex),
             ServiceNotConnectedException or ServiceNotAuthenticatedException or ProtocolException => new InvalidOperationException($"The {kind} server {host}:{port} did not accept the conversation: {ex.Message}", ex),

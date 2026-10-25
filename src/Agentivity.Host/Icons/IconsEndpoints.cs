@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Domain.Icons;
 using Agentivity.Infrastructure.Http;
 using Microsoft.AspNetCore.Builder;
@@ -32,7 +33,8 @@ internal static class IconsEndpoints
             )
             .WithName("ListIcons")
             .WithTags("Icons")
-            .WithSummary("List the icons a user can choose from, optionally filtered by set (type) or by name (q)");
+            .WithSummary("List the icons a user can choose from, optionally filtered by set (type) or by name (q)")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.Anyone);
 
         return endpoints;
     }

@@ -5,10 +5,12 @@ namespace Agentivity.Infrastructure.Web;
 
 /// <summary>
 /// What a workflow step or an agent calls on the web stays on the public internet: never the local machine, a private
-/// network, or the link-local range cloud providers serve instance credentials from. It holds in every edition — whoever
-/// writes the address (a person, an agent, a page that redirects), the server must not become a way into the network it
-/// runs in. The rule is applied twice: before a call (<see cref="Precheck"/>, for a clear refusal) and on the address
-/// actually connected to (<see cref="CreateHandler"/>), which no redirect and no name resolving inside can get around.
+/// network, or the link-local range cloud providers serve instance credentials from — unless the instance names the internal
+/// address as allowed (<see cref="OutboundPolicy.AllowedInternal"/>). It holds in every edition — whoever writes the address (a
+/// person, an agent, a page that redirects), the server must not become a way into the network it runs in. The rule is applied
+/// twice: before a call (<see cref="Precheck"/>, for a clear refusal) and on the address actually connected to
+/// (<see cref="CreateHandler"/>, the handler of <see cref="OutboundPolicy"/> for an address someone wrote), which no redirect and
+/// no name resolving inside can get around.
 /// </summary>
 public static class PublicNetwork
 {
@@ -38,7 +40,9 @@ public static class PublicNetwork
 
         string host = uri.Host.Trim('[', ']');
         bool localByName = host.Equals("localhost", StringComparison.OrdinalIgnoreCase) || host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase);
-        return localByName || (IPAddress.TryParse(host, out IPAddress? literal) && IsInternal(literal)) ? Refusal(uri.Host) : null;
+        IPAddress? address = localByName ? IPAddress.Loopback : IPAddress.TryParse(host, out IPAddress? literal) && IsInternal(literal) ? literal : null;
+        // An internal address the instance names as allowed is called all the same.
+        return address is null ? null : OutboundPolicy.Current.Refusal(host, uri.Port, [address], OutboundCall.Address);
     }
 
     /// <summary>Whether <paramref name="exception"/> (or what it wraps) is a call refused for leading inside the network.</summary>
@@ -61,34 +65,7 @@ public static class PublicNetwork
     /// address — for the first address as for every one a redirect leads to. It follows redirects on its own only when
     /// <paramref name="followRedirects"/> (each new address is then checked as it connects).
     /// </summary>
-    public static SocketsHttpHandler CreateHandler(bool followRedirects = false) =>
-        new()
-        {
-            AllowAutoRedirect = followRedirects,
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            ConnectCallback = async (context, cancellationToken) =>
-            {
-                string host = context.DnsEndPoint.Host;
-                IPAddress[] addresses = IPAddress.TryParse(host.Trim('[', ']'), out IPAddress? literal) ? [literal] : await Dns.GetHostAddressesAsync(host, cancellationToken).ConfigureAwait(false);
-                IPAddress? target = addresses.FirstOrDefault();
-                if (target is null || addresses.Any(IsInternal))
-                {
-                    throw new PrivateNetworkRefusedException(Refusal(host));
-                }
-
-                var socket = new Socket(target.AddressFamily, SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
-                try
-                {
-                    await socket.ConnectAsync(new IPEndPoint(target, context.DnsEndPoint.Port), cancellationToken).ConfigureAwait(false);
-                    return new NetworkStream(socket, ownsSocket: true);
-                }
-                catch
-                {
-                    socket.Dispose();
-                    throw;
-                }
-            },
-        };
+    public static SocketsHttpHandler CreateHandler(bool followRedirects = false) => OutboundPolicy.Handler(OutboundCall.Address, followRedirects);
 
     /// <summary>Whether <paramref name="address"/> is the local machine, a private or link-local network, or not routable.</summary>
     public static bool IsInternal(IPAddress address)

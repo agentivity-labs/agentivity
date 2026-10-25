@@ -37,4 +37,10 @@ public interface IConfigurationRepository
     /// Checks if a configuration file exists.
     /// </summary>
     bool Exists(string relativePath);
+
+    /// <summary>
+    /// Says the spaces the configuration may be used in, none meaning all of them; false when there is no such configuration. The
+    /// reads above give only what may be used in the space of the work being done now.
+    /// </summary>
+    Task<bool> SetSpacesAsync(string relativePath, IReadOnlyList<string> spaces, CancellationToken cancellationToken = default) => Task.FromResult(false);
 }

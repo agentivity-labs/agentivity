@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Core;
 using Agentivity.Infrastructure.Core.Json;
 using Agentivity.Infrastructure.Http;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Options;
 using Agentivity.Infrastructure.Storage.Workspace;
 using Microsoft.Extensions.Logging;
@@ -70,7 +71,7 @@ public sealed class ConfigurationRepository : IConfigurationRepository
         if (!TryName(relativePath, out var name))
             return null;
 
-        var text = TextOf(await FindAsync(name, cancellationToken).ConfigureAwait(false));
+        var text = TextOf(Here(await FindAsync(name, cancellationToken).ConfigureAwait(false)));
         return text is null ? null : JsonSerializer.Deserialize<T>(text, ReadOptions);
     }
 
@@ -84,7 +85,8 @@ public sealed class ConfigurationRepository : IConfigurationRepository
     {
         var name = NameOf(relativePath);
         using (JsonDocument.Parse(jsonContent)) { } // Not JSON: refused, nothing kept.
-        await KeepAsync(name, jsonContent, DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(false);
+        // Where it is available stays as it was.
+        await KeepAsync(name, jsonContent, DateTimeOffset.UtcNow, cancellationToken, SpacesOf(await FindAsync(name, cancellationToken).ConfigureAwait(false))).ConfigureAwait(false);
         _checked[name] = true;
         _logger.LogInformation("Saved configuration: {Name}", name);
     }
@@ -99,14 +101,35 @@ public sealed class ConfigurationRepository : IConfigurationRepository
             .GetAwaiter()
             .GetResult()
             .Select(e => (Envelope: e, Kept: JsonNode.Parse(e.Payload)))
-            .Select(x => (x.Envelope, Name: x.Kept?["path"]?.GetValue<string>() ?? x.Envelope.Name, Text: TextOf(x.Kept)))
+            .Where(x => Here(x.Kept) is not null)
+            .Select(x => (x.Envelope, Name: x.Kept?["path"]?.GetValue<string>() ?? x.Envelope.Name, Text: TextOf(x.Kept), Spaces: SpacesOf(x.Kept)))
             .Where(x => prefix is null || x.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            .Select(x => new ConfigurationFileInfo(x.Name, Path.GetFileNameWithoutExtension(x.Name), x.Text?.Length ?? 0, x.Envelope.Metadata.UpdatedAtUtc.UtcDateTime))
+            .Select(x => new ConfigurationFileInfo(x.Name, Path.GetFileNameWithoutExtension(x.Name), x.Text?.Length ?? 0, x.Envelope.Metadata.UpdatedAtUtc.UtcDateTime, x.Spaces))
             .OrderBy(f => f.Path, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
-    public bool Exists(string relativePath) => TryName(relativePath, out var name) && FindAsync(name, CancellationToken.None).GetAwaiter().GetResult() is not null;
+    public bool Exists(string relativePath) => TryName(relativePath, out var name) && Here(FindAsync(name, CancellationToken.None).GetAwaiter().GetResult()) is not null;
+
+    public async Task<bool> SetSpacesAsync(string relativePath, IReadOnlyList<string> spaces, CancellationToken cancellationToken = default)
+    {
+        var name = NameOf(relativePath);
+        var kept = await FindAsync(name, cancellationToken).ConfigureAwait(false);
+        if (TextOf(kept) is not { } text)
+            return false;
+
+        var updatedAt = DateTimeOffset.UtcNow;
+        await KeepAsync(name, text, updatedAt, cancellationToken, [.. spaces.Distinct(StringComparer.Ordinal)]).ConfigureAwait(false);
+        _logger.LogInformation("The configuration {Name} is available in {Spaces}", name, spaces.Count == 0 ? "every space" : string.Join(", ", spaces));
+        return true;
+    }
+
+    // The spaces a configuration is available in, kept beside its text (none: all of them; a configuration is not kept by space).
+    private static IReadOnlyList<string> SpacesOf(JsonNode? kept) =>
+        SpaceAvailability.Of(kept?["spaces"] is JsonArray said ? [.. said.Select(s => s?.GetValue<string>()).OfType<string>()] : null, null);
+
+    // The configuration when it may be used here, null otherwise.
+    private static JsonNode? Here(JsonNode? kept) => kept is not null && SpaceAvailability.Here(SpacesOf(kept)) ? kept : null;
 
     private static bool TryName(string? path, out string name)
     {
@@ -180,9 +203,11 @@ public sealed class ConfigurationRepository : IConfigurationRepository
 
     private static string? TextOf(JsonNode? kept) => kept?["text"]?.GetValue<string>();
 
-    private async Task KeepAsync(string name, string text, DateTimeOffset updatedAt, CancellationToken cancellationToken)
+    private async Task KeepAsync(string name, string text, DateTimeOffset updatedAt, CancellationToken cancellationToken, IReadOnlyList<string>? spaces = null)
     {
         var payload = new JsonObject { ["name"] = name, ["path"] = name, ["text"] = text };
+        if (spaces is { Count: > 0 })
+            payload["spaces"] = new JsonArray([.. spaces.Select(s => (JsonNode?)JsonValue.Create(s))]);
         var saved = await _store.SaveAsync(WorkspaceObjectEnvelope.CreateJson(ConfigurationType, IdOf(name), name, payload.ToJsonString(WriteOptions), new WorkspaceObjectMetadata(updatedAt, updatedAt)), cancellationToken).ConfigureAwait(false);
         if (!saved.Success)
             throw new InvalidOperationException($"The configuration {name} could not be kept in the workspace: {saved.Error}");
@@ -198,4 +223,5 @@ public sealed class ConfigurationPathException(string message) : ArgumentExcepti
 }
 
 /// <summary>Represents information about a configuration.</summary>
-public sealed record ConfigurationFileInfo(string Path, string Name, long Size, DateTime LastModified);
+/// <param name="Spaces">The spaces it may be used in; none: all of them.</param>
+public sealed record ConfigurationFileInfo(string Path, string Name, long Size, DateTime LastModified, IReadOnlyList<string>? Spaces = null);

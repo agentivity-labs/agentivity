@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Storage;
 using Agentivity.Infrastructure.Storage.Workspace;
 using Microsoft.Data.Sqlite;
@@ -22,6 +23,9 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
     private readonly SqliteTakeOver? _takeOver;
     private readonly WorkspaceDomainTypes? _types;
 
+    // A domain kept by space (the libraries): nothing is read or written outside the spaces of the work being done now.
+    private readonly bool _spaced;
+
     /// <param name="takeOverFrom">
     /// Where the JSON workspace kept this domain, when there is one: what it holds is taken over the first time the domain is used
     /// (see <see cref="SqliteTakeOver"/>).
@@ -33,6 +37,7 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
     public SqliteWorkspaceObjectStore(string databasePath, string domain, ILogger<SqliteWorkspaceObjectStore> logger, string? takeOverFrom = null, WorkspaceDomainTypes? types = null)
     {
         _types = types;
+        _spaced = types?.SpaceScoped == true;
         ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(domain);
         _databasePath = Path.GetFullPath(databasePath);
@@ -53,7 +58,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
         try
         {
             await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-            var found = await ReadObjectsAsync(connection, "object_type = $type AND object_id = $id", cancellationToken, ("$type", objectType), ("$id", objectId.Trim())).ConfigureAwait(false);
+            var (seen, seenParameters) = Seen();
+            var found = await ReadObjectsAsync(connection, "object_type = $type AND object_id = $id" + seen, cancellationToken, [("$type", objectType), ("$id", objectId.Trim()), .. seenParameters]).ConfigureAwait(false);
             return found.Count > 0 ? StorageResult<WorkspaceObjectEnvelope>.Ok(found[0]) : StorageResult<WorkspaceObjectEnvelope>.Fail($"Workspace object '{objectType}/{objectId}' was not found.");
         }
         catch (Exception ex) when (ex is SqliteException or IOException or JsonException)
@@ -82,6 +88,10 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
                 parameters.Add(("$name", query.NameContains));
             }
 
+            var (shown, shownParameters) = Shown();
+            where += shown;
+            parameters.AddRange(shownParameters);
+
             // By name, then the page asked for.
             var page = $" ORDER BY name COLLATE WORKSPACE_NAME, object_id LIMIT {(query?.Take is > 0 ? query.Take.Value : -1)} OFFSET {(query?.Skip is > 0 ? query.Skip.Value : 0)}";
             await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
@@ -107,7 +117,21 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
                 return StorageResult.Fail($"Workspace folder '{folderId}' was not found.");
             }
 
-            await WriteObjectAsync(connection, transaction, envelope, keepExisting: false, cancellationToken).ConfigureAwait(false);
+            var spaceId = WorkspaceSpaces.Default;
+            if (_spaced)
+            {
+                var kept = await SpaceOfAsync(connection, transaction, "SELECT space_id FROM workspace_objects WHERE domain = $domain AND object_type = $type AND object_id = $id", cancellationToken, ("$type", envelope.ObjectType), ("$id", envelope.ObjectId.Trim())).ConfigureAwait(false);
+                if (kept is not null && !SpaceScope.Access.Sees(kept))
+                {
+                    return StorageResult.Fail($"Workspace object '{envelope.ObjectType}/{envelope.ObjectId}' was not found.");
+                }
+
+                spaceId = kept
+                    ?? (folderId is null ? null : await SpaceOfAsync(connection, transaction, "SELECT space_id FROM workspace_folders WHERE domain = $domain AND folder_id = $id", cancellationToken, ("$id", folderId)).ConfigureAwait(false))
+                    ?? SpaceScope.CurrentSpaceId;
+            }
+
+            await WriteObjectAsync(connection, transaction, envelope, keepExisting: false, spaceId, cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return StorageResult.Ok();
         }
@@ -119,7 +143,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
     }
 
     // keepExisting: an object already in the file is left as it is (taking over never overwrites).
-    private async Task WriteObjectAsync(SqliteConnection connection, SqliteTransaction transaction, WorkspaceObjectEnvelope envelope, bool keepExisting, CancellationToken cancellationToken)
+    // spaceId: the space of an object written for the first time (one already there keeps its own).
+    private async Task WriteObjectAsync(SqliteConnection connection, SqliteTransaction transaction, WorkspaceObjectEnvelope envelope, bool keepExisting, string spaceId, CancellationToken cancellationToken)
     {
         var onConflict = keepExisting
             ? "DO NOTHING"
@@ -133,8 +158,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
                 connection,
                 transaction,
                 $"""
-                INSERT INTO workspace_objects (domain, object_type, object_id, name, payload, content_type, folder_id, created_at, updated_at, created_by, updated_by, tags)
-                VALUES ($domain, $type, $id, $name, $payload, $contentType, $folder, $createdAt, $updatedAt, $createdBy, $updatedBy, $tags)
+                INSERT INTO workspace_objects (domain, object_type, object_id, name, payload, content_type, folder_id, created_at, updated_at, created_by, updated_by, tags, space_id)
+                VALUES ($domain, $type, $id, $name, $payload, $contentType, $folder, $createdAt, $updatedAt, $createdBy, $updatedBy, $tags, $space)
                 ON CONFLICT (domain, object_type, object_id) {onConflict}
                 """,
                 cancellationToken,
@@ -148,7 +173,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
                 ("$updatedAt", Instant(envelope.Metadata.UpdatedAtUtc)),
                 ("$createdBy", envelope.Metadata.CreatedBy),
                 ("$updatedBy", envelope.Metadata.UpdatedBy),
-                ("$tags", envelope.Metadata.Tags is { Count: > 0 } tags ? JsonSerializer.Serialize(tags) : null)
+                ("$tags", envelope.Metadata.Tags is { Count: > 0 } tags ? JsonSerializer.Serialize(tags) : null),
+                ("$space", spaceId)
             ).ConfigureAwait(false);
     }
 
@@ -158,7 +184,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
         try
         {
             await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-            var removed = await ExecuteAsync(connection, null, "DELETE FROM workspace_objects WHERE domain = $domain AND object_type = $type AND object_id = $id", cancellationToken, ("$type", objectType), ("$id", objectId.Trim())).ConfigureAwait(false);
+            var (seen, seenParameters) = Seen();
+            var removed = await ExecuteAsync(connection, null, "DELETE FROM workspace_objects WHERE domain = $domain AND object_type = $type AND object_id = $id" + seen, cancellationToken, [("$type", objectType), ("$id", objectId.Trim()), .. seenParameters]).ConfigureAwait(false);
             return removed > 0 ? StorageResult.Ok() : StorageResult.Fail($"Workspace object '{objectType}/{objectId}' was not found.");
         }
         catch (Exception ex) when (ex is SqliteException or IOException)
@@ -174,7 +201,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
         try
         {
             await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
-            return await ScalarAsync(connection, null, "SELECT COUNT(*) FROM workspace_objects WHERE domain = $domain AND object_type = $type AND object_id = $id", cancellationToken, ("$type", objectType), ("$id", objectId.Trim())).ConfigureAwait(false) > 0;
+            var (seen, seenParameters) = Seen();
+            return await ScalarAsync(connection, null, "SELECT COUNT(*) FROM workspace_objects WHERE domain = $domain AND object_type = $type AND object_id = $id" + seen, cancellationToken, [("$type", objectType), ("$id", objectId.Trim()), .. seenParameters]).ConfigureAwait(false) > 0;
         }
         catch (Exception ex) when (ex is SqliteException or IOException)
         {
@@ -196,7 +224,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
                 return StorageResult.Fail($"Workspace folder '{objectType}/{targetId}' was not found.");
             }
 
-            var moved = await ExecuteAsync(connection, transaction, "UPDATE workspace_objects SET folder_id = $folder, updated_at = max(created_at, $now) WHERE domain = $domain AND object_type = $type AND object_id = $id", cancellationToken, ("$folder", targetId), ("$now", Instant(DateTimeOffset.UtcNow)), ("$type", objectType), ("$id", objectId.Trim())).ConfigureAwait(false);
+            var (seen, seenParameters) = Seen();
+            var moved = await ExecuteAsync(connection, transaction, "UPDATE workspace_objects SET folder_id = $folder, updated_at = max(created_at, $now) WHERE domain = $domain AND object_type = $type AND object_id = $id" + seen, cancellationToken, [("$folder", targetId), ("$now", Instant(DateTimeOffset.UtcNow)), ("$type", objectType), ("$id", objectId.Trim()), .. seenParameters]).ConfigureAwait(false);
             if (moved == 0)
             {
                 return StorageResult.Fail($"Workspace object '{objectType}/{objectId}' was not found.");
@@ -208,6 +237,92 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
         catch (Exception ex) when (ex is SqliteException or IOException)
         {
             _logger.LogError(ex, "Failed to move workspace object {ObjectType}/{ObjectId}", objectType, objectId);
+            return StorageResult.Fail(ex.Message);
+        }
+    }
+
+    public async ValueTask<StorageResult> MoveToSpaceAsync(string objectType, string objectId, string spaceId, CancellationToken cancellationToken = default)
+    {
+        ValidateIdentity(objectType, objectId);
+        if (!_spaced)
+            return StorageResult.Fail($"'{objectType}' is not kept by space.");
+        try
+        {
+            await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
+            var (seen, seenParameters) = Seen();
+            var moved = await ExecuteAsync(connection, null, "UPDATE workspace_objects SET space_id = $space, folder_id = NULL, updated_at = max(created_at, $now) WHERE domain = $domain AND object_type = $type AND object_id = $id" + seen, cancellationToken, [("$space", spaceId), ("$now", Instant(DateTimeOffset.UtcNow)), ("$type", objectType), ("$id", objectId.Trim()), .. seenParameters]).ConfigureAwait(false);
+            return moved > 0 ? StorageResult.Ok() : StorageResult.Fail($"Workspace object '{objectType}/{objectId}' was not found.");
+        }
+        catch (Exception ex) when (ex is SqliteException or IOException)
+        {
+            _logger.LogError(ex, "Failed to move workspace object {ObjectType}/{ObjectId} to another space", objectType, objectId);
+            return StorageResult.Fail(ex.Message);
+        }
+    }
+
+    // A folder and the folders below it, by their ids.
+    private const string TreeOf = """
+        WITH RECURSIVE tree(id) AS (
+            SELECT folder_id FROM workspace_folders WHERE domain = $domain AND folder_id = $folder
+            UNION ALL
+            SELECT f.folder_id FROM workspace_folders f JOIN tree t ON f.parent_id = t.id WHERE f.domain = $domain
+        )
+        """;
+
+    public async ValueTask<IReadOnlyList<WorkspaceSpaceFolder>> TopFoldersAsync(string objectType, CancellationToken cancellationToken = default)
+    {
+        if (!_spaced)
+            return [];
+        try
+        {
+            await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
+            var (seen, seenParameters) = Seen();
+            var tops = new List<(string Id, string Name, string Space)>();
+            await using (var command = Command(connection, null, "SELECT folder_id, name, space_id FROM workspace_folders WHERE domain = $domain AND parent_id IS NULL" + seen + " ORDER BY name COLLATE WORKSPACE_NAME", seenParameters))
+            await using (var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+            {
+                while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+                    tops.Add((reader.GetString(0), reader.GetString(1), NullableString(reader, 2) ?? WorkspaceSpaces.Default));
+            }
+
+            var folders = new List<WorkspaceSpaceFolder>();
+            foreach (var (id, name, space) in tops)
+            {
+                var elements = await ScalarAsync(connection, null, TreeOf + " SELECT COUNT(*) FROM workspace_objects WHERE domain = $domain AND folder_id IN (SELECT id FROM tree)", cancellationToken, ("$folder", id)).ConfigureAwait(false);
+                folders.Add(new WorkspaceSpaceFolder(id, name, space, (int)elements));
+            }
+
+            return folders;
+        }
+        catch (Exception ex) when (ex is SqliteException or IOException)
+        {
+            _logger.LogError(ex, "Failed to list the top-level workspace folders for type {ObjectType}", objectType);
+            return [];
+        }
+    }
+
+    public async ValueTask<StorageResult> MoveFolderToSpaceAsync(string objectType, string folderId, string spaceId, CancellationToken cancellationToken = default)
+    {
+        if (!_spaced)
+            return StorageResult.Fail($"'{objectType}' is not kept by space.");
+        try
+        {
+            await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
+            await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+            if (!await FolderExistsAsync(connection, transaction, folderId, cancellationToken).ConfigureAwait(false))
+            {
+                return StorageResult.Fail($"Workspace folder '{objectType}/{folderId}' was not found.");
+            }
+
+            var now = Instant(DateTimeOffset.UtcNow);
+            await ExecuteAsync(connection, transaction, TreeOf + " UPDATE workspace_objects SET space_id = $space, updated_at = max(created_at, $now) WHERE domain = $domain AND folder_id IN (SELECT id FROM tree)", cancellationToken, ("$folder", folderId), ("$space", spaceId), ("$now", now)).ConfigureAwait(false);
+            await ExecuteAsync(connection, transaction, TreeOf + " UPDATE workspace_folders SET space_id = $space, updated_at = max(created_at, $now) WHERE domain = $domain AND folder_id IN (SELECT id FROM tree)", cancellationToken, ("$folder", folderId), ("$space", spaceId), ("$now", now)).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return StorageResult.Ok();
+        }
+        catch (Exception ex) when (ex is SqliteException or IOException)
+        {
+            _logger.LogError(ex, "Failed to move workspace folder {FolderId} to another space", folderId);
             return StorageResult.Fail(ex.Message);
         }
     }
@@ -254,7 +369,10 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
 
             var now = DateTimeOffset.UtcNow;
             var folderId = Guid.NewGuid().ToString("N");
-            await ExecuteAsync(connection, transaction, "INSERT INTO workspace_folders (domain, folder_id, name, parent_id, created_at, updated_at) VALUES ($domain, $id, $name, $parent, $now, $now)", cancellationToken, ("$id", folderId), ("$name", name), ("$parent", parentId), ("$now", Instant(now))).ConfigureAwait(false);
+            var spaceId = !_spaced
+                ? WorkspaceSpaces.Default
+                : (parentId is null ? null : await SpaceOfAsync(connection, transaction, "SELECT space_id FROM workspace_folders WHERE domain = $domain AND folder_id = $id", cancellationToken, ("$id", parentId)).ConfigureAwait(false)) ?? SpaceScope.CurrentSpaceId;
+            await ExecuteAsync(connection, transaction, "INSERT INTO workspace_folders (domain, folder_id, name, parent_id, created_at, updated_at, space_id) VALUES ($domain, $id, $name, $parent, $now, $now, $space)", cancellationToken, ("$id", folderId), ("$name", name), ("$parent", parentId), ("$now", Instant(now)), ("$space", spaceId)).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return StorageResult<WorkspaceFolder>.Ok(new WorkspaceFolder(objectType, folderId, name, parentId, now, now));
         }
@@ -383,7 +501,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
             await using var connection = await OpenAsync(cancellationToken).ConfigureAwait(false);
             var current = currentId is null ? new WorkspaceBrowseCurrentFolder(null, null, true) : new WorkspaceBrowseCurrentFolder(currentId, (await ParentOfAsync(connection, null, currentId, cancellationToken).ConfigureAwait(false))?.Name, false);
             var folders = await ChildFoldersAsync(connection, null, objectType, currentId, cancellationToken).ConfigureAwait(false);
-            var items = await ReadObjectsAsync(connection, (currentId is null ? "object_type = $type AND folder_id IS NULL" : "object_type = $type AND folder_id = $folder") + " ORDER BY name COLLATE WORKSPACE_NAME, object_id", cancellationToken, ("$type", objectType), ("$folder", currentId)).ConfigureAwait(false);
+            var (shown, shownParameters) = Shown();
+            var items = await ReadObjectsAsync(connection, (currentId is null ? "object_type = $type AND folder_id IS NULL" : "object_type = $type AND folder_id = $folder") + shown + " ORDER BY name COLLATE WORKSPACE_NAME, object_id", cancellationToken, [("$type", objectType), ("$folder", currentId), .. shownParameters]).ConfigureAwait(false);
             return new WorkspaceBrowseResult(current, folders, items);
         }
         catch (Exception ex) when (ex is SqliteException or IOException or JsonException)
@@ -419,7 +538,7 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
 
         foreach (var envelope in kept.Objects)
         {
-            await WriteObjectAsync(connection, transaction, envelope, keepExisting: true, CancellationToken.None).ConfigureAwait(false);
+            await WriteObjectAsync(connection, transaction, envelope, keepExisting: true, WorkspaceSpaces.Default, CancellationToken.None).ConfigureAwait(false);
         }
 
         return kept.Count;
@@ -453,13 +572,14 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
 
     private async Task<List<WorkspaceObjectEnvelope>> ReadObjectsAsync(SqliteConnection connection, string where, CancellationToken cancellationToken, params (string Name, object? Value)[] parameters)
     {
-        await using var command = Command(connection, null, "SELECT object_type, object_id, name, payload, content_type, folder_id, created_at, updated_at, created_by, updated_by, tags FROM workspace_objects WHERE domain = $domain AND " + where, parameters);
+        await using var command = Command(connection, null, "SELECT object_type, object_id, name, payload, content_type, folder_id, created_at, updated_at, created_by, updated_by, tags, space_id FROM workspace_objects WHERE domain = $domain AND " + where, parameters);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         var items = new List<WorkspaceObjectEnvelope>();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             var tags = reader.IsDBNull(10) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(reader.GetString(10));
-            items.Add(new WorkspaceObjectEnvelope(reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), new WorkspaceObjectMetadata(Instant(reader.GetString(6)), Instant(reader.GetString(7)), NullableString(reader, 5), NullableString(reader, 8), NullableString(reader, 9), tags), reader.GetString(4)));
+            var metadata = new WorkspaceObjectMetadata(Instant(reader.GetString(6)), Instant(reader.GetString(7)), NullableString(reader, 5), NullableString(reader, 8), NullableString(reader, 9), tags) { SpaceId = SpaceOfRow(NullableString(reader, 11)) };
+            items.Add(new WorkspaceObjectEnvelope(reader.GetString(0), reader.GetString(1), reader.GetString(2), reader.GetString(3), metadata, reader.GetString(4)));
         }
 
         return items;
@@ -467,7 +587,8 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
 
     private async Task<List<WorkspaceFolder>> ChildFoldersAsync(SqliteConnection connection, SqliteTransaction? transaction, string objectType, string? parentId, CancellationToken cancellationToken)
     {
-        await using var command = Command(connection, transaction, (parentId is null ? "SELECT folder_id, name, parent_id, created_at, updated_at FROM workspace_folders WHERE domain = $domain AND parent_id IS NULL" : "SELECT folder_id, name, parent_id, created_at, updated_at FROM workspace_folders WHERE domain = $domain AND parent_id = $parent") + " ORDER BY name COLLATE WORKSPACE_NAME", [("$parent", parentId)]);
+        var (shown, shownParameters) = Shown();
+        await using var command = Command(connection, transaction, (parentId is null ? "SELECT folder_id, name, parent_id, created_at, updated_at FROM workspace_folders WHERE domain = $domain AND parent_id IS NULL" : "SELECT folder_id, name, parent_id, created_at, updated_at FROM workspace_folders WHERE domain = $domain AND parent_id = $parent") + shown + " ORDER BY name COLLATE WORKSPACE_NAME", [("$parent", parentId), .. shownParameters]);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         var folders = new List<WorkspaceFolder>();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -478,20 +599,40 @@ public sealed class SqliteWorkspaceObjectStore : IWorkspaceObjectStore
         return folders;
     }
 
-    private async Task<bool> FolderExistsAsync(SqliteConnection connection, SqliteTransaction? transaction, string folderId, CancellationToken cancellationToken) =>
-        await ScalarAsync(connection, transaction, "SELECT COUNT(*) FROM workspace_folders WHERE domain = $domain AND folder_id = $id", cancellationToken, ("$id", folderId)).ConfigureAwait(false) > 0;
+    private async Task<bool> FolderExistsAsync(SqliteConnection connection, SqliteTransaction? transaction, string folderId, CancellationToken cancellationToken)
+    {
+        var (seen, seenParameters) = Seen();
+        return await ScalarAsync(connection, transaction, "SELECT COUNT(*) FROM workspace_folders WHERE domain = $domain AND folder_id = $id" + seen, cancellationToken, [("$id", folderId), .. seenParameters]).ConfigureAwait(false) > 0;
+    }
 
     /// <summary>The name of the folder and the folder it is in, or null when there is no such folder in this domain.</summary>
     private async Task<(string Name, string? ParentId)?> ParentOfAsync(SqliteConnection connection, SqliteTransaction? transaction, string folderId, CancellationToken cancellationToken)
     {
-        await using var command = Command(connection, transaction, "SELECT name, parent_id FROM workspace_folders WHERE domain = $domain AND folder_id = $id", [("$id", folderId)]);
+        var (seen, seenParameters) = Seen();
+        await using var command = Command(connection, transaction, "SELECT name, parent_id FROM workspace_folders WHERE domain = $domain AND folder_id = $id" + seen, [("$id", folderId), .. seenParameters]);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         return await reader.ReadAsync(cancellationToken).ConfigureAwait(false) ? (reader.GetString(0), NullableString(reader, 1)) : null;
+    }
+
+    // What the spaces of the work being done now add to a WHERE: nothing for a domain not kept by space.
+    private (string Sql, (string Name, object? Value)[] Parameters) Seen() => _spaced ? WorkspaceSpaceFilter.Seen('$') : (string.Empty, []);
+
+    private (string Sql, (string Name, object? Value)[] Parameters) Shown() => _spaced ? WorkspaceSpaceFilter.Shown('$') : (string.Empty, []);
+
+    // The space of one row (an object, a folder), whatever the spaces seen; null when there is none.
+    private async Task<string?> SpaceOfAsync(SqliteConnection connection, SqliteTransaction? transaction, string sql, CancellationToken cancellationToken, params (string Name, object? Value)[] parameters)
+    {
+        await using var command = Command(connection, transaction, sql, parameters);
+        return await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) as string;
     }
 
     private static string Instant(DateTimeOffset value) => value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
     private static DateTimeOffset Instant(string value) => DateTimeOffset.Parse(value, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+
+    // The space of an object as it is read: for a domain not kept by space, only one that is not General — what was kept by space
+    // before it was not (the credentials, which say where they are available from it).
+    private string? SpaceOfRow(string? spaceId) => _spaced || (spaceId is not null && spaceId != WorkspaceSpaces.Default) ? spaceId : null;
 
     private static string? NullableString(SqliteDataReader reader, int ordinal) => reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
 

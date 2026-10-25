@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
 using Agentivity.Domain.Run;
@@ -26,7 +27,7 @@ namespace Agentivity.Host.Executions;
 /// Called by <see cref="ExecutionsEndpoints"/> and by <see cref="IApiStub"/> implementations.
 /// An execution is the user-facing concept; runs are internal implementation details.
 /// </summary>
-public sealed class ExecutionService
+public sealed class ExecutionService(IEdition? edition = null, MonthlyRuns? monthlyRuns = null, Agentivity.Infrastructure.Storage.Workspace.IWorkspaceObjectStore? workspace = null, ExecutionLimits? limits = null, Agentivity.Infrastructure.Hosting.WorkspaceMaintenance? maintenance = null)
 {
     private const string ExecutionStreamBase = "/api/v1/streams/executions";
 
@@ -40,7 +41,9 @@ public sealed class ExecutionService
         IRepository<ExecutionContext, ExecutionRecord> executionRepository,
         ILoggerFactory loggerFactory,
         CancellationToken ct,
-        IRepository<RunContext, RunRecord>? runRepository = null
+        IRepository<RunContext, RunRecord>? runRepository = null,
+        Caller? startedBy = null,
+        Action<ExecutorResult?, Exception?>? finished = null
     )
     {
         if (string.IsNullOrWhiteSpace(body?.EntityId))
@@ -63,26 +66,72 @@ public sealed class ExecutionService
         if (executable.Definition.Kind == ExecutableKind.Team && teamEngine is not null && await RefuseTeamAsync(executable.Definition.Id, teamEngine, catalogue, ct).ConfigureAwait(false) is { } refusal)
             return refusal;
 
+        // No plan in force (a trial ended, a subscription cancelled): nothing new runs; an execution going on may still be answered.
+        if (string.IsNullOrWhiteSpace(body.ExecutionId) && edition is { HasPlan: false })
+            return Results.Json(EditionRefusals.NoPlan(), statusCode: StatusCodes.Status403Forbidden);
+
+        // The workspace is being updated (or the server stops): a new one waits; what goes on finishes, an answer still takes one up.
+        if (string.IsNullOrWhiteSpace(body.ExecutionId) && maintenance?.Refusal() is { } updating)
+            return Results.Json(updating, statusCode: StatusCodes.Status503ServiceUnavailable);
+
+        // Too many running at once, or the disk full: a new one waits (a continuation is the same execution).
+        if (string.IsNullOrWhiteSpace(body.ExecutionId) && limits is not null && await limits.RefusalAsync(ct).ConfigureAwait(false) is { } refused)
+            return Results.Json(refused, statusCode: StatusCodes.Status403Forbidden);
+
+        // A new execution counts in the month, as far as the edition allows (a continuation is the same execution).
+        if (string.IsNullOrWhiteSpace(body.ExecutionId) && monthlyRuns is not null && !await monthlyRuns.TryStartAsync(edition?.Limit(EditionLimits.MaxRunsPerMonth), ct).ConfigureAwait(false))
+            return Results.Json(EditionRefusals.Limit(edition!, "executions a month", edition!.Limit(EditionLimits.MaxRunsPerMonth)!.Value), statusCode: StatusCodes.Status403Forbidden);
+
         // Resolve the execution's one live, durable identity FIRST — a continuation
         // (body.ExecutionId set) reuses it exactly as-is (StreamId/HilChannel/Telemetry/Trace
         // included); only a genuinely new execution gets a fresh one. RunContext.GetOrCreate then
         // resolves (or creates) the execution's one live run in the same step — never a candidate
         // that might not match.
+        // Continuing an execution of a space the caller does not see is as continuing none.
+        if (!string.IsNullOrWhiteSpace(body.ExecutionId) && await executionRepository.FindAsync(body.ExecutionId, ct).ConfigureAwait(false) is { } going && !SpaceScope.Access.Sees(going.SpaceId))
+            return Results.NotFound(new { error = $"Execution '{body.ExecutionId}' not found." });
+
+        // Running something needs the right to run in its space (not only in the space chosen).
+        var elementSpace = await SpaceOfAsync(executable.Definition.Kind, executable.Definition.Id, ct).ConfigureAwait(false);
+        if (!SpaceScope.May(Permissions.RunsStart, elementSpace))
+            return Results.Json(AgentivityAuthentication.Refusal(Permissions.RunsStart), statusCode: StatusCodes.Status403Forbidden);
+
         var executionCtx = await ExecutionContext.FindOrCreate(executionRepository, body.ExecutionId, ct).ConfigureAwait(false);
+        // A new execution is in the space of what it runs, and so is its history.
+        executionCtx.PlaceIn(elementSpace);
         var runCtx = await RunContext.GetOrCreate(runRepository, ToRunKind(executable.Definition.Kind), body.EntityId, executionCtx, ct).ConfigureAwait(false);
 
+        // Once started, it runs as a closed box, with what it calls, in its own space, whatever the spaces of who started it.
+        using var unlimited = SpaceScope.Unlimited(executionCtx.SpaceId);
         return executable.Definition.Kind switch
         {
-            ExecutableKind.Agent => await StartAgentAsync(executable, body, runCtx, eventBus, executionRepository, loggerFactory, ct, runRepository),
-            ExecutableKind.Team when teamEngine is not null => await StartTeamAsync(executable, body, runCtx, teamEngine, catalogue, eventBus, executionRepository, loggerFactory, ct),
+            ExecutableKind.Agent => await StartAgentAsync(executable, body, runCtx, eventBus, executionRepository, loggerFactory, ct, runRepository, startedBy, finished),
+            ExecutableKind.Team when teamEngine is not null => await StartTeamAsync(executable, body, runCtx, teamEngine, catalogue, eventBus, executionRepository, loggerFactory, ct, startedBy, finished),
             ExecutableKind.Team => Results.Problem("Team engine module is not loaded.", statusCode: 503),
-            ExecutableKind.Workflow when workflowEngine is not null => await StartWorkflowAsync(executable, body, runCtx, eventBus, executionRepository, loggerFactory, ct),
+            ExecutableKind.Workflow when workflowEngine is not null => await StartWorkflowAsync(executable, body, runCtx, eventBus, executionRepository, loggerFactory, ct, startedBy, finished),
             ExecutableKind.Workflow => Results.Problem("Workflow engine module is not loaded.", statusCode: 503),
             _ => Results.BadRequest(new { error = $"Entity kind '{executable.Definition.Kind}' is not supported." }),
         };
     }
 
-    private static async Task<IResult> StartAgentAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct, IRepository<RunContext, RunRecord>? runRepository = null)
+    // The space of the element run: an agent or a team in the agentic library, a workflow in the workflows (General when the
+    // workspace does not say, as for an element of an edition without spaces).
+    private async Task<string> SpaceOfAsync(ExecutableKind kind, string id, CancellationToken ct)
+    {
+        var type = kind switch
+        {
+            ExecutableKind.Agent => "agent",
+            ExecutableKind.Team => "team",
+            ExecutableKind.Workflow => "workflow.definition",
+            _ => null,
+        };
+        if (workspace is null || type is null)
+            return Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
+        var found = await workspace.GetAsync(type, id, ct).ConfigureAwait(false);
+        return found.Success ? found.Value?.Metadata.SpaceId ?? Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default : Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
+    }
+
+    private static async Task<IResult> StartAgentAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct, IRepository<RunContext, RunRecord>? runRepository = null, Caller? startedBy = null, Action<ExecutorResult?, Exception?>? finished = null)
     {
         // runCtx is already the execution's one live run instance — resolved once by
         // RunContext.GetOrCreate in StartAsync, before dispatching here.
@@ -129,7 +178,7 @@ public sealed class ExecutionService
                 ctx.Control = new RunControl();
         }
 
-        executionCtx.AttachRun(agentId, "agent", body.Input, runId);
+        executionCtx.AttachRun(agentId, "agent", body.Input, runId, startedBy);
         await executionRepository.AddAsync(executionCtx, ct).ConfigureAwait(false);
 
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["input"] = body.Input };
@@ -141,7 +190,7 @@ public sealed class ExecutionService
         var entryNodeId = executable.Definition is Agentivity.Infrastructure.Agentic.AgentEntity ae ? ae.Graph.EntryNode : null;
         var streamId = runCtx.Execution.StreamId;
 
-        _ = Task.Run(async () =>
+        _ = SpaceScope.RunUnlimited(async () =>
         {
             eventBus.Publish(new RunEvent(RunId: runId, DefinitionId: agentId, RunKind: RunKind.Agent, Kind: RunEventKind.run_started, EventName: "agent_run_started", OccurredAtUtc: DateTimeOffset.UtcNow, Payload: new { agentId, executionId }, ExecutionId: executionId, StreamId: streamId));
 
@@ -183,6 +232,7 @@ public sealed class ExecutionService
                     executionCtx.SetState("completed");
                     await executionRepository.AddAsync(executionCtx, CancellationToken.None).ConfigureAwait(false);
                 }
+                finished?.Invoke(result, null);
             }
             catch (Exception ex)
             {
@@ -196,17 +246,18 @@ public sealed class ExecutionService
                 executionCtx.SetState("failed");
                 await executionRepository.AddAsync(executionCtx, CancellationToken.None).ConfigureAwait(false);
                 eventBus.Publish(new RunEvent(RunId: runId, DefinitionId: agentId, RunKind: RunKind.Agent, Kind: RunEventKind.run_failed, EventName: "agent_run_failed", OccurredAtUtc: failedAt, Payload: new { error = ex.Message }, Terminal: true, ExecutionId: executionId, StreamId: streamId));
+                finished?.Invoke(null, ex);
             }
         }, CancellationToken.None);
 
         return Results.Accepted($"/api/v1/executions/{executionId}", BuildResponse(executionId, runCtx.Execution.StreamId, runId, agentId, "agent", "active", createdAt));
     }
 
-    private static async Task<IResult> StartTeamAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, ITeamEngine teamEngine, IAgenticRepository catalogue, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct)
+    private static async Task<IResult> StartTeamAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, ITeamEngine teamEngine, IAgenticRepository catalogue, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct, Caller? startedBy, Action<ExecutorResult?, Exception?>? finished)
     {
         // The team was checked before the execution was created (RefuseTeamAsync).
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["input"] = body.Input };
-        return await RunExecutableAsync(executable, body, runCtx, args, "team", eventBus, executionRepository, loggerFactory, ct).ConfigureAwait(false);
+        return await RunExecutableAsync(executable, body, runCtx, args, "team", eventBus, executionRepository, loggerFactory, ct, startedBy, finished).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -223,10 +274,10 @@ public sealed class ExecutionService
         return validation.IsValid ? null : Results.Problem(string.Join("; ", validation.Errors), statusCode: 422, title: "Team configuration is invalid");
     }
 
-    private static async Task<IResult> StartWorkflowAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct)
+    private static async Task<IResult> StartWorkflowAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct, Caller? startedBy, Action<ExecutorResult?, Exception?>? finished)
     {
         var args = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase) { ["input"] = body.Input };
-        return await RunExecutableAsync(executable, body, runCtx, args, "workflow", eventBus, executionRepository, loggerFactory, ct).ConfigureAwait(false);
+        return await RunExecutableAsync(executable, body, runCtx, args, "workflow", eventBus, executionRepository, loggerFactory, ct, startedBy, finished).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -236,7 +287,7 @@ public sealed class ExecutionService
     /// node/step bookkeeping, HIL <c>WaitingFor</c> handling, and <c>AgentTurnOutcomeReporter</c>
     /// reporting and stays a separate method (<see cref="StartAgentAsync"/>) for that reason.
     /// </summary>
-    private static async Task<IResult> RunExecutableAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IReadOnlyDictionary<string, object?> args, string entityKind, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct)
+    private static async Task<IResult> RunExecutableAsync(IExecutable executable, StartExecutionRequest body, RunContext runCtx, IReadOnlyDictionary<string, object?> args, string entityKind, IRunEventBus eventBus, IRepository<ExecutionContext, ExecutionRecord> executionRepository, ILoggerFactory loggerFactory, CancellationToken ct, Caller? startedBy, Action<ExecutorResult?, Exception?>? finished = null)
     {
         var runId = runCtx.RunId;
         var executionCtx = runCtx.Execution;
@@ -245,15 +296,15 @@ public sealed class ExecutionService
         var createdAt = DateTimeOffset.UtcNow;
         var logger = loggerFactory.CreateLogger($"Executions.{entityKind}");
 
-        executionCtx.AttachRun(entityId, entityKind, body.Input, runId);
+        executionCtx.AttachRun(entityId, entityKind, body.Input, runId, startedBy);
         await executionRepository.AddAsync(executionCtx, ct).ConfigureAwait(false);
 
-        _ = Task.Run(async () =>
+        _ = SpaceScope.RunUnlimited(async () =>
         {
             try
             {
                 // A failed run fails its execution, as every caller of a child does.
-                (await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false)).ThrowIfFailed(executable.Definition);
+                var result = (await executable.ExecuteAsync(args, runCtx, CancellationToken.None).ConfigureAwait(false)).ThrowIfFailed(executable.Definition);
                 // A caught, structured failure (e.g. LlmCallException converted to a Failed graph
                 // task) never rethrows here — it only flips RunContext.Status; and a run that asked a
                 // person something returns here waiting for the answer. Reading that back rather than
@@ -261,12 +312,14 @@ public sealed class ExecutionService
                 // actual outcome (see ExecutionContext.StateOf).
                 executionCtx.SetState(ExecutionContext.StateOf(runCtx.Status));
                 await executionRepository.AddAsync(executionCtx, CancellationToken.None).ConfigureAwait(false);
+                finished?.Invoke(result, null);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "{EntityKind} execution {ExecutionId} failed.", entityKind, executionId);
                 executionCtx.SetState("failed");
                 await executionRepository.AddAsync(executionCtx, CancellationToken.None).ConfigureAwait(false);
+                finished?.Invoke(null, ex);
             }
         }, CancellationToken.None);
 

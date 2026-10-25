@@ -2,6 +2,8 @@ using Agentivity.Infrastructure.KnowledgeBases.Endpoints;
 using Agentivity.Domain.Run;
 using Agentivity.Host.Agentic;
 using Agentivity.Host.Icons;
+using Agentivity.Host.Identity;
+using Agentivity.Host.Mcp;
 using Agentivity.Host.AgUi;
 using Agentivity.Host.AiAssistant;
 using Agentivity.Host.Capabilities;
@@ -27,6 +29,7 @@ using Agentivity.Infrastructure.Core.DependencyInjection;
 using Agentivity.Infrastructure.Fabric;
 using Agentivity.Infrastructure.Features;
 using Agentivity.Infrastructure.Hosting;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Http;
 using Agentivity.Infrastructure.Interactions.Chat.DependencyInjection;
 using Agentivity.Infrastructure.Interactions.DependencyInjection;
@@ -77,7 +80,11 @@ public sealed class AgentivityHost : IAgentivityHost
         ApiStub = apiStub;
 
         var builder = WebApplication.CreateBuilder(args);
+        // A stop (an update, fly.io moving the machine) leaves the server time to finish what it writes; fly.io waits as long.
+        builder.Services.Configure<HostOptions>(options => options.ShutdownTimeout = TimeSpan.FromSeconds(30));
 
+        // The monitoring the client wired (Administration > Monitoring), as settings: read before the exporters are made.
+        builder.Configuration.AddClientMonitoring();
         var openTelemetryConfig = builder.Configuration.GetSection("OpenTelemetry");
         var openTelemetryEndpoint = openTelemetryConfig["Endpoint"]?.TrimEnd('/');
         var openTelemetryProtocolName = openTelemetryConfig["Protocol"] ?? "HttpProtobuf";
@@ -321,7 +328,16 @@ public sealed class AgentivityHost : IAgentivityHost
         });
 
         // Which web pages may call the API (ApiCors).
-        builder.Services.AddApiCors(builder.Configuration);
+        builder.Services.AddApiCors(builder.Configuration, builder.Environment.IsDevelopment());
+
+        // Who makes each request; with sign-in, every route needs a caller unless it says why it is public.
+        builder.Services.AddAgentivityCallers(builder.Configuration);
+        builder.Services.AddSingleton<Agentivity.Infrastructure.Repository.IAssetUsageFinder, Agentivity.Host.Entities.AssetUsageFinder>();
+        builder.Services.AddSingleton<Agentivity.Host.Identity.ExecutionStarters>();
+        builder.Services.AddSingleton<Agentivity.Infrastructure.Identity.IExecutionStarters>(sp => sp.GetRequiredService<Agentivity.Host.Identity.ExecutionStarters>());
+        builder.Services.AddSingleton<Agentivity.Infrastructure.Identity.IExecutionSpaces>(sp => sp.GetRequiredService<Agentivity.Host.Identity.ExecutionStarters>());
+        // The instance as an MCP server: its agents, teams and workflows as tools, for an AI assistant.
+        builder.Services.AddAgentivityMcp();
 
         storeStub.Configure(builder.Services);
 
@@ -368,6 +384,13 @@ public sealed class AgentivityHost : IAgentivityHost
             };
         });
 
+        // An update planned: every answer says when it starts (the Studio shows it), and nothing new starts once the server stops.
+        UseWorkspaceMaintenance(_app);
+
+        // The Studio's files are public (the page that asks to sign in is one of them); everything after needs a caller.
+        MapStudio(_app);
+        _app.UseAgentivityCallers();
+
         _app.MapWorkflowPluginCapabilities();
         if (Agentivity.Infrastructure.Agentic.Features.AgenticCoreFeatures.IsLibraryEnabled(_app.Configuration))
         {
@@ -401,11 +424,13 @@ public sealed class AgentivityHost : IAgentivityHost
         _app.MapAiAssistantApi();
         _app.MapVoiceApi();
         _app.MapSettingsApi();
+        _app.MapWorkspaceExportApi();
+        _app.MapWorkspaceImportApi();
         _app.MapResourcesApi();
+        _app.MapAgentivityMcp();
         _app.MapUploadsApi();
         moduleLoader.RegisterLoadedModules(_app.Services.GetRequiredService<IModuleCatalog>());
         moduleLoader.MapEndpoints(_app);
-        MapStudio(_app);
 
         // Eagerly populate the object identity registry at startup (agents, teams, workflows)
         WarmUpObjectIdentityRegistryAsync(_app.Services).GetAwaiter().GetResult();
@@ -417,6 +442,22 @@ public sealed class AgentivityHost : IAgentivityHost
         }
 
         Log.Information("✅ Agentivity API started successfully");
+    }
+
+    private static void UseWorkspaceMaintenance(WebApplication app)
+    {
+        var maintenance = app.Services.GetRequiredService<Agentivity.Infrastructure.Hosting.WorkspaceMaintenance>();
+        app.Lifetime.ApplicationStopping.Register(maintenance.Stopping);
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                if (maintenance.StartsAt is { } startsAt)
+                    context.Response.Headers[Agentivity.Infrastructure.Hosting.WorkspaceMaintenance.Header] = startsAt.ToUniversalTime().ToString("O");
+                return Task.CompletedTask;
+            });
+            await next();
+        });
     }
 
     /// <summary>
@@ -432,22 +473,46 @@ public sealed class AgentivityHost : IAgentivityHost
             return;
         }
 
+        // The Studio open in a browser stays at the version of the instance (a tab left open through an update reloads itself).
+        if (StudioVersionCheck.Read(AppContext.BaseDirectory) is { } version)
+        {
+            app.UseStudioVersionCheck(version);
+        }
+
         var files = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(webRoot);
         app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
-        app.UseStaticFiles(new StaticFileOptions { FileProvider = files });
+        // The shaders of the Studio (Material ink effects) have an extension the server does not know: served as what they are, not
+        // as the page, or every button that draws them stops answering a click.
+        var types = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+        types.Mappings[".frag"] = "application/octet-stream";
+        // None of the files of the Studio changes its name from one version to the next: the browser asks each time whether it
+        // changed (a 304 when not), so an instance updated in place serves its new Studio on the next visit.
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = files,
+            ContentTypeProvider = types,
+            OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = "no-cache",
+        });
 
-        // The Studio routes itself in the browser: any other GET that matched nothing gets its page. (Not an endpoint: a catch-all
-        // endpoint would be picked before the static files get a chance to answer.)
+        // The Studio routes itself in the browser: any other GET that matches no route gets its page. (Not an endpoint: a catch-all
+        // endpoint would be picked before the static files get a chance to answer.) It is answered here, before sign-in is asked:
+        // the page is the one that asks.
         var index = files.GetFileInfo("index.html");
         app.Use(async (context, next) =>
         {
-            await next();
-            if (context.Response.StatusCode == StatusCodes.Status404NotFound && !context.Response.HasStarted && HttpMethods.IsGet(context.Request.Method) && !context.Request.Path.StartsWithSegments("/api") && index.Exists)
+            // Only a page of the Studio gets it, never a file it does not have (a .js, a .json…): those answer 404, so that a browser
+            // drops what an earlier Studio left (its service worker), instead of being given a page for a script.
+            if (context.GetEndpoint() is null && HttpMethods.IsGet(context.Request.Method) && !context.Request.Path.StartsWithSegments("/api")
+                && !Path.HasExtension(context.Request.Path.Value) && index.Exists)
             {
                 context.Response.StatusCode = StatusCodes.Status200OK;
                 context.Response.ContentType = "text/html";
+                context.Response.Headers.CacheControl = "no-cache";
                 await context.Response.SendFileAsync(index);
+                return;
             }
+
+            await next();
         });
         Log.Information("Studio is served from {WebRoot}", webRoot);
     }

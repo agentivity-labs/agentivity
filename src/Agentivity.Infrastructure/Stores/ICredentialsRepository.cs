@@ -24,4 +24,10 @@ public interface ICredentialsRepository
 
     /// <summary>Deletes credentials.</summary>
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Says the spaces the credentials may be used in, none meaning all of them (with secrets masked); null when there are no such
+    /// credentials. The reads above give only what may be used in the space of the work being done now.
+    /// </summary>
+    Task<Credentials?> SetSpacesAsync(string id, IReadOnlyList<string> spaces, CancellationToken cancellationToken = default) => Task.FromResult<Credentials?>(null);
 }

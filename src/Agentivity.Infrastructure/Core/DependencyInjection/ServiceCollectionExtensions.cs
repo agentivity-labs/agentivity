@@ -57,10 +57,17 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceObjectStore, Agentivity.Infrastructure.Storage.Workspace.RoutingWorkspaceObjectStore>();
         services.TryAddSingleton<Agentivity.Infrastructure.Storage.Workspace.IWorkspaceObjectVersionStore, Agentivity.Infrastructure.Storage.Workspace.RoutingWorkspaceObjectVersionStore>();
 
+        // Every HTTP client of the server connects through the outbound policy: as a service the instance set up, unless it is one
+        // of the clients for the addresses someone wrote below (see OutboundPolicy).
+        Agentivity.Infrastructure.Web.OutboundPolicy.Use(new Agentivity.Infrastructure.Web.OutboundPolicy(
+            servicesMayReachInternal: configuration.GetValue("Outbound:ServicesMayReachInternal", true),
+            allowedInternal: configuration.GetSection("Outbound:AllowedInternal").Get<string[]>() ?? []));
+        services.ConfigureHttpClientDefaults(client => client.ConfigurePrimaryHttpMessageHandler(() => Agentivity.Infrastructure.Web.OutboundPolicy.Handler(Agentivity.Infrastructure.Web.OutboundCall.Service)));
+
         // Register named HttpClient for LLM with no timeout (LLM calls can take several minutes)
         services
             .AddHttpClient("agentivity-llm")
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(10) })
+            .ConfigurePrimaryHttpMessageHandler(() => Agentivity.Infrastructure.Web.OutboundPolicy.Handler(Agentivity.Infrastructure.Web.OutboundCall.Service, pooledConnectionLifetime: TimeSpan.FromMinutes(10)))
             .ConfigureHttpClient(client =>
             {
                 client.Timeout = Timeout.InfiniteTimeSpan;

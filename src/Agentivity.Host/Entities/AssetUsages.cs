@@ -11,6 +11,17 @@ public sealed record AssetUser(string Kind, string Id, string Name);
 /// Which agents and workflows use the assets of the workspace: those with a step whose settings name the asset's id. What tells,
 /// before an asset is deleted, what would no longer work.
 /// </summary>
+public sealed class AssetUsageFinder(
+    Agentivity.Infrastructure.Repository.Entities.IEntityRepository<AgentEntity> agents,
+    Agentivity.Infrastructure.Repository.Entities.IEntityRepository<WorkflowEntity> workflows) : Agentivity.Infrastructure.Repository.IAssetUsageFinder
+{
+    public async Task<IReadOnlyList<Agentivity.Infrastructure.Repository.AssetUse>> UsersOfAsync(string assetId, CancellationToken cancellationToken = default)
+    {
+        var usages = AssetUsages.Of([assetId], await agents.ListAsync(null, cancellationToken).ConfigureAwait(false), await workflows.ListAsync(null, cancellationToken).ConfigureAwait(false));
+        return [.. usages.Values.SelectMany(u => u).Select(u => new Agentivity.Infrastructure.Repository.AssetUse(u.Kind, u.Id, u.Name))];
+    }
+}
+
 public static class AssetUsages
 {
     public static IReadOnlyDictionary<string, IReadOnlyList<AssetUser>> Of(IReadOnlyCollection<string> assetIds, IEnumerable<AgentEntity> agents, IEnumerable<WorkflowEntity> workflows)

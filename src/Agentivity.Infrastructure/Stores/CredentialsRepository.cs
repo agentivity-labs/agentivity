@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Agentivity.Domain.Credentials;
 using Agentivity.Infrastructure.Core;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Options;
 using Agentivity.Infrastructure.Storage.Workspace;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -81,24 +82,48 @@ public sealed class CredentialsRepository : ICredentialsRepository
         _environmentKey = string.IsNullOrWhiteSpace(environmentKey) ? null : environmentKey;
     }
 
+    // What is read is what may be used here (SpaceAvailability): a credential kept for other spaces is as if it were not there.
     public async Task<IReadOnlyList<Credentials>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         await ReadyAsync(cancellationToken).ConfigureAwait(false);
-        return (await ListAsync(cancellationToken).ConfigureAwait(false)).Select(CredentialsMasking.Mask).ToList();
+        return (await ListAsync(cancellationToken).ConfigureAwait(false)).Where(Here).Select(CredentialsMasking.Mask).ToList();
     }
 
     public async Task<IReadOnlyList<Credentials>> GetByTemplateAsync(string templateId, CancellationToken cancellationToken = default)
     {
         await ReadyAsync(cancellationToken).ConfigureAwait(false);
-        return (await ListAsync(cancellationToken).ConfigureAwait(false)).Where(c => string.Equals(c.TemplateId, templateId, StringComparison.OrdinalIgnoreCase)).Select(CredentialsMasking.Mask).ToList();
+        return (await ListAsync(cancellationToken).ConfigureAwait(false)).Where(c => Here(c) && string.Equals(c.TemplateId, templateId, StringComparison.OrdinalIgnoreCase)).Select(CredentialsMasking.Mask).ToList();
     }
 
     public async Task<Credentials?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
     {
         var secrets = await ReadyAsync(cancellationToken).ConfigureAwait(false);
         var kept = await FindAsync(id, cancellationToken).ConfigureAwait(false);
-        return kept is null ? null : Decrypted(kept, secrets);
+        return kept is null || !Here(kept) ? null : Decrypted(kept, secrets);
     }
+
+    public async Task<Credentials?> SetSpacesAsync(string id, IReadOnlyList<string> spaces, CancellationToken cancellationToken = default)
+    {
+        await ReadyAsync(cancellationToken).ConfigureAwait(false);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var existing = await FindAsync(id, cancellationToken).ConfigureAwait(false);
+            if (existing is null)
+                return null;
+
+            var updated = existing with { Spaces = [.. spaces.Distinct(StringComparer.Ordinal)] };
+            await SaveAsync(updated, cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation("Credentials {Id} are available in {Spaces}", id, updated.Spaces.Count == 0 ? "every space" : string.Join(", ", updated.Spaces));
+            return CredentialsMasking.Mask(updated);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private static bool Here(Credentials credentials) => SpaceAvailability.Here(credentials.Spaces ?? []);
 
     public async Task<Credentials> CreateAsync(string name, string templateId, string? description, List<CredentialsField> fields, CancellationToken cancellationToken = default)
     {
@@ -115,6 +140,8 @@ public sealed class CredentialsRepository : ICredentialsRepository
             Description = description,
             Fields = completeFields.Select(f => IsSecret(f.Key, template) ? f with { Value = secrets.Encrypt(f.Value) } : f).ToList(),
             CreatedAt = DateTimeOffset.UtcNow,
+            // Available everywhere until an administrator keeps it to some spaces.
+            Spaces = [],
         };
 
         await SaveAsync(credentials, cancellationToken).ConfigureAwait(false);
@@ -330,13 +357,20 @@ public sealed class CredentialsRepository : ICredentialsRepository
 
     // ── Kept in the workspace ───────────────────────────────────────────────────────────────
 
+    // Each with the spaces it is available in: those it says, or, kept before it said any, those of where it was kept.
     private async Task<IReadOnlyList<Credentials>> ListAsync(CancellationToken cancellationToken) =>
-        (await _store.ListAsync(CredentialType, cancellationToken: cancellationToken).ConfigureAwait(false)).Select(e => JsonSerializer.Deserialize<Credentials>(e.Payload, SerializerOptions)!).ToList();
+        (await _store.ListAsync(CredentialType, cancellationToken: cancellationToken).ConfigureAwait(false)).Select(Read).ToList();
 
     private async Task<Credentials?> FindAsync(string id, CancellationToken cancellationToken)
     {
         var kept = await _store.GetAsync(CredentialType, id, cancellationToken).ConfigureAwait(false);
-        return kept.Success ? JsonSerializer.Deserialize<Credentials>(kept.Value!.Payload, SerializerOptions) : null;
+        return kept.Success ? Read(kept.Value!) : null;
+    }
+
+    private static Credentials Read(WorkspaceObjectEnvelope envelope)
+    {
+        var credentials = JsonSerializer.Deserialize<Credentials>(envelope.Payload, SerializerOptions)!;
+        return credentials with { Spaces = [.. SpaceAvailability.Of(credentials.Spaces, envelope.Metadata.SpaceId)] };
     }
 
     private async Task SaveAsync(Credentials credentials, CancellationToken cancellationToken) =>

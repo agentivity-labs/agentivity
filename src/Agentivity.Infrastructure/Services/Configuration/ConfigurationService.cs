@@ -61,4 +61,7 @@ public sealed class ConfigurationService
     /// Checks if a configuration file exists.
     /// </summary>
     public bool Exists(string relativePath) => _store.Exists(relativePath);
+
+    /// <summary>Says the spaces a configuration may be used in, none meaning all of them; false when there is no such configuration.</summary>
+    public Task<bool> SetSpacesAsync(string relativePath, IReadOnlyList<string> spaces, CancellationToken cancellationToken = default) => _store.SetSpacesAsync(relativePath, spaces, cancellationToken);
 }
