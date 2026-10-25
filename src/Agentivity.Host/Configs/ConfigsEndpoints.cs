@@ -1,4 +1,5 @@
 using Agentivity.Infrastructure.Http;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Stores;
 using Agentivity.Infrastructure.Workflow.Services.Configuration;
 using Microsoft.AspNetCore.Builder;
@@ -18,16 +19,27 @@ public static class ConfigsEndpoints
     {
         var v1 = routes.MapV1();
 
-        v1.MapGet("/configs", (ConfigurationService configService) => Results.Ok(configService.ListFiles()))
+        // What may be used in the space worked in, or, for whoever manages the settings and asks it, all of them (each with the
+        // spaces it is available in, set by /api/v1/spaces/availability).
+        v1.MapGet(
+                "/configs",
+                (bool? everywhere, HttpContext context, ConfigurationService configService) =>
+                {
+                    using var all = everywhere == true && CallerPermissions.Has(context.User, Permissions.SettingsManage) ? SpaceAvailability.Everywhere() : null;
+                    return Results.Ok(configService.ListFiles().ToList());
+                }
+            )
             .WithSummary("List the configuration files");
 
         v1.MapGet(
             "/configs/{*path}",
-            async (string path, ConfigurationService configService, CancellationToken ct) =>
+            async (string path, HttpContext context, ConfigurationService configService, CancellationToken ct) =>
             {
                 if (string.IsNullOrWhiteSpace(path))
                     return ApiValidationError(code: "configuration_path_required", userMessage: "A configuration path is required.", detail: "Configuration path is required.");
 
+                // Whoever manages the settings reads it wherever it is available; others, where they work.
+                using var all = CallerPermissions.Has(context.User, Permissions.SettingsManage) ? SpaceAvailability.Everywhere() : null;
                 // A configuration is asked for by its name, never by a place on the disk (refused as configuration_path_invalid).
                 ConfigurationRepository.NameOf(path);
                 if (!configService.Exists(path))

@@ -19,23 +19,39 @@ public interface IChangesetStore
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 }
 
-public sealed class InMemoryChangesetStore : IChangesetStore
+/// <summary>
+/// Whose drafts the work being done now sees: those of the person who calls (a key's are its person's), and those made before the
+/// assistant knew who spoke to it. Without a caller (the platform itself), all of them.
+/// </summary>
+public static class ChangesetOwnership
+{
+    public static bool Sees(Changeset changeset, string? caller) => caller is null || changeset.OwnerId is null || changeset.OwnerId == caller;
+
+    /// <summary>The person who calls, from the request being served; null outside a request.</summary>
+    public static Func<string?> Of(Microsoft.AspNetCore.Http.IHttpContextAccessor? requests) => () => Agentivity.Infrastructure.Identity.Caller.From(requests?.HttpContext?.User)?.Id;
+}
+
+public sealed class InMemoryChangesetStore(Func<string?>? caller = null) : IChangesetStore
 {
     private readonly ConcurrentDictionary<string, string> _items = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<IReadOnlyList<Changeset>> ListAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult<IReadOnlyList<Changeset>>([.. _items.Values.Select(Read).OrderByDescending(c => c.UpdatedAt)]);
+    private string? Caller => caller?.Invoke();
 
-    public Task<Changeset?> GetAsync(string id, CancellationToken cancellationToken = default) => Task.FromResult(_items.TryGetValue(id, out var json) ? Read(json) : null);
+    public Task<IReadOnlyList<Changeset>> ListAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<Changeset>>([.. _items.Values.Select(Read).Where(c => ChangesetOwnership.Sees(c, Caller)).OrderByDescending(c => c.UpdatedAt)]);
+
+    public Task<Changeset?> GetAsync(string id, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_items.TryGetValue(id, out var json) && Read(json) is { } found && ChangesetOwnership.Sees(found, Caller) ? found : null);
 
     public Task SaveAsync(Changeset changeset, CancellationToken cancellationToken = default)
     {
         changeset.UpdatedAt = DateTimeOffset.UtcNow;
+        changeset.OwnerId ??= Caller;
         _items[changeset.Id] = ChangesetJson.Write(changeset);
         return Task.CompletedTask;
     }
 
-    public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => Task.FromResult(_items.TryRemove(id, out _));
+    public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => await GetAsync(id, cancellationToken).ConfigureAwait(false) is not null && _items.TryRemove(id, out _);
 
     private static Changeset Read(string json) => ChangesetJson.Read(json);
 }
@@ -64,10 +80,13 @@ public sealed class WorkspaceChangesetStore : IChangesetStore
     private readonly string _legacyFolder;
     private readonly ILogger<WorkspaceChangesetStore> _logger;
     private readonly SemaphoreSlim _takingOver = new(1, 1);
+    private readonly Func<string?>? _caller;
     private volatile bool _takenOver;
 
-    public WorkspaceChangesetStore(IWorkspaceObjectStore store, IWorkspaceObjectStore takeOvers, string legacyFolder, ILogger<WorkspaceChangesetStore> logger)
+    /// <param name="caller">The person who calls (<see cref="ChangesetOwnership.Of"/>): each sees only their own drafts.</param>
+    public WorkspaceChangesetStore(IWorkspaceObjectStore store, IWorkspaceObjectStore takeOvers, string legacyFolder, ILogger<WorkspaceChangesetStore> logger, Func<string?>? caller = null)
     {
+        _caller = caller;
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _takeOvers = takeOvers ?? throw new ArgumentNullException(nameof(takeOvers));
         _legacyFolder = legacyFolder ?? throw new ArgumentNullException(nameof(legacyFolder));
@@ -80,7 +99,7 @@ public sealed class WorkspaceChangesetStore : IChangesetStore
         var list = new List<Changeset>();
         foreach (var kept in await _store.ListAsync(ChangesetType, cancellationToken: cancellationToken).ConfigureAwait(false))
         {
-            if (Read(kept) is { } changeset)
+            if (Read(kept) is { } changeset && ChangesetOwnership.Sees(changeset, Caller))
                 list.Add(changeset);
         }
 
@@ -92,8 +111,10 @@ public sealed class WorkspaceChangesetStore : IChangesetStore
         Validate(id);
         await TakeOverOnceAsync(cancellationToken).ConfigureAwait(false);
         var kept = await _store.GetAsync(ChangesetType, id, cancellationToken).ConfigureAwait(false);
-        return kept.Success ? Read(kept.Value!) : null;
+        return kept.Success && Read(kept.Value!) is { } changeset && ChangesetOwnership.Sees(changeset, Caller) ? changeset : null;
     }
+
+    private string? Caller => _caller?.Invoke();
 
     public async Task SaveAsync(Changeset changeset, CancellationToken cancellationToken = default)
     {
@@ -101,6 +122,7 @@ public sealed class WorkspaceChangesetStore : IChangesetStore
         Validate(changeset.Id);
         await TakeOverOnceAsync(cancellationToken).ConfigureAwait(false);
         changeset.UpdatedAt = DateTimeOffset.UtcNow;
+        changeset.OwnerId ??= Caller;
         await KeepAsync(changeset, cancellationToken).ConfigureAwait(false);
     }
 
@@ -108,7 +130,7 @@ public sealed class WorkspaceChangesetStore : IChangesetStore
     {
         Validate(id);
         await TakeOverOnceAsync(cancellationToken).ConfigureAwait(false);
-        if (!await _store.ExistsAsync(ChangesetType, id, cancellationToken).ConfigureAwait(false))
+        if (await GetAsync(id, cancellationToken).ConfigureAwait(false) is null)
             return false;
         return (await _store.DeleteAsync(ChangesetType, id, cancellationToken).ConfigureAwait(false)).Success;
     }

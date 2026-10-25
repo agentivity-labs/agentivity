@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Agentivity.Infrastructure.Agentic.Library;
 using Agentivity.Infrastructure.Http;
+using Agentivity.Infrastructure.Identity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -92,18 +93,26 @@ public static class TemplatesEndpoints
         // The body is the Template file itself. Defaults to a dry run: nothing is created unless the call says dryRun=false.
         // modelConnection: "default" (the first model connection of the list), "keep" (leave the author's), or the id of one of your credentials.
         // folder: where everything goes, one value per folder name from the top level down (folder=Finance&folder=Invoices); none for the top level.
+        // space: the space everything is made in, where the instance has spaces (by default, the space worked in); one builds there.
         v1.MapPost(
             "/templates/import",
-            async (JsonObject? template, bool? dryRun, string? modelConnection, bool? includeRows, [FromQuery] string[]? folder, TemplateImporter importer, CancellationToken ct) =>
+            async (JsonObject? template, bool? dryRun, string? modelConnection, bool? includeRows, [FromQuery] string[]? folder, string? space, TemplateImporter importer, CancellationToken ct) =>
             {
                 if (template is null)
                 {
                     return ApiValidationError(code: "template_required", userMessage: "Send the Template file as the body of the request.", detail: "The body must be the Template JSON document.");
                 }
 
+                var into = string.IsNullOrWhiteSpace(space) ? SpaceScope.CurrentSpaceId : space.Trim();
+                if (!SpaceScope.Access.Sees(into))
+                    return ApiNotFound(code: "space_not_found", userMessage: "There is no such space, or you are not in it.", detail: $"Space '{into}' is not one the caller sees.");
+                if (!SpaceScope.MayBuildIn(into))
+                    return Results.Json(AgentivityAuthentication.Refusal(Permissions.LibraryEdit), statusCode: StatusCodes.Status403Forbidden);
+
                 TemplateImportResult result;
                 try
                 {
+                    using var workingThere = SpaceScope.WorkIn(into);
                     result = await importer.ImportAsync(template, new TemplateImportOptions(dryRun ?? true, modelConnection, includeRows ?? true, folder), ct);
                 }
                 catch (TemplateImportException ex)

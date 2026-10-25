@@ -11,7 +11,12 @@ namespace Agentivity.Infrastructure.Storage.Workspace;
 /// only one. Null when none of them tells.
 /// </para>
 /// </summary>
-public sealed record WorkspaceDomainTypes(IReadOnlyList<string> ObjectTypes, Func<string, JsonElement, string?>? TypeOf = null)
+/// <param name="SpaceScoped">
+/// Each object of the domain belongs to a space (the libraries): its store reads and writes only in the spaces of the work being
+/// done now. The domains of the instance itself (its people, its settings, its journal) are not, nor what it shares among the
+/// spaces (the credentials, the configurations: see <see cref="Identity.SpaceAvailability"/>).
+/// </param>
+public sealed record WorkspaceDomainTypes(IReadOnlyList<string> ObjectTypes, Func<string, JsonElement, string?>? TypeOf = null, bool SpaceScoped = false)
 {
     public string? TypeOfKept(string objectId, JsonElement content)
     {

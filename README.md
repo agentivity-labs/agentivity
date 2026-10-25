@@ -205,7 +205,7 @@ The **Community edition** is free forever and runs on your own machine or server
 a Docker image.
 
 ```bash
-docker run -d --name agentivity -p 5005:5005 -v agentivity-data:/app/_data agentivitylabs/agentivity
+docker run -d --name agentivity -p 127.0.0.1:5005:5005 -v agentivity-data:/app/_data agentivitylabs/agentivity
 ```
 
 Then open `http://localhost:5005` in your browser: the Studio opens. You need Docker and, to run a team, an API key

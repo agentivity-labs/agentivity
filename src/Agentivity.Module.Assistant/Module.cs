@@ -34,7 +34,7 @@ public sealed class Module(bool enabled) : IModule, IModuleFeatureProvider
         services.AddSingleton<IWorkspaceStoreContribution>(sp => new WorkspaceStoreContribution(WorkspaceChangesetStore.ChangesetObjectTypes, sp.GetRequiredService<IWorkspaceProvisioner>().CreateStore(Domain("assistant-changesets"), new WorkspaceDomainTypes(WorkspaceChangesetStore.ChangesetObjectTypes))));
         services.AddSingleton<IWorkspaceStoreContribution>(sp => new WorkspaceStoreContribution(WorkspaceChangesetStore.TakeOverObjectTypes, sp.GetRequiredService<IWorkspaceProvisioner>().CreateStore(Domain("assistant-changesets-takeovers"), new WorkspaceDomainTypes(WorkspaceChangesetStore.TakeOverObjectTypes))));
         services.AddSingleton<IChangesetStore>(sp =>
-            new WorkspaceChangesetStore(sp.GetRequiredService<IWorkspaceObjectStore>(), sp.GetRequiredService<IWorkspaceObjectStore>(), directory, sp.GetRequiredService<ILogger<WorkspaceChangesetStore>>())
+            new WorkspaceChangesetStore(sp.GetRequiredService<IWorkspaceObjectStore>(), sp.GetRequiredService<IWorkspaceObjectStore>(), directory, sp.GetRequiredService<ILogger<WorkspaceChangesetStore>>(), ChangesetOwnership.Of(sp.GetService<Microsoft.AspNetCore.Http.IHttpContextAccessor>()))
         );
         services.AddSingleton<IEntityLookup, RepositoryEntityLookup>();
         services.AddSingleton<IConnectionLookup, CredentialsConnectionLookup>();

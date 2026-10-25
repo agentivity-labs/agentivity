@@ -77,6 +77,25 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>Who started it: seeded once, with its entity (see <see cref="AttachRun"/>); its runs, children included, run as them.</summary>
+    public Agentivity.Infrastructure.Identity.Caller? StartedBy { get; private set; }
+
+    /// <summary>The space it belongs to: the space of what it runs.</summary>
+    public string SpaceId { get; private set; } = Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
+
+    /// <summary>
+    /// Places a new execution in <paramref name="spaceId"/>, the space of what it runs; an execution already started (a
+    /// continuation) stays where it is.
+    /// </summary>
+    public void PlaceIn(string spaceId)
+    {
+        lock (_gate)
+        {
+            if (string.IsNullOrEmpty(EntityId) && !string.IsNullOrWhiteSpace(spaceId))
+                SpaceId = spaceId;
+        }
+    }
+
     // channelType → threadId
     private readonly Dictionary<string, string> _channels = new(StringComparer.OrdinalIgnoreCase);
     public IReadOnlyDictionary<string, string> Channels => _channels;
@@ -98,7 +117,7 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
     /// <see cref="State"/> are only seeded the first time (an empty <see cref="EntityId"/> means
     /// this is a brand-new execution) — a re-join must not clobber the accumulated history.
     /// </summary>
-    public void AttachRun(string entityId, string entityKind, string input, string runId)
+    public void AttachRun(string entityId, string entityKind, string input, string runId, Agentivity.Infrastructure.Identity.Caller? startedBy = null)
     {
         lock (_gate)
         {
@@ -108,6 +127,7 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
                 EntityKind = entityKind;
                 Input = input;
                 State = "active";
+                StartedBy = startedBy;
             }
             CurrentRunId = runId;
             if (!RunIds.Contains(runId))
@@ -214,6 +234,8 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
                 RunIds = [.. RunIds],
                 StreamId = StreamId,
                 InteractionThreadId = InteractionThreadId,
+                StartedBy = StartedBy,
+                SpaceId = SpaceId,
                 CreatedAt = CreatedAt,
                 UpdatedAt = UpdatedAt,
             };
@@ -234,6 +256,8 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
         ctx.CurrentRunId = r.CurrentRunId;
         ctx.RunIds.AddRange(r.RunIds);
         ctx.InteractionThreadId = r.InteractionThreadId;
+        ctx.StartedBy = r.StartedBy;
+        ctx.SpaceId = string.IsNullOrWhiteSpace(r.SpaceId) ? Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default : r.SpaceId;
         ctx.CreatedAt = r.CreatedAt;
         ctx.UpdatedAt = r.UpdatedAt;
         return ctx;

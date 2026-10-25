@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Storage.Workspace;
 using Agentivity.Infrastructure.Storage.Workspace.Migrations;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
@@ -91,6 +92,11 @@ public static class SqliteWorkspaceMigrations
                 );
                 """),
         WorkspaceContentMigration.Rewrite(2, WorkspaceContentRewrites.StepRenames20261018Name, Content, WorkspaceContentRewrites.StepRenames20261018Holds, WorkspaceContentRewrites.StepRenames20261018),
+        // Every object and folder belongs to a space; what was there goes in the default one. Saving an object again keeps its space.
+        WorkspaceMigration.Sql(3, WorkspaceSpaces.MigrationName, """
+                ALTER TABLE workspace_objects ADD COLUMN space_id TEXT NOT NULL DEFAULT 'default';
+                ALTER TABLE workspace_folders ADD COLUMN space_id TEXT NOT NULL DEFAULT 'default';
+                """),
     ];
 
     /// <summary>

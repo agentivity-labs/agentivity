@@ -38,7 +38,84 @@ public sealed class RoutingWorkspaceObjectStore : IWorkspaceObjectStore
 
     public ValueTask<IReadOnlyList<WorkspaceObjectEnvelope>> ListAsync(string objectType, WorkspaceObjectQuery? query = null, CancellationToken cancellationToken = default) => Resolve(objectType).ListAsync(objectType, query, cancellationToken);
 
-    public ValueTask<StorageResult> SaveAsync(WorkspaceObjectEnvelope envelope, CancellationToken cancellationToken = default) => Resolve(envelope.ObjectType).SaveAsync(envelope, cancellationToken);
+    public async ValueTask<StorageResult> SaveAsync(WorkspaceObjectEnvelope envelope, CancellationToken cancellationToken = default)
+    {
+        // One links only what one sees: an element saved by someone who does not see every space names no element of a space they
+        // do not see (a step that runs an agent of HR, a Data Table of Finance…).
+        if (Identity.SpaceScope.IsLimited && await NotSeenNamedByAsync(envelope, cancellationToken).ConfigureAwait(false) is { } hidden)
+            return StorageResult.Fail($"This names something you cannot see ({hidden}): one links only what is in a space one is in.");
+        return await Resolve(envelope.ObjectType).SaveAsync(envelope, cancellationToken).ConfigureAwait(false);
+    }
+
+    public ValueTask<StorageResult> MoveToSpaceAsync(string objectType, string objectId, string spaceId, CancellationToken cancellationToken = default) => Resolve(objectType).MoveToSpaceAsync(objectType, objectId, spaceId, cancellationToken);
+
+    public ValueTask<IReadOnlyList<WorkspaceSpaceFolder>> TopFoldersAsync(string objectType, CancellationToken cancellationToken = default) => Resolve(objectType).TopFoldersAsync(objectType, cancellationToken);
+
+    public ValueTask<StorageResult> MoveFolderToSpaceAsync(string objectType, string folderId, string spaceId, CancellationToken cancellationToken = default) => Resolve(objectType).MoveFolderToSpaceAsync(objectType, folderId, spaceId, cancellationToken);
+
+    public bool Keeps(string objectType) => _byObjectType.ContainsKey(objectType);
+
+    private static readonly System.Text.RegularExpressions.Regex IdShape = new("^[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    // The first element of the libraries the payload names (by its id) that is in a space the work being done now does not see.
+    private async Task<string?> NotSeenNamedByAsync(WorkspaceObjectEnvelope envelope, CancellationToken cancellationToken)
+    {
+        var access = Identity.SpaceScope.Access;
+        var named = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            Collect(System.Text.Json.JsonDocument.Parse(envelope.Payload).RootElement, named);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+
+        named.Remove(envelope.ObjectId);
+        using (Identity.SpaceScope.Unlimited())
+        {
+            foreach (var id in named.Take(200))
+            {
+                foreach (var type in WorkspaceSpaces.LibraryTypes.Values.Where(_byObjectType.ContainsKey))
+                {
+                    var found = await Resolve(type).GetAsync(type, id, cancellationToken).ConfigureAwait(false);
+                    if (found.Success && found.Value?.Metadata.SpaceId is { } space && !access.Sees(space))
+                        return $"{type} {id}";
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static void Collect(System.Text.Json.JsonElement element, HashSet<string> named)
+    {
+        switch (element.ValueKind)
+        {
+            case System.Text.Json.JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                    Collect(property.Value, named);
+                break;
+            case System.Text.Json.JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                    Collect(item, named);
+                break;
+            case System.Text.Json.JsonValueKind.String when element.GetString() is { } text:
+                if (IdShape.IsMatch(text.Trim()))
+                    named.Add(text.Trim());
+                else if (text.TrimStart().StartsWith('{') || text.TrimStart().StartsWith('['))
+                {
+                    // An entity is often kept as JSON in a string of its wrapper.
+                    try
+                    {
+                        Collect(System.Text.Json.JsonDocument.Parse(text).RootElement, named);
+                    }
+                    catch (System.Text.Json.JsonException) { }
+                }
+
+                break;
+        }
+    }
 
     public ValueTask<StorageResult> DeleteAsync(string objectType, string objectId, CancellationToken cancellationToken = default) => Resolve(objectType).DeleteAsync(objectType, objectId, cancellationToken);
 

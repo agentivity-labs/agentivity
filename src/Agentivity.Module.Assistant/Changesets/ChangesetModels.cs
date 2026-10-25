@@ -37,6 +37,12 @@ public sealed class Changeset
 
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>
+    /// The person whose draft it is, with its conversation: no one else sees it. Null for one made before the assistant knew who
+    /// spoke to it, which the first person who keeps it makes theirs.
+    /// </summary>
+    public string? OwnerId { get; set; }
+
     /// <summary>The main entity of the solution, once there is one. It receives the <c>solution</c> tag when saved.</summary>
     public string? RootEntityId { get; set; }
 

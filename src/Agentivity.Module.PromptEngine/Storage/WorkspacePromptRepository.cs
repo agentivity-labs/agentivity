@@ -35,7 +35,7 @@ public sealed class WorkspacePromptRepository : IPromptEngineRepository
         content.ValueKind != System.Text.Json.JsonValueKind.Object ? null
         : content.TryGetProperty("current_iteration", out System.Text.Json.JsonElement _) ? OptRunType
         : content.TryGetProperty("expected_output", out System.Text.Json.JsonElement _) ? TestCaseType
-        : null);
+        : null, SpaceScoped: true);
 
     private readonly IEntityRepository<PromptEntity> _prompts;
     private readonly IWorkspaceObjectStore _store;
