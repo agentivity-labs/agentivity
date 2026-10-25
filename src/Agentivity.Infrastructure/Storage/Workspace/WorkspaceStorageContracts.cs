@@ -30,8 +30,35 @@ public interface IWorkspaceObjectStore
 
     ValueTask<StorageResult> MoveObjectAsync(string objectType, string objectId, string? targetFolderId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Moves the object to <paramref name="spaceId"/>, at the top of its library there (its folder is of its old space). Only a
+    /// store of a domain kept by space does it, and only for an object the work being done now sees.
+    /// </summary>
+    ValueTask<StorageResult> MoveToSpaceAsync(string objectType, string objectId, string spaceId, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(StorageResult.Fail($"'{objectType}' is not kept by space."));
+
+    /// <summary>
+    /// The top-level folders of the library of <paramref name="objectType"/>, each with its space and how many elements it holds,
+    /// the folders below it included. Only a store of a domain kept by space gives them.
+    /// </summary>
+    ValueTask<IReadOnlyList<WorkspaceSpaceFolder>> TopFoldersAsync(string objectType, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult<IReadOnlyList<WorkspaceSpaceFolder>>([]);
+
+    /// <summary>
+    /// Moves the folder, the folders below it and everything they hold to <paramref name="spaceId"/>: the tree stays as it is. Only
+    /// a store of a domain kept by space does it, and only for a folder the work being done now sees.
+    /// </summary>
+    ValueTask<StorageResult> MoveFolderToSpaceAsync(string objectType, string folderId, string spaceId, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(StorageResult.Fail($"'{objectType}' is not kept by space."));
+
+    /// <summary>Whether the store keeps <paramref name="objectType"/> (the routing store keeps only the types a module contributes).</summary>
+    bool Keeps(string objectType) => true;
+
     ValueTask<WorkspaceBrowseResult> BrowseAsync(string objectType, string? folderId = null, CancellationToken cancellationToken = default);
 }
+
+/// <summary>A top-level folder of a library, its space, and how many elements it holds (the folders below it included).</summary>
+public sealed record WorkspaceSpaceFolder(string FolderId, string Name, string SpaceId, int Elements);
 
 public sealed record WorkspaceBrowseCurrentFolder(string? FolderId, string? Name, bool IsRoot);
 
@@ -225,6 +252,12 @@ public sealed record WorkspaceObjectEnvelope
 
 public sealed record WorkspaceObjectMetadata
 {
+    /// <summary>
+    /// The space the object is in, as its store read it. Null from a store of a domain not kept by space, unless the object was kept
+    /// in another space than General before its domain stopped being kept by space (the credentials).
+    /// </summary>
+    public string? SpaceId { get; init; }
+
     public WorkspaceObjectMetadata(DateTimeOffset CreatedAtUtc, DateTimeOffset UpdatedAtUtc, string? FolderId = null, string? CreatedBy = null, string? UpdatedBy = null, IReadOnlyDictionary<string, string>? Tags = null)
     {
         if (UpdatedAtUtc < CreatedAtUtc)

@@ -35,15 +35,40 @@ public sealed class KnowledgeBaseEngine(IKnowledgeBaseStore store, IEnumerable<I
         ArgumentNullException.ThrowIfNull(knowledgeBase);
         var running = Running.GetOrAdd(knowledgeBase.Id, _ => new SemaphoreSlim(1, 1));
         await running.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var started = clock.GetUtcNow();
         try
         {
             return await SyncNowAsync(knowledgeBase, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Whatever stopped it, the base does not stay "syncing": it says it failed, and why, and can be synchronised again.
+            logger.LogWarning(ex, "Knowledge base {Id}: the synchronisation stopped", knowledgeBase.Id);
+            await FailAsync(knowledgeBase, started, knowledgeBase.SourceType, $"The synchronisation stopped: {ex.Message}", null, CancellationToken.None).ConfigureAwait(false);
+            throw;
         }
         finally
         {
             running.Release();
         }
     }
+
+    // A synchronisation of this base goes on in this server now.
+    private static bool SyncingHere(string id) => Running.TryGetValue(id, out var running) && running.CurrentCount == 0;
+
+    /// <summary>
+    /// What a "syncing" state says when no synchronisation of the base goes on in this server: it was cut off (the server stopped
+    /// in the middle). The documents it had treated are kept; the base is due again.
+    /// </summary>
+    private KnowledgeBaseSyncState? Settled(KnowledgeBaseEntity knowledgeBase, KnowledgeBaseSyncState? state) =>
+        state is { Status: KnowledgeBaseStatus.Syncing } && !SyncingHere(knowledgeBase.Id)
+            ? state with
+            {
+                Status = KnowledgeBaseStatus.Failed,
+                FinishedAt = state.StartedAt,
+                Errors = [new KnowledgeBaseSyncError(knowledgeBase.SourceType, "The synchronisation was cut off when the server stopped. What it had read is kept; synchronise it again to finish.")],
+            }
+            : state;
 
     /// <summary>The <paramref name="limit"/> passages closest to <paramref name="question"/>, the base brought up to date first when it is due.</summary>
     public async ValueTask<IReadOnlyList<KnowledgeBaseMatch>> RetrieveAsync(KnowledgeBaseEntity knowledgeBase, string question, int limit, CancellationToken cancellationToken = default)
@@ -52,7 +77,8 @@ public sealed class KnowledgeBaseEngine(IKnowledgeBaseStore store, IEnumerable<I
         ArgumentException.ThrowIfNullOrWhiteSpace(question);
 
         var state = await store.StateAsync(knowledgeBase.Id, cancellationToken).ConfigureAwait(false);
-        if (await IsDueAsync(knowledgeBase, state, cancellationToken).ConfigureAwait(false))
+        var cutOff = state is { Status: KnowledgeBaseStatus.Syncing } && !SyncingHere(knowledgeBase.Id);
+        if (cutOff || await IsDueAsync(knowledgeBase, state, cancellationToken).ConfigureAwait(false))
             state = await SyncAsync(knowledgeBase, cancellationToken).ConfigureAwait(false);
 
         var counts = await store.CountAsync(knowledgeBase.Id, cancellationToken).ConfigureAwait(false);
@@ -71,7 +97,7 @@ public sealed class KnowledgeBaseEngine(IKnowledgeBaseStore store, IEnumerable<I
 
     /// <summary>What the base holds and how its last synchronisation went.</summary>
     public async ValueTask<(KnowledgeBaseCounts Counts, KnowledgeBaseSyncState? State)> StatusAsync(KnowledgeBaseEntity knowledgeBase, CancellationToken cancellationToken = default) =>
-        (await store.CountAsync(knowledgeBase.Id, cancellationToken).ConfigureAwait(false), await store.StateAsync(knowledgeBase.Id, cancellationToken).ConfigureAwait(false));
+        (await store.CountAsync(knowledgeBase.Id, cancellationToken).ConfigureAwait(false), Settled(knowledgeBase, await store.StateAsync(knowledgeBase.Id, cancellationToken).ConfigureAwait(false)));
 
     private async ValueTask<bool> IsDueAsync(KnowledgeBaseEntity knowledgeBase, KnowledgeBaseSyncState? state, CancellationToken cancellationToken)
     {

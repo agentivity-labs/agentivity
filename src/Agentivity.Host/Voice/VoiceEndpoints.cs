@@ -46,7 +46,7 @@ public static class VoiceEndpoints
                 SpeechToTextSettings settings = appSettings.SpeechToText;
                 if (!IsConfigured(settings))
                 {
-                    return ApiError(StatusCodes.Status503ServiceUnavailable, code: "stt_not_configured", userMessage: "Voice transcription isn't configured.", detail: "No speech-to-text credentials are configured in Settings.");
+                    return ApiError(StatusCodes.Status503ServiceUnavailable, code: "stt_not_configured", userMessage: "Voice transcription isn't configured.", detail: "No speech-to-text credentials are configured in Administration > Credentials.");
                 }
 
                 httpContext.Features.Get<IHttpMaxRequestBodySizeFeature>()!.MaxRequestBodySize = MaxUploadBytes;

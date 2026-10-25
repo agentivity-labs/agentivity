@@ -16,6 +16,9 @@ public sealed class WorkflowResumableEngine(WorkflowEngine workflowEngine, ILogg
 {
     public string Kind => "workflow";
 
+    // A workflow keeps its place only where it stops to wait (a person, a run it called): cut off mid-step, it is run again.
+    public bool RecoversInterrupted => false;
+
     public async ValueTask<Task> ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct)
     {
         if (!Guid.TryParse(run.RunId, out var runGuid))

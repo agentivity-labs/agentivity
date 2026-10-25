@@ -19,6 +19,9 @@ public sealed record Credentials
     public required List<CredentialsField> Fields { get; init; }
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
+    /// <summary>The spaces it may be used in; none: all of them. Null for one kept before it said any.</summary>
+    public List<string>? Spaces { get; init; }
+
     /// <summary>Gets a field value by key, or null if not found.</summary>
     public string? GetField(string key) => Fields.FirstOrDefault(f => string.Equals(f.Key, key, StringComparison.OrdinalIgnoreCase))?.Value;
 

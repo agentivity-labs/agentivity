@@ -58,7 +58,7 @@ public static class OnnxModelDownloader
 
         try
         {
-            using var httpClient = network is null ? new HttpClient() : new HttpClient(network, disposeHandler: false);
+            using var httpClient = network is null ? new HttpClient(Agentivity.Infrastructure.Web.OutboundPolicy.Handler(Agentivity.Infrastructure.Web.OutboundCall.Service, followRedirects: true)) : new HttpClient(network, disposeHandler: false);
             httpClient.Timeout = TimeSpan.FromMinutes(10);
             using HttpResponseMessage response = await httpClient.GetAsync(downloadUrl).ConfigureAwait(false);
             if (!response.IsSuccessStatusCode)

@@ -93,7 +93,8 @@ public sealed class SpeechToTextService
 
         if (Uri.TryCreate(audioSource, UriKind.Absolute, out Uri? uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
-            using var httpClient = new HttpClient();
+            // An address someone wrote: the public internet only (a sound of the network would go to the provider).
+            using var httpClient = new HttpClient(Agentivity.Infrastructure.Web.PublicNetwork.CreateHandler(followRedirects: true));
             byte[] bytes = await httpClient.GetByteArrayAsync(uri, cancellationToken).ConfigureAwait(false);
             return (bytes, Path.GetFileName(uri.LocalPath) is { Length: > 0 } name ? name : "audio.mp3");
         }

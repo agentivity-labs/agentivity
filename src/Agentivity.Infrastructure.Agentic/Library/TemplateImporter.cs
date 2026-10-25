@@ -540,11 +540,11 @@ public sealed partial class TemplateImporter(
 
         if (string.Equals(options.ModelConnection, "keep", StringComparison.OrdinalIgnoreCase))
         {
-            return new TemplateImportModel("kept", null, nodesFound, 0, "The author's model connection is kept: it does not exist on this server, the first run will fail until you change it.");
+            return new TemplateImportModel("kept", null, nodesFound, 0, "The author's model credential is kept: it does not exist on this server, the first execution will fail until you change it.");
         }
 
         return credential is null
-            ? new TemplateImportModel("no_connection", null, nodesFound, 0, "You have no model connection yet. Add one in Settings, then use 'Use my default model' on the imported items.")
+            ? new TemplateImportModel("no_connection", null, nodesFound, 0, "You have no model credential yet. Add one in Administration > Credentials, then use 'Use my default model' on the imported items.")
             : new TemplateImportModel("will_adapt", credential, nodesFound, 0, null);
     }
 

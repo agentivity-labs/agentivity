@@ -21,7 +21,7 @@ internal static class RunMetricsEndpointMappings
 
         v1.MapGet(
                 "/runs/metrics/summary",
-                async ([FromServices] IExecutionMetricsStore store, CancellationToken ct) =>
+                async ([FromServices] IExecutionMetricsStore store, [FromServices] Agentivity.Infrastructure.Execution.Executions.IExecutionRecordStore executions, CancellationToken ct) =>
                 {
                     var now = DateTimeOffset.UtcNow;
                     var startOfWeek = now.Date.AddDays(-(int)now.DayOfWeek);
@@ -30,6 +30,12 @@ internal static class RunMetricsEndpointMappings
                     // startOfYear <= startOfWeek always, so one call covers both — filter the wider
                     // set in memory for "this week" instead of a second disk scan.
                     var sinceYearStart = await store.ListSinceAsync(startOfYear, ct).ConfigureAwait(false);
+                    // Only the executions of the spaces shown: the ones seen, and the one looked at when one is chosen.
+                    if (Agentivity.Infrastructure.Identity.SpaceScope.IsLimited || Agentivity.Infrastructure.Identity.SpaceScope.ViewSpaceId is not null)
+                    {
+                        var spaces = (await executions.FindAllAsync(ct).ConfigureAwait(false)).ToDictionary(e => e.ExecutionId, e => e.SpaceId, StringComparer.Ordinal);
+                        sinceYearStart = [.. sinceYearStart.Where(r => Agentivity.Infrastructure.Identity.SpaceScope.Shows(spaces.GetValueOrDefault(r.ExecutionId)))];
+                    }
                     var thisWeek = sinceYearStart.Where(r => r.CompletedAtUtc >= startOfWeek).ToList();
 
                     // One bucket per day of the current calendar month (index 0 = day 1) — feeds
@@ -80,6 +86,15 @@ internal static class RunMetricsEndpointMappings
                         }
                     }
 
+                    // The executions of this month by model: how many, their tokens and their cost (the usage pane of the
+                    // administration). An execution with no model said (a workflow without AI) is under null.
+                    var modelsThisMonth = sinceYearStart
+                        .Where(r => r.CompletedAtUtc.UtcDateTime.Year == now.Year && r.CompletedAtUtc.UtcDateTime.Month == now.Month)
+                        .GroupBy(r => string.IsNullOrWhiteSpace(r.ModelUsed) ? null : r.ModelUsed)
+                        .Select(g => new { model = g.Key, executions = g.Count(), tokens = g.Sum(r => (long)(r.TokensUsed ?? 0)), costUsd = g.Sum(r => r.CostUsd ?? 0) })
+                        .OrderByDescending(m => m.executions)
+                        .ToList();
+
                     return Results.Ok(
                         new
                         {
@@ -93,6 +108,7 @@ internal static class RunMetricsEndpointMappings
                             teamDailyCounts = teamDaily,
                             workflowDailyCounts = workflowDaily,
                             dailyMinutesSaved = minutesSavedDaily,
+                            modelsThisMonth,
                         }
                     );
                 }

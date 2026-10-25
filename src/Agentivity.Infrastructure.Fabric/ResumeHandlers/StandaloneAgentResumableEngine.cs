@@ -31,6 +31,8 @@ public sealed class StandaloneAgentResumableEngine(
 
     public async ValueTask<Task> ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct)
     {
+        // A resume runs as the execution did: a closed box in its own space, whatever the spaces of who answered.
+        using var unlimited = Agentivity.Infrastructure.Identity.SpaceScope.Unlimited(run.Execution.SpaceId);
         var agentId = run.EntityId;
         if (agentId is null || run.Payload is not { } payload)
         {

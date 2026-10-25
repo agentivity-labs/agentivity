@@ -27,7 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWorkspaceStoreContribution>(sp =>
         {
             var provisioner = sp.GetRequiredService<IWorkspaceProvisioner>();
-            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes(["agent", "team"]));
+            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes(["agent", "team"], SpaceScoped: true));
             var versionStorePath = Path.Combine(Path.GetDirectoryName(storagePath) ?? storagePath, ".versions");
             var versionStore = provisioner.CreateVersionStore(versionStorePath, store);
             return new WorkspaceStoreContribution(["agent", "team"], store, versionStore);

@@ -56,6 +56,9 @@ public sealed class CredentialsService
     /// </summary>
     public Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default) => _store.DeleteAsync(id, cancellationToken);
 
+    /// <summary>Says the spaces a credential may be used in, none meaning all of them.</summary>
+    public Task<Credentials?> SetSpacesAsync(string id, IReadOnlyList<string> spaces, CancellationToken cancellationToken = default) => _store.SetSpacesAsync(id, spaces, cancellationToken);
+
     /// <summary>
     /// Why these fields cannot be saved for this kind of connection, or null when they can: a field its kind requires is left empty
     /// (<c>credentials_field_required</c>), or a value is not what its field expects — a web address, a number

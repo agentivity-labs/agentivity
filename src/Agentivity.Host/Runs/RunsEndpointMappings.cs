@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
 using Agentivity.Domain.Run;
@@ -92,6 +93,9 @@ internal static class RunsEndpointMappings
                             records = [.. records.Where(r => states.Contains(r.Status))];
                         scopedEntityKind = records.Count > 0 ? records[0].EntityKind : null;
                     }
+
+                    // Only the runs of the executions of the spaces seen.
+                    records = await Agentivity.Host.Agentic.ExecutionsEndpoints.RunsSeenAsync(records, executionStore, ct).ConfigureAwait(false);
 
                     // Resolve each run's StreamId via its ExecutionRecord — needed by the frontend to
                     // reconnect to the run's SSE channel (chat, live status) after navigating away and
@@ -304,6 +308,7 @@ internal static class RunsEndpointMappings
             )
             .WithName("CancelUnifiedRun")
             .WithSummary("Cancel a run for any entity kind (agent, team, workflow)")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsRun)
             .WithTags("Runs");
 
         // DELETE /api/v1/runs/{runId}

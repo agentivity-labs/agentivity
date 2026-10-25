@@ -33,4 +33,11 @@ public interface IResumableEngine
     /// the run that called it can be taken up again in its turn. Already ended when nothing was re-entered.
     /// </returns>
     ValueTask<Task> ReenterAsync(RunContext run, InteractionResponse? response, CancellationToken ct);
+
+    /// <summary>
+    /// Whether a run of this kind cut off by a restart (<see cref="RunStatus.Interrupted"/>) can go on from its last saved point.
+    /// False: it keeps no such point (it only keeps its place where it waits for a person), and is run again instead; asking to
+    /// recover it is refused, with why, rather than answered as if it went on.
+    /// </summary>
+    bool RecoversInterrupted => true;
 }

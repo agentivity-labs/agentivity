@@ -391,15 +391,21 @@ public sealed class CapabilityRegistry : ICapabilityRegistry
             return new CapabilitySearchResult("lexical", []);
 
         CapabilitySemanticIndex? index;
+        string? notReady;
         lock (_gate)
+        {
             index = _semantic is not null && _semanticVersion == snapshot.Version ? _semantic : null;
+            // Why it is words only, read now: the index got ready in the background may be there before this answer leaves,
+            // and the answer must still say why it was words only.
+            notReady = _semanticReason ?? "The meaning index is not ready yet.";
+        }
 
         if (index is null)
         {
             // Not ready: answer with words now, and get the index ready for the next search.
             if (_embedder is not null)
                 _ = Task.Run(() => PrepareSemanticAsync(CancellationToken.None), CancellationToken.None);
-            return new CapabilitySearchResult("lexical", [.. lexical.Take(limit)], Semantic.Reason);
+            return new CapabilitySearchResult("lexical", [.. lexical.Take(limit)], notReady);
         }
 
         float[] vector;

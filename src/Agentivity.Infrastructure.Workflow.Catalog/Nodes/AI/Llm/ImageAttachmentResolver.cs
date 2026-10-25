@@ -63,7 +63,8 @@ internal static class ImageAttachmentResolver
         }
         else if (!string.IsNullOrWhiteSpace(imageRef.Url) && Uri.TryCreate(imageRef.Url, UriKind.Absolute, out Uri? uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
         {
-            using var httpClient = new HttpClient();
+            // An address someone wrote: the public internet only (an image of the network would go to the model).
+            using var httpClient = new HttpClient(Agentivity.Infrastructure.Web.PublicNetwork.CreateHandler(followRedirects: true));
             bytes = await httpClient.GetByteArrayAsync(uri, cancellationToken).ConfigureAwait(false);
         }
         else
