@@ -29,5 +29,6 @@ jobs:
           path-to-signatures: 'signatures/v1/cla.json'
           path-to-document: 'https://github.com/${{ github.repository }}/blob/main/CLA.md'
           branch: 'cla-signatures'
-          allowlist: 'dependabot[bot],github-actions[bot]'
+          # Agentivity: the updates of this repository by its maintainers (the commit of an export), not a contributor.
+          allowlist: 'dependabot[bot],github-actions[bot],Agentivity'          
           custom-notsigned-prcomment: 'Thank you for your contribution! Before we can look at it, please sign our short Contributor License Agreement (CLA.md) by replying with the sentence below.'
