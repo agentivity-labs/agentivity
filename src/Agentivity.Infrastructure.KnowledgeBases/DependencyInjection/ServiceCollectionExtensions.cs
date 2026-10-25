@@ -27,7 +27,7 @@ public static class ServiceCollectionExtensions
         {
             var storagePath = PathResolver.Resolve(configuration.GetValue<string>("KnowledgeBases:StoragePath") ?? "_data/knowledgebases");
             var provisioner = sp.GetRequiredService<IWorkspaceProvisioner>();
-            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes([KnowledgeBaseEntity.ObjectType]));
+            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes([KnowledgeBaseEntity.ObjectType], SpaceScoped: true));
             var versionStorePath = Path.Combine(Path.GetDirectoryName(storagePath) ?? storagePath, ".versions");
             var versionStore = provisioner.CreateVersionStore(versionStorePath, store);
             return new WorkspaceStoreContribution([KnowledgeBaseEntity.ObjectType], store, versionStore);

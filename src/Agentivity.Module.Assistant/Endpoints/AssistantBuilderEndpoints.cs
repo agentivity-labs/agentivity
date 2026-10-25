@@ -141,8 +141,16 @@ public static class AssistantBuilderEndpoints
         // The one route that changes the workspace. It is for a person to call: the assistant has no tool that reaches it.
         group.MapPost(
             "/changesets/{id}/save",
-            async (IBuilderApi api, string id, SaveRequest? request, CancellationToken ct) =>
+            async (IBuilderApi api, string id, SaveRequest? request, string? space, CancellationToken ct) =>
             {
+                // space: the space what is new is made in, where the instance has spaces (by default, the space worked in).
+                var into = string.IsNullOrWhiteSpace(space) ? Agentivity.Infrastructure.Identity.SpaceScope.CurrentSpaceId : space.Trim();
+                if (!Agentivity.Infrastructure.Identity.SpaceScope.Access.Sees(into))
+                    return Results.Json(new { error = "space_not_found", message = "There is no such space, or you are not in it." }, statusCode: StatusCodes.Status404NotFound);
+                if (!Agentivity.Infrastructure.Identity.SpaceScope.MayBuildIn(into))
+                    return Results.Json(Agentivity.Infrastructure.Identity.AgentivityAuthentication.Refusal(Agentivity.Infrastructure.Identity.Permissions.LibraryEdit), statusCode: StatusCodes.Status403Forbidden);
+                using var workingThere = Agentivity.Infrastructure.Identity.SpaceScope.WorkIn(into);
+
                 // The person chooses where it goes as they save: the destination travels with the save.
                 if (request?.Destination is { } destination && await api.SetDestinationAsync(id, destination.AgenticFolderId, destination.WorkflowFolderId, ct, destination.Path) is null)
                     return NotFound(id);

@@ -21,7 +21,7 @@ public static class ServiceCollectionExtensions
         {
             var storagePath = PathResolver.Resolve(configuration.GetValue<string>("DataTables:StoragePath") ?? "_data/datatables");
             var provisioner = sp.GetRequiredService<IWorkspaceProvisioner>();
-            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes([DataTableEntity.ObjectType]));
+            var store = provisioner.CreateStore(storagePath, new WorkspaceDomainTypes([DataTableEntity.ObjectType], SpaceScoped: true));
             var versionStorePath = Path.Combine(Path.GetDirectoryName(storagePath) ?? storagePath, ".versions");
             var versionStore = provisioner.CreateVersionStore(versionStorePath, store);
             return new WorkspaceStoreContribution([DataTableEntity.ObjectType], store, versionStore);

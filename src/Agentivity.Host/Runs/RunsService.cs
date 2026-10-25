@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Domain.Executable;
 using Agentivity.Domain.Execution;
 using Agentivity.Domain.Run;
@@ -171,7 +172,7 @@ public sealed class RunsService
         // (confirmed in production for the analogous resume path, see StandaloneAgentResumableEngine).
         var streamId = runCtx.Execution.StreamId;
 
-        _ = Task.Run(
+        _ = SpaceScope.RunUnlimited(
             async () =>
             {
                 eventBus.Publish(new RunEvent(RunId: runId, DefinitionId: agentId, RunKind: RunKind.Agent, Kind: RunEventKind.run_started, EventName: "agent_run_started", OccurredAtUtc: DateTimeOffset.UtcNow, Payload: new { agentId, executionId }, ExecutionId: executionId, StreamId: streamId));
@@ -292,7 +293,7 @@ public sealed class RunsService
             };
         await executionStore.SaveAsync(execution, ct).ConfigureAwait(false);
 
-        _ = Task.Run(
+        _ = SpaceScope.RunUnlimited(
             async () =>
             {
                 try
@@ -348,7 +349,7 @@ public sealed class RunsService
         await executionStore.SaveAsync(execution, ct).ConfigureAwait(false);
 
         // Fire-and-forget: the run outlives the HTTP request.
-        _ = Task.Run(
+        _ = SpaceScope.RunUnlimited(
             async () =>
             {
                 try

@@ -1,4 +1,5 @@
 using Agentivity.Infrastructure.Http;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Plugins;
 using Agentivity.Infrastructure.Workflow.Catalog.Services.Communication;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
@@ -42,7 +43,9 @@ public sealed class SlackInteractionEndpointContributor : IEndpointContributor
                     };
                 }
             )
-            .WithSummary("Receive a Slack reply and resume the waiting run");
+            .WithSummary("Receive a Slack reply and resume the waiting run")
+            // Slack calls it, not a person: each call is signed with the signing secret of a Slack connection, and checked.
+            .PublicRoute("Called by Slack: each call carries Slack's signature, checked against the signing secret of a Slack connection.");
     }
 
     private static IResult ResumeSlackInteraction(SlackWebhookProcessResult result, WorkflowEngine engine)

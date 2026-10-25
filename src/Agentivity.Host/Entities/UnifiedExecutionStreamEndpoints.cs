@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using System.Text.Json;
 using System.Threading.Channels;
 using Agentivity.Host.AgUi;
@@ -50,6 +51,7 @@ internal static class ExecutionStreamEndpoints
             )
             .WithName("StreamRunEvents")
             .WithSummary("Unified SSE stream for a specific run (workflow, team, agent) — supports replay via Last-Event-ID")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsRun)
             .WithTags("Streams");
 
         // GET /api/v1/streams/runs/events
@@ -81,6 +83,7 @@ internal static class ExecutionStreamEndpoints
             )
             .WithName("StreamChannelEvents")
             .WithSummary("Primary SSE channel for an execution — full AG-UI content, one channel per execution chain")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsStream)
             .WithTags("Streams");
 
 

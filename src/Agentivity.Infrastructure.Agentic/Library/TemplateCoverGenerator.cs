@@ -101,7 +101,7 @@ public sealed class TemplateCoverGenerator(IImageGenerationClient images, Creden
     }
 
     /// <summary>What to say when nothing can draw: the author needs an OpenAI account.</summary>
-    public const string NeedsOpenAiAccount = "Drawing a cover needs an OpenAI account: add a connection to OpenAI (api.openai.com) in Settings > Connections.";
+    public const string NeedsOpenAiAccount = "Drawing a cover needs an OpenAI account: add a connection to OpenAI (api.openai.com) in Administration > Credentials.";
 
     // Where a connection of an OpenAI type leads when it names no address.
     private const string OpenAiAddress = "https://api.openai.com/v1";

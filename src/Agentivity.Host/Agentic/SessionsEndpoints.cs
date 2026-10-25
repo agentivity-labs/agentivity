@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Domain.Execution;
 using Agentivity.Host.Executions;
 using Agentivity.Host.Runs;
@@ -61,9 +62,11 @@ internal static class ExecutionsEndpoints
                     if (string.IsNullOrWhiteSpace(entityId))
                     {
                         var states = state ?? [];
-                        var records = states.Length > 0
-                            ? await executionStore.ListByStatesAsync(states, ct).ConfigureAwait(false)
-                            : await executionStore.FindAllAsync(ct).ConfigureAwait(false);
+                        var records = (states.Length > 0
+                                ? await executionStore.ListByStatesAsync(states, ct).ConfigureAwait(false)
+                                : await executionStore.FindAllAsync(ct).ConfigureAwait(false))
+                            .Where(r => SpaceScope.Shows(r.SpaceId))
+                            .ToList();
 
                         return Results.Ok(
                             new
@@ -79,6 +82,7 @@ internal static class ExecutionsEndpoints
                                         state = r.State,
                                         createdAt = r.CreatedAt,
                                         updatedAt = r.UpdatedAt,
+                                        spaceId = r.SpaceId,
                                     }),
                             }
                         );
@@ -89,7 +93,7 @@ internal static class ExecutionsEndpoints
                     // here — a plain `==` against "agent"/"team"/"workflow" never matched anything,
                     // so this endpoint always fell through to the empty `entityKind: null` response
                     // regardless of how many runs actually existed for the entity.
-                    var ownerRuns = await runRecordStore.ListByOwnerAsync(entityId, ct).ConfigureAwait(false);
+                    var ownerRuns = await RunsSeenAsync(await runRecordStore.ListByOwnerAsync(entityId, ct).ConfigureAwait(false), executionStore, ct).ConfigureAwait(false);
                     var agentRuns = ownerRuns.Where(r => string.Equals(r.EntityKind, "agent", StringComparison.OrdinalIgnoreCase)).ToList();
                     if (agentRuns.Count > 0)
                     {
@@ -232,6 +236,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("GetExecution")
             .WithSummary("Get execution detail for any entity kind (agent, team, workflow)")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // POST /api/v1/executions/{executionId}/respond
@@ -275,6 +280,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("RespondToExecutionHil")
             .WithSummary("Deliver a human-in-the-loop response to any pending request within an execution")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // GET /api/v1/executions/{executionId}/hil/pending
@@ -305,6 +311,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("GetPendingExecutionHil")
             .WithSummary("List all pending HIL requests for an execution")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // GET /api/v1/executions/{executionId}/threads
@@ -330,6 +337,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("ListExecutionThreads")
             .WithSummary("List all interaction threads across all runs in an execution (session)")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // GET /api/v1/executions/{executionId}/threads/{threadId}/messages
@@ -364,6 +372,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("ListExecutionThreadMessages")
             .WithSummary("List messages in a thread, validated to belong to the execution")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // POST /api/v1/executions/{executionId}/threads/{threadId}/messages
@@ -393,6 +402,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("PostExecutionThreadMessage")
             .WithSummary("Write a message in a conversation of an execution")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // ── POST /api/v1/executions ──────────────────────────────────────────
@@ -410,11 +420,13 @@ internal static class ExecutionsEndpoints
                     [FromServices] IRepository<ExecutionContext, ExecutionRecord> executionRepository,
                     [FromServices] ILoggerFactory loggerFactory,
                     [FromServices] IRepository<RunContext, RunRecord>? runRepository,
+                    HttpContext http,
                     CancellationToken ct
-                ) => await executionService.StartAsync(body, resolver, eventBus, teamEngine, catalogue, workflowEngine, executionRepository, loggerFactory, ct, runRepository)
+                ) => await PublishableStartRefusalAsync(http, body, executionRepository, ct) ?? await executionService.StartAsync(body, resolver, eventBus, teamEngine, catalogue, workflowEngine, executionRepository, loggerFactory, ct, runRepository, Agentivity.Infrastructure.Identity.Caller.From(http.User))
             )
             .WithName("StartExecution")
             .WithSummary("Start a new execution (workflow, agent, or team)")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.StartsItsElement)
             .WithTags("Executions");
 
         // ── POST /api/v1/executions/{executionId}/cancel ─────────────────────
@@ -437,6 +449,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("CancelExecution")
             .WithSummary("Cancel the active run of an execution")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // ── POST /api/v1/executions/{executionId}/pause ──────────────────────
@@ -523,6 +536,7 @@ internal static class ExecutionsEndpoints
             )
             .WithName("GetExecutionStatus")
             .WithSummary("Get live node/connection statuses for an execution")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.ItsExecution)
             .WithTags("Executions");
 
         // ── GET /api/v1/executions/{executionId}/inspector ───────────────────
@@ -583,7 +597,45 @@ internal static class ExecutionsEndpoints
         string.IsNullOrWhiteSpace(question.ExecutionId)
         || string.Equals(question.ExecutionId, executionId, StringComparison.OrdinalIgnoreCase)
         || string.Equals(question.RunId.ToString("D"), executionId, StringComparison.OrdinalIgnoreCase);
+
+    // A web page (publishable key) starts only the element of its key, continues only an execution it started, and starts no more
+    // a minute than its key allows. Anyone else is not concerned.
+    private static async Task<IResult?> PublishableStartRefusalAsync(HttpContext http, StartExecutionRequest body, IRepository<ExecutionContext, ExecutionRecord> executions, CancellationToken ct)
+    {
+        if (Agentivity.Infrastructure.Identity.Caller.From(http.User) is not { Kind: Agentivity.Infrastructure.Identity.CallerKind.PublishableKey } page)
+            return null;
+        if (!string.Equals(body?.EntityId, Agentivity.Infrastructure.Identity.AgentivityAuthentication.ElementOf(http.User), StringComparison.OrdinalIgnoreCase))
+            return Results.Json(new { error = "publishable_element", message = "This page talks only to the agent, team or workflow its key was made for." }, statusCode: StatusCodes.Status403Forbidden);
+        if (!string.IsNullOrWhiteSpace(body!.ExecutionId))
+        {
+            var started = (await executions.FindAsync(body.ExecutionId, ct).ConfigureAwait(false))?.StartedBy;
+            if (started is not { Kind: Agentivity.Infrastructure.Identity.CallerKind.PublishableKey } || started.Id != page.Id)
+                return Results.Json(new { error = "not_yours", message = "This page did not start it." }, statusCode: StatusCodes.Status403Forbidden);
+        }
+        if (http.RequestServices.GetRequiredService<Agentivity.Infrastructure.Identity.PublishableStarts>().TryStart(page.Id, Agentivity.Infrastructure.Identity.AgentivityAuthentication.PerMinuteOf(http.User)) is { } wait)
+        {
+            http.Response.Headers.RetryAfter = ((int)Math.Ceiling(wait.TotalSeconds)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return Results.Json(new { error = "too_many_starts", message = "Too many conversations started from this site: try again in a minute." }, statusCode: StatusCodes.Status429TooManyRequests);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The runs whose execution a list shows (<see cref="SpaceScope.Shows"/>: in a space the caller sees, and the one looked at when
+    /// one is chosen); a run without an execution is in General.
+    /// </summary>
+    internal static async Task<IReadOnlyList<RunRecord>> RunsSeenAsync(IReadOnlyList<RunRecord> runs, IExecutionRecordStore executions, CancellationToken ct)
+    {
+        if (!SpaceScope.IsLimited && SpaceScope.ViewSpaceId is null)
+            return runs;
+        var spaces = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var executionId in runs.Select(r => r.ExecutionId).OfType<string>().Distinct())
+            spaces[executionId] = (await executions.GetAsync(executionId, ct).ConfigureAwait(false))?.SpaceId ?? Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
+        return [.. runs.Where(r => SpaceScope.Shows(r.ExecutionId is { } id ? spaces.GetValueOrDefault(id, Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default) : Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default))];
+    }
 }
+
 
 /// <summary>The answer to one question of an execution. <paramref name="RequestId"/> names the question; the backend finds the run that asked it.</summary>
 /// <param name="Source"><c>"widget"</c> when the answer was given through a widget (it shows the answer itself, so the conversation does not show it again).</param>

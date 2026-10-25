@@ -125,7 +125,7 @@ public sealed class DurableRunService(
     /// (completed work is never re-executed). No interaction response is involved.
     /// </summary>
     public ValueTask<RunResumeOutcome> RecoverAsync(Guid runId, CancellationToken ct = default) =>
-        ReenterBranchRootAsync(runId, response: null, gate: static s => s is RunStatus.Interrupted, gateError: "not interrupted", ct);
+        ReenterBranchRootAsync(runId, response: null, gate: static s => s is RunStatus.Interrupted, gateError: "not interrupted", ct, recovering: true);
 
     /// <summary>
     /// Startup recovery scan over the durable run records:
@@ -173,7 +173,7 @@ public sealed class DurableRunService(
     }
 
 
-    private async ValueTask<RunResumeOutcome> ReenterBranchRootAsync(Guid runId, InteractionResponse? response, Func<RunStatus, bool> gate, string gateError, CancellationToken ct)
+    private async ValueTask<RunResumeOutcome> ReenterBranchRootAsync(Guid runId, InteractionResponse? response, Func<RunStatus, bool> gate, string gateError, CancellationToken ct, bool recovering = false)
     {
         var entry = await runRepository.FindAsync(runId.ToString("D"), ct).ConfigureAwait(false);
         if (entry is null)
@@ -192,11 +192,11 @@ public sealed class DurableRunService(
             entry = parent;
         }
 
-        return await ReenterAsync(entry, response, gate, gateError, thenItsParent: false, ct).ConfigureAwait(false);
+        return await ReenterAsync(entry, response, gate, gateError, thenItsParent: false, ct, recovering).ConfigureAwait(false);
     }
 
     /// <summary>Takes one run up again through the engine of its kind. The same for every run, wherever it is in the tree.</summary>
-    private async ValueTask<RunResumeOutcome> ReenterAsync(RunContext entry, InteractionResponse? response, Func<RunStatus, bool> gate, string gateError, bool thenItsParent, CancellationToken ct)
+    private async ValueTask<RunResumeOutcome> ReenterAsync(RunContext entry, InteractionResponse? response, Func<RunStatus, bool> gate, string gateError, bool thenItsParent, CancellationToken ct, bool recovering = false)
     {
         if (!gate(entry.Status))
             return new RunResumeOutcome(false, $"Run '{entry.RunId}' is {gateError} (status: {entry.Status}).", entry.RunId);
@@ -205,6 +205,10 @@ public sealed class DurableRunService(
         var engine = engines.FirstOrDefault(e => string.Equals(e.Kind, entityKind, StringComparison.OrdinalIgnoreCase));
         if (engine is null)
             return new RunResumeOutcome(false, $"No resumable engine is registered for run kind '{entityKind}'.", entry.RunId);
+
+        // Nothing to go on from: said, and nothing is touched (the execution stays as it is, not set going then failed).
+        if (recovering && !engine.RecoversInterrupted)
+            return new RunResumeOutcome(false, $"This {entityKind} cannot go on from where it was cut off: it keeps its place only where it waits for a person. Run it again.", entry.RunId);
 
         // `entry` is the run's one live, cache-registered RunContext (FindAsync returns the
         // cached instance on a hit, or a freshly-reconstructed-and-recached one from the durable

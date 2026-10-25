@@ -27,6 +27,15 @@ public sealed record ExecutionRecord
     /// </summary>
     public string? InteractionThreadId { get; init; }
 
+    /// <summary>
+    /// Who started it (the person signed in, or the owner of an instance without sign-in): what it runs runs as them, and a resume
+    /// keeps it. Null for an execution kept before it was noted, or started from within the platform (not by a request).
+    /// </summary>
+    public Agentivity.Infrastructure.Identity.Caller? StartedBy { get; init; }
+
+    /// <summary>The space it belongs to: the space of what it runs.</summary>
+    public string SpaceId { get; init; } = Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
+
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset UpdatedAt { get; init; }
 }

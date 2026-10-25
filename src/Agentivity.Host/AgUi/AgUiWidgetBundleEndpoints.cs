@@ -1,3 +1,4 @@
+using Agentivity.Infrastructure.Identity;
 using System.Text.Json;
 using Agentivity.Infrastructure.AgUi;
 
@@ -19,6 +20,7 @@ public static class AgUiWidgetBundleEndpoints
             .MapGet("/", (IAgUiWidgetBundleRegistry registry) => Results.Ok(registry.GetAll().Select(b => new AgUiBundleSummaryResponse(b.Id, b.DisplayName, b.Version, b.Description, b.Widgets.Count))))
             .WithName("GetAgUiBundles")
             .WithSummary("Returns all registered AG-UI widget bundles")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.Anyone)
             .Produces<IEnumerable<AgUiBundleSummaryResponse>>();
 
         group
@@ -35,6 +37,7 @@ public static class AgUiWidgetBundleEndpoints
             )
             .WithName("GetAgUiBundleWidgets")
             .WithSummary("Returns the full widget descriptor list for a specific bundle")
+            .Publishable(Agentivity.Infrastructure.Identity.PublishableAccess.Anyone)
             .Produces<AgUiBundleDetailResponse>()
             .Produces(StatusCodes.Status404NotFound);
 

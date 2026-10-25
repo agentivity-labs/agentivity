@@ -1,6 +1,7 @@
 using Agentivity.Domain.Credentials;
 using Agentivity.Infrastructure.Core.Llm;
 using Agentivity.Infrastructure.Http;
+using Agentivity.Infrastructure.Identity;
 using Agentivity.Infrastructure.Workflow.Services.CredentialsManagement;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,6 +14,12 @@ namespace Agentivity.Host.Credentials;
 /// <summary>
 /// Credentials CRUD endpoints and template discovery.
 /// Routes: /api/v1/credentials, /api/v1/credentials/templates
+/// <para>
+/// The credentials are the instance's, each available in the spaces an administrator says (<see cref="SpaceAvailability"/>, set by
+/// /api/v1/spaces/availability). The list gives what may be used in the space worked in — what a step may take —, or, for whom
+/// manages them and asks it (<c>everywhere=true</c>), all of them; whoever manages them finds one credential, to test, change or
+/// delete it, wherever it is available.
+/// </para>
 /// </summary>
 public static class CredentialsEndpoints
 {
@@ -51,8 +58,9 @@ public static class CredentialsEndpoints
 
         v1.MapGet(
             "/credentials",
-            async (string? templateId, CredentialsService service, CancellationToken ct) =>
+            async (string? templateId, bool? everywhere, HttpContext context, CredentialsService service, CancellationToken ct) =>
             {
+                using var all = everywhere == true ? Managing(context) : null;
                 var credentials = templateId is not null ? await service.GetByTemplateAsync(templateId, ct) : await service.GetAllAsync(ct);
                 return Results.Ok(credentials.Select(ToDto));
             }
@@ -61,8 +69,9 @@ public static class CredentialsEndpoints
 
         v1.MapGet(
             "/credentials/{id}",
-            async (string id, CredentialsService service, CancellationToken ct) =>
+            async (string id, HttpContext context, CredentialsService service, CancellationToken ct) =>
             {
+                using var all = Managing(context);
                 var credentials = await service.GetByIdAsync(id, ct);
                 return credentials is not null ? Results.Ok(ToDto(credentials)) : ApiNotFound(code: "credentials_not_found", userMessage: "These credentials could not be found.", detail: $"Credentials '{id}' not found.", context: new { id });
             }
@@ -87,8 +96,9 @@ public static class CredentialsEndpoints
         // provider's "list the models" call, from the server — the key never reaches the browser, and nothing is saved.
         v1.MapPost(
             "/credentials/models",
-            async (ModelsOfConnectionRequest request, CredentialsService service, LlmCredentialTester tester, CancellationToken ct) =>
+            async (ModelsOfConnectionRequest request, HttpContext context, CredentialsService service, LlmCredentialTester tester, CancellationToken ct) =>
             {
+                using var all = Managing(context);
                 var fields = (request.Fields ?? []).Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
                 var draft = await service.ComposeAsync(request.Id, request.TemplateId, fields, ct);
                 if (draft is null)
@@ -106,8 +116,9 @@ public static class CredentialsEndpoints
         // the key never reaches the browser. Always 200 with a status, unless the credential does not exist.
         v1.MapPost(
             "/credentials/{id}/test",
-            async (string id, CredentialsService service, LlmCredentialTester tester, CancellationToken ct) =>
+            async (string id, HttpContext context, CredentialsService service, LlmCredentialTester tester, CancellationToken ct) =>
             {
+                using var all = Managing(context);
                 var credentials = await service.GetByIdAsync(id, ct);
                 if (credentials is null)
                 {
@@ -122,8 +133,9 @@ public static class CredentialsEndpoints
 
         v1.MapPut(
             "/credentials/{id}",
-            async (string id, UpdateCredentialsRequest request, CredentialsService service, CancellationToken ct) =>
+            async (string id, UpdateCredentialsRequest request, HttpContext context, CredentialsService service, CancellationToken ct) =>
             {
+                using var all = Managing(context);
                 var fields = request.Fields.Select(f => new CredentialsField { Key = f.Key, Value = f.Value }).ToList();
                 if (await service.GetByIdAsync(id, ct) is { } stored && CredentialsService.CheckFields(stored.TemplateId, fields, stored) is { } problem)
                     return ApiValidationError(code: problem.Code, userMessage: problem.Message, detail: problem.Message, context: new { id });
@@ -147,6 +159,9 @@ public static class CredentialsEndpoints
         return routes;
     }
 
+    // Whoever manages the credentials finds each wherever it is available (null for others: only what may be used here).
+    private static IDisposable? Managing(HttpContext context) => CallerPermissions.Has(context.User, Permissions.CredentialsManage) ? SpaceAvailability.Everywhere() : null;
+
     // Every credentials answer goes through here, and a secret never leaves the server: it comes out as a mask (see CredentialsMasking).
     private static object ToDto(CredentialModel c)
     {
@@ -159,6 +174,8 @@ public static class CredentialsEndpoints
             description = masked.Description,
             fields = masked.Fields.Select(f => new { key = f.Key, value = f.Value }),
             createdAt = masked.CreatedAt,
+            // The spaces it may be used in; none: all of them.
+            spaces = masked.Spaces ?? [],
         };
     }
 }
