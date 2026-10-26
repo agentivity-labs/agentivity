@@ -83,6 +83,8 @@ internal static class ExecutionsEndpoints
                                         createdAt = r.CreatedAt,
                                         updatedAt = r.UpdatedAt,
                                         spaceId = r.SpaceId,
+                                        // What started it when it was not a person (a schedule: schedule:<id>).
+                                        origin = r.Origin,
                                     }),
                             }
                         );

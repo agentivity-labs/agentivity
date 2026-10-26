@@ -83,6 +83,19 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
     /// <summary>The space it belongs to: the space of what it runs.</summary>
     public string SpaceId { get; private set; } = Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
 
+    /// <summary>What started it when it was not a person asking (a schedule: <c>schedule:&lt;id&gt;</c>); null otherwise.</summary>
+    public string? Origin { get; private set; }
+
+    /// <summary>Notes what starts a new execution; an execution already started keeps what it had.</summary>
+    public void NoteOrigin(string? origin)
+    {
+        lock (_gate)
+        {
+            if (string.IsNullOrEmpty(EntityId) && !string.IsNullOrWhiteSpace(origin))
+                Origin = origin;
+        }
+    }
+
     /// <summary>
     /// Places a new execution in <paramref name="spaceId"/>, the space of what it runs; an execution already started (a
     /// continuation) stays where it is.
@@ -236,6 +249,7 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
                 InteractionThreadId = InteractionThreadId,
                 StartedBy = StartedBy,
                 SpaceId = SpaceId,
+                Origin = Origin,
                 CreatedAt = CreatedAt,
                 UpdatedAt = UpdatedAt,
             };
@@ -257,6 +271,7 @@ public sealed class ExecutionContext : IRecordConvertible<ExecutionRecord>
         ctx.RunIds.AddRange(r.RunIds);
         ctx.InteractionThreadId = r.InteractionThreadId;
         ctx.StartedBy = r.StartedBy;
+        ctx.Origin = r.Origin;
         ctx.SpaceId = string.IsNullOrWhiteSpace(r.SpaceId) ? Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default : r.SpaceId;
         ctx.CreatedAt = r.CreatedAt;
         ctx.UpdatedAt = r.UpdatedAt;

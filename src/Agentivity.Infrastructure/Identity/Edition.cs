@@ -66,6 +66,9 @@ public static class EditionFeatures
     /// <summary>The monitoring of the client, wired by the client: traces, metrics and logs sent to their OpenTelemetry collector.</summary>
     public const string Observability = "observability";
 
+    /// <summary>Agents, teams and workflows started on their own at the times chosen (the hosted plans).</summary>
+    public const string Schedules = "schedules";
+
     /// <summary>Each feature, and whether the Community edition has it: what an edition that says nothing has.</summary>
     public static readonly IReadOnlyDictionary<string, bool> Community = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase)
     {
@@ -77,6 +80,7 @@ public static class EditionFeatures
         [Sso] = false,
         [Audit] = false,
         [Observability] = false,
+        [Schedules] = false,
     };
 
     public static IReadOnlyCollection<string> All => [.. Community.Keys];
@@ -99,6 +103,12 @@ public static class EditionLimits
     /// <summary>How many GB the workspace holds on its disk.</summary>
     public const string MaxDiskGb = "maxDiskGb";
 
+    /// <summary>How many schedules the workspace keeps (paused ones included).</summary>
+    public const string MaxSchedules = "maxSchedules";
+
+    /// <summary>The shortest time, in minutes, between two executions of one schedule.</summary>
+    public const string MinScheduleMinutes = "minScheduleMinutes";
+
     /// <summary>Each limit, and what the Community edition allows (null: no limit).</summary>
     public static readonly IReadOnlyDictionary<string, long?> Community = new Dictionary<string, long?>(StringComparer.OrdinalIgnoreCase)
     {
@@ -109,6 +119,8 @@ public static class EditionLimits
         [MaxParallelRuns] = null,
         [MaxRunMinutes] = null,
         [MaxDiskGb] = null,
+        [MaxSchedules] = null,
+        [MinScheduleMinutes] = null,
     };
 
     public static IReadOnlyCollection<string> All => [.. Community.Keys];

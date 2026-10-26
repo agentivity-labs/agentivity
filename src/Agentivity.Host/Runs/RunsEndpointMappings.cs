@@ -101,10 +101,13 @@ internal static class RunsEndpointMappings
                     // reconnect to the run's SSE channel (chat, live status) after navigating away and
                     // back, since streamId is a distinct GUID from runId/executionId.
                     var streamIds = new Dictionary<string, string?>(StringComparer.Ordinal);
+                    // And what started it, when it was not a person (a schedule).
+                    var origins = new Dictionary<string, string?>(StringComparer.Ordinal);
                     foreach (var executionId in records.Select(r => r.ExecutionId).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct())
                     {
                         var execution = await executionStore.GetAsync(executionId!, ct).ConfigureAwait(false);
                         streamIds[executionId!] = execution?.StreamId;
+                        origins[executionId!] = execution?.Origin;
                     }
 
                     return Results.Ok(
@@ -120,6 +123,7 @@ internal static class RunsEndpointMappings
                                 entityKind = r.EntityKind,
                                 executionId = r.ExecutionId,
                                 streamId = r.ExecutionId is not null ? streamIds.GetValueOrDefault(r.ExecutionId) : null,
+                                origin = r.ExecutionId is not null ? origins.GetValueOrDefault(r.ExecutionId) : null,
                                 state = r.Status.ToString().ToLowerInvariant(),
                                 createdAt = r.CreatedAt,
                                 completedAt = r.CompletedAt,

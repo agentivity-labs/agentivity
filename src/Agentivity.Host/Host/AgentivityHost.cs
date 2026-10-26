@@ -277,6 +277,8 @@ public sealed class AgentivityHost : IAgentivityHost
         builder.Services.AddRunEventBus();
 
         builder.Services.AddSingleton<Agentivity.Host.Executions.ExecutionService>();
+        // What starts an execution from within the platform (a schedule), as the Studio starts one.
+        builder.Services.AddSingleton<Agentivity.Infrastructure.Execution.IExecutionLauncher, Agentivity.Host.Executions.ExecutionLauncher>();
         builder.Services.AddSingleton<ExecutionRepository>();
         builder.Services.AddSingleton<Agentivity.Infrastructure.Repository.IRepository<Infrastructure.Execution.Executions.ExecutionContext, ExecutionRecord>>(sp => sp.GetRequiredService<ExecutionRepository>());
         builder.Services.AddSingleton<Agentivity.Host.Runs.RunsService>();

@@ -43,7 +43,8 @@ public sealed class ExecutionService(IEdition? edition = null, MonthlyRuns? mont
         CancellationToken ct,
         IRepository<RunContext, RunRecord>? runRepository = null,
         Caller? startedBy = null,
-        Action<ExecutorResult?, Exception?>? finished = null
+        Action<ExecutorResult?, Exception?>? finished = null,
+        string? origin = null
     )
     {
         if (string.IsNullOrWhiteSpace(body?.EntityId))
@@ -99,6 +100,7 @@ public sealed class ExecutionService(IEdition? edition = null, MonthlyRuns? mont
         var executionCtx = await ExecutionContext.FindOrCreate(executionRepository, body.ExecutionId, ct).ConfigureAwait(false);
         // A new execution is in the space of what it runs, and so is its history.
         executionCtx.PlaceIn(elementSpace);
+        executionCtx.NoteOrigin(origin);
         var runCtx = await RunContext.GetOrCreate(runRepository, ToRunKind(executable.Definition.Kind), body.EntityId, executionCtx, ct).ConfigureAwait(false);
 
         // Once started, it runs as a closed box, with what it calls, in its own space, whatever the spaces of who started it.
