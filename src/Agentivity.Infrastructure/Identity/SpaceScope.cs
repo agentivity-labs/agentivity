@@ -90,6 +90,17 @@ public static class SpaceScope
     }
 
     /// <summary>
+    /// Works from here on with what <paramref name="access"/> sees and allows, outside a request: what someone set up, done later in
+    /// their name (a schedule), is allowed as their own request would be.
+    /// </summary>
+    public static IDisposable As(SpaceAccess access, string currentSpaceId = WorkspaceSpaces.Default)
+    {
+        var before = Ambient.Value;
+        Ambient.Value = new Scope(access, currentSpaceId, null);
+        return new Restore(before);
+    }
+
+    /// <summary>
     /// Runs <paramref name="work"/> without the limits of the request: what an execution does once started (it runs with the element
     /// it was started on, whatever space what it calls is in). Its result stays in the space of that element.
     /// </summary>

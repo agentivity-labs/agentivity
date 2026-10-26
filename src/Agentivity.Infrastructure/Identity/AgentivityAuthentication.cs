@@ -230,6 +230,7 @@ public sealed class EditionFeatureContributor(IEdition edition) : IFeatureContri
         [EditionFeatures.Observability] = ("Your own monitoring", "Traces, metrics and logs sent to your OpenTelemetry collector."),
         [EditionFeatures.Sso] = ("Single sign-on", "Signing in through the identity provider of an organisation."),
         [EditionFeatures.Audit] = ("Audit journal", "The screen of the journal of who came in and what changed."),
+        [EditionFeatures.Schedules] = ("Schedules", "Agents, teams and workflows started on their own at the times chosen."),
     };
 
     public IReadOnlyCollection<FeatureDescriptor> GetFeatures() =>

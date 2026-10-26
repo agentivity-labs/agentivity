@@ -36,6 +36,9 @@ public sealed record ExecutionRecord
     /// <summary>The space it belongs to: the space of what it runs.</summary>
     public string SpaceId { get; init; } = Agentivity.Infrastructure.Storage.Workspace.WorkspaceSpaces.Default;
 
+    /// <summary>What started it when it was not a person asking (a schedule: <c>schedule:&lt;id&gt;</c>); null otherwise.</summary>
+    public string? Origin { get; init; }
+
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset UpdatedAt { get; init; }
 }
